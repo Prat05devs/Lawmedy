@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+onlyBuiltDependencies:
+  - "@embedded-postgres/windows-x64"
+  - "@nestjs/core"
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma
+  - bcrypt
+  - sharp

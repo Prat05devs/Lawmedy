@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": [
+        "API_URL",
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "WEB_ORIGIN",
+        "PORT",
+        "NODE_ENV"
+      ]
+    },
+    "dev": { "cache": false, "persistent": true },
+    "typecheck": { "dependsOn": ["^build"] },
+    "test": { "cache": false }
+  }
+}

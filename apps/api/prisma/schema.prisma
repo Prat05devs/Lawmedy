@@ -1,0 +1,439 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MatterType {
+  LEGAL_NOTICE
+  RTI
+}
+
+enum GovernmentLevel {
+  CENTRAL
+  STATE
+  LOCAL
+}
+
+enum MatterStatus {
+  DRAFT
+  INTAKE_IN_PROGRESS
+  READY_FOR_PAYMENT
+  PAID
+  AI_PROCESSING
+  DRAFT_GENERATED
+  UNDER_ADVOCATE_REVIEW
+  USER_RESPONSE_REQUIRED
+  APPROVED
+  COMPLETED
+}
+
+enum UserRole {
+  USER
+  ADVOCATE
+  ADMIN
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  fullName     String
+  role         UserRole   @default(USER)
+  createdAt    DateTime   @default(now())
+  matters      Matter[]
+  evidence     Evidence[] @relation("EvidenceUploader")
+  advocateAssignments MatterAssignment[] @relation("AdvocateAssignments")
+  advocateQuestions   MatterQuestion[]   @relation("AdvocateQuestions")
+  notifications       Notification[]
+  reviewedDocuments   LegalDocument[]    @relation("DocumentReviewer")
+}
+
+model Matter {
+  id                 String             @id @default(uuid())
+  referenceNumber    String             @unique @default(dbgenerated("next_matter_reference()"))
+  userId             String
+  user               User               @relation(fields: [userId], references: [id])
+  type               MatterType
+  status             MatterStatus       @default(DRAFT)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  statements         MatterStatement[]  @relation("Statements")
+  currentStatementId String?            @unique
+  currentStatement   MatterStatement?   @relation("CurrentStatement", fields: [currentStatementId], references: [id], onDelete: SetNull)
+  aiRuns             AiRun[]
+  analyses           MatterAiAnalysis[]
+  questions          MatterQuestion[]
+  evidence           Evidence[]
+  caseFacts          CaseFact[]
+  recipient          MatterRecipient?
+  payments           Payment[]
+  documents          LegalDocument[]
+  assignment         MatterAssignment?
+  notifications      Notification[]
+  finalDocument      FinalDocument?
+  rtiDetail          RtiDetail?
+
+  @@index([userId, createdAt])
+}
+
+model PublicAuthority {
+  id              String          @id @default(uuid())
+  name            String          @unique
+  department      String
+  governmentLevel GovernmentLevel
+  state           String?
+  address         String          @db.Text
+  rtiPortalUrl    String?
+  rtiDetails      RtiDetail[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([governmentLevel, state, name])
+}
+
+model RtiDetail {
+  id                String          @id @default(uuid())
+  matterId          String          @unique
+  matter            Matter          @relation(fields: [matterId], references: [id])
+  governmentLevel   GovernmentLevel
+  state             String?
+  department        String
+  publicAuthorityId String
+  publicAuthority   PublicAuthority @relation(fields: [publicAuthorityId], references: [id])
+  subject           String
+  periodFrom        DateTime?
+  periodTo          DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([publicAuthorityId])
+}
+
+model MatterWorkflowConfiguration {
+  id                      String     @id @default(uuid())
+  matterType              MatterType
+  category                String     @default("*")
+  requiresAdvocateReview  Boolean
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  @@unique([matterType, category])
+}
+
+model MatterStatement {
+  id               String            @id @default(uuid())
+  matterId         String
+  matter           Matter            @relation("Statements", fields: [matterId], references: [id])
+  statement        String            @db.Text
+  createdAt        DateTime          @default(now())
+  currentForMatter Matter?           @relation("CurrentStatement")
+  analysis         MatterAiAnalysis?
+
+  @@index([matterId, createdAt])
+}
+
+enum AiRunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model AiRun {
+  id                 String              @id @default(uuid())
+  matterId           String
+  matter             Matter              @relation(fields: [matterId], references: [id])
+  taskType           String
+  provider           String
+  modelName          String
+  promptVersion      String
+  inputReference     String
+  output             Json?
+  status             AiRunStatus         @default(RUNNING)
+  inputTokens        Int?
+  outputTokens       Int?
+  latencyMs          Int?
+  error              String?
+  createdAt          DateTime            @default(now())
+  finishedAt         DateTime?
+  expiresAt          DateTime
+  analysis           MatterAiAnalysis?
+  evidenceExtraction EvidenceExtraction?
+  generatedVersion   DocumentVersion?     @relation("GenerationRun")
+  qaVersion          DocumentVersion?     @relation("QaRun")
+
+  @@index([matterId, inputReference, createdAt])
+  @@map("ai_runs")
+}
+
+enum EvidenceStatus {
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+enum EvidenceExtractionStatus {
+  SUCCEEDED
+  FAILED
+}
+
+model Evidence {
+  id               String              @id @default(uuid())
+  matterId         String
+  matter           Matter              @relation(fields: [matterId], references: [id])
+  uploadedBy       String
+  uploader         User                @relation("EvidenceUploader", fields: [uploadedBy], references: [id])
+  originalFilename String
+  storageKey       String              @unique
+  mimeType         String
+  sizeBytes        Int
+  sha256           String
+  status           EvidenceStatus      @default(PROCESSING)
+  statusMessage    String?
+  createdAt        DateTime            @default(now())
+  extraction       EvidenceExtraction?
+
+  @@index([matterId, createdAt])
+}
+
+model EvidenceExtraction {
+  id         String                   @id @default(uuid())
+  evidenceId String                   @unique
+  evidence   Evidence                 @relation(fields: [evidenceId], references: [id])
+  aiRunId    String                   @unique
+  aiRun      AiRun                    @relation(fields: [aiRunId], references: [id])
+  model      String
+  extraction Json
+  confidence Float?
+  status     EvidenceExtractionStatus
+  createdAt  DateTime                 @default(now())
+}
+
+model MatterAiAnalysis {
+  id                 String           @id @default(uuid())
+  matterId           String
+  matter             Matter           @relation(fields: [matterId], references: [id])
+  statementId        String           @unique
+  statement          MatterStatement  @relation(fields: [statementId], references: [id])
+  aiRunId            String           @unique
+  aiRun              AiRun            @relation(fields: [aiRunId], references: [id])
+  category           String
+  summary            String
+  facts              Json
+  missingInformation Json
+  createdAt          DateTime         @default(now())
+  questions          MatterQuestion[]
+
+  @@index([matterId, createdAt])
+}
+
+model MatterQuestion {
+  id           String           @id @default(uuid())
+  matterId     String
+  matter       Matter           @relation(fields: [matterId], references: [id])
+  analysisId   String?
+  analysis     MatterAiAnalysis? @relation(fields: [analysisId], references: [id])
+  requestedByAdvocateId String?
+  requestedByAdvocate   User? @relation("AdvocateQuestions", fields: [requestedByAdvocateId], references: [id])
+  question     String
+  questionType String
+  position     Int
+  createdAt    DateTime         @default(now())
+  answer       MatterAnswer?
+
+  @@unique([analysisId, position])
+  @@index([matterId])
+}
+
+model MatterAnswer {
+  id         String         @id @default(uuid())
+  questionId String         @unique
+  question   MatterQuestion @relation(fields: [questionId], references: [id])
+  answer     String         @db.Text
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+enum CaseFactSource {
+  STATEMENT
+  ANSWER
+  EVIDENCE
+}
+
+model CaseFact {
+  id              String         @id @default(uuid())
+  matterId        String
+  matter          Matter         @relation(fields: [matterId], references: [id])
+  type            String
+  value           Json
+  source          CaseFactSource
+  sourceId        String
+  confirmedByUser Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  @@unique([matterId, type, source, sourceId])
+  @@index([matterId, type])
+}
+
+model MatterRecipient {
+  id          String    @id @default(uuid())
+  matterId    String    @unique
+  matter      Matter    @relation(fields: [matterId], references: [id])
+  name        String
+  address     String    @db.Text
+  phone       String?
+  email       String?
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  matterId          String
+  matter            Matter        @relation(fields: [matterId], references: [id])
+  provider          String
+  providerOrderId   String        @unique
+  providerPaymentId String?       @unique
+  amount            Int
+  currency          String
+  status            PaymentStatus @default(CREATED)
+  createdAt         DateTime      @default(now())
+  paidAt            DateTime?
+
+  @@index([matterId, createdAt])
+}
+
+enum LegalDocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+  MISSING_INFORMATION
+}
+
+enum DocumentVersionCreatorType {
+  AI
+  ADVOCATE
+}
+
+model LegalDocument {
+  id             String              @id @default(uuid())
+  matterId       String
+  matter         Matter              @relation(fields: [matterId], references: [id])
+  documentType   String
+  status         LegalDocumentStatus @default(PROCESSING)
+  currentVersion Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  reviewedById   String?
+  reviewedBy     User?               @relation("DocumentReviewer", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+  versions       DocumentVersion[]
+
+  @@unique([matterId, documentType])
+  @@index([matterId])
+}
+
+model DocumentVersion {
+  id            String                     @id @default(uuid())
+  documentId    String
+  document      LegalDocument              @relation(fields: [documentId], references: [id])
+  versionNumber Int
+  content       Json
+  createdByType DocumentVersionCreatorType
+  createdById   String
+  aiRunId       String?                    @unique
+  aiRun         AiRun?                     @relation("GenerationRun", fields: [aiRunId], references: [id])
+  qa            Json?
+  qaAiRunId     String?                    @unique
+  qaAiRun       AiRun?                     @relation("QaRun", fields: [qaAiRunId], references: [id])
+  createdAt     DateTime                   @default(now())
+  finalDocument FinalDocument?
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId, createdAt])
+}
+
+enum FinalDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED_CONFIGURATION
+}
+
+model FinalDocument {
+  id                    String              @id @default(uuid())
+  matterId              String              @unique
+  matter                Matter              @relation(fields: [matterId], references: [id])
+  documentVersionId     String              @unique
+  documentVersion       DocumentVersion     @relation(fields: [documentVersionId], references: [id])
+  storageKey            String              @unique
+  filename              String
+  mimeType              String              @default("application/pdf")
+  sizeBytes             Int
+  sha256                 String
+  renderedHtml           String              @db.Text
+  generatedAt            DateTime            @default(now())
+  deliveryStatus         FinalDeliveryStatus @default(PENDING)
+  providerMessageId      String?
+  emailedAt              DateTime?
+  deliveryError          String?
+
+  @@index([generatedAt])
+}
+
+enum MatterAssignmentStatus {
+  PENDING
+  WAITING_FOR_USER
+  COMPLETED
+}
+
+model MatterAssignment {
+  id             String                 @id @default(uuid())
+  matterId       String                 @unique
+  matter         Matter                 @relation(fields: [matterId], references: [id])
+  advocateId     String
+  advocate       User                   @relation("AdvocateAssignments", fields: [advocateId], references: [id])
+  status         MatterAssignmentStatus @default(PENDING)
+  newInformation Boolean                @default(false)
+  assignedAt     DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([advocateId, status, assignedAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  matterId  String
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorType  String   @default("USER")
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

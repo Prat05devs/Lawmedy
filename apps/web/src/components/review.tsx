@@ -18,6 +18,7 @@ import {
   type CheckoutDetails,
 } from "@/lib/actions";
 import type { MatterReview } from "@/lib/api";
+import { ManualPaymentPanel } from "@/components/manual-payment";
 
 type RazorpayInstance = { open(): void };
 declare global {
@@ -37,8 +38,12 @@ export function ReviewPanel({
   return (
     <>
       <FactReview matterId={matterId} review={review} />
-      {(review.status === "READY_FOR_PAYMENT" || review.status === "PAID") && (
-        <PaymentPanel matterId={matterId} review={review} />
+      {(review.status === "READY_FOR_PAYMENT" || review.status === "PAYMENT_VERIFICATION" || review.status === "PAID") && (
+        review.paymentMode === "manual" ? (
+          <ManualPaymentPanel matterId={matterId} review={review} />
+        ) : (
+          <PaymentPanel matterId={matterId} review={review} />
+        )
       )}
     </>
   );

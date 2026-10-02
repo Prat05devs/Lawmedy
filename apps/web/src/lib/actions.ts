@@ -348,3 +348,21 @@ export async function retryFinalDocument(
   revalidatePath("/dashboard");
   return { success: "Your final PDF is ready." };
 }
+
+export async function submitManualPayment(
+  id: string,
+  _: FormState,
+  data: FormData,
+): Promise<FormState> {
+  try {
+    await api(`/matters/${encodeURIComponent(id)}/payment/manual`, {
+      method: "POST",
+      body: JSON.stringify({ reference: data.get("reference") }),
+    });
+  } catch (error) {
+    return errorState(error);
+  }
+  revalidatePath(`/matters/${id}`);
+  revalidatePath("/dashboard");
+  return { success: "Payment details received." };
+}

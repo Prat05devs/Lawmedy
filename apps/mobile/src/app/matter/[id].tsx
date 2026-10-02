@@ -4,6 +4,8 @@ import { useLocalSearchParams } from "expo-router";
 import { Body, Eyebrow, H1, Loading, Message, StatusBadge } from "@/components/ui";
 import { useApi, shortDate } from "@/lib/hooks";
 import { colors, fonts } from "@/lib/theme";
+import { progressNote } from "@/lib/types";
+import { Ionicons } from "@expo/vector-icons";
 import type { AdvocateRequests, EvidenceItem, FinalDocument, Intake, Matter, MatterDocument, MatterReview, PublicAuthority, RtiDetail } from "@/lib/types";
 import { StatementPanel } from "@/components/matter/statement";
 import { IntakePanel } from "@/components/matter/intake";
@@ -15,7 +17,7 @@ import { DraftPanel } from "@/components/matter/draft";
 import { AdvocatePanel } from "@/components/matter/advocate";
 import { FinalPanel } from "@/components/matter/final";
 
-const BUSY: Matter["status"][] = ["PAID", "AI_PROCESSING", "UNDER_ADVOCATE_REVIEW", "APPROVED"];
+const BUSY: Matter["status"][] = ["PAYMENT_VERIFICATION", "PAID", "AI_PROCESSING", "DRAFT_GENERATED", "UNDER_ADVOCATE_REVIEW", "APPROVED"];
 
 export default function MatterScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,7 +52,10 @@ export default function MatterScreen() {
         <H1>{isRti ? "Your RTI application" : "Your legal notice"}</H1>
         <Text style={{ fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginBottom: 12 }}>Started {shortDate(mt.createdAt)}</Text>
         <View style={{ marginBottom: 20 }}><StatusBadge status={mt.status} /></View>
-        {mt.status === "UNDER_ADVOCATE_REVIEW" && <View style={{ marginBottom: 16 }}><Body muted>Our in-house advocate is reviewing your document. We will notify you when it is ready.</Body></View>}
+        <View style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: 14, backgroundColor: "#fff", borderWidth: 1, borderColor: colors.line, marginBottom: 18 }}>
+          <Ionicons name={mt.status === "COMPLETED" ? "checkmark-circle" : "information-circle-outline"} size={22} color={mt.status === "COMPLETED" ? colors.ok : colors.navy2} />
+          <Body style={{ flex: 1, fontSize: 14 }}>{progressNote[mt.status]}</Body>
+        </View>
 
         <StatementPanel matter={mt} editable={editable} onChanged={reloadAll} />
         {latest && intake.data && <IntakePanel matterId={mt.id} intake={intake.data} editable={editable} onChanged={reloadAll} />}

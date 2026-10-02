@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Landmark, LayoutDashboard, LogOut, LockKeyhole, Plus } from "lucide-react";
+import { redirect } from "next/navigation";
 import { api, User } from "@/lib/api";
 import { logout } from "@/lib/actions";
 import { Brand } from "@/components/brand";
@@ -9,6 +10,8 @@ export default async function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const user = await api<User>("/users/me");
+  if (user.role === "ADMIN") redirect("/admin");
+  if (user.role === "ADVOCATE") redirect("/advocate");
   const initials = user.fullName
     .split(" ")
     .filter(Boolean)

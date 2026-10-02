@@ -11,8 +11,8 @@ const label = (t: string) => t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (
 const sourceName = { STATEMENT: "Your statement", ANSWER: "Your answer", EVIDENCE: "Your document" } as const;
 
 export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: string; review: MatterReview; step: string; onChanged: () => void }) {
-  const locked = !["INTAKE_IN_PROGRESS", "DRAFT"].includes(review.status) && review.status !== "READY_FOR_PAYMENT" ? true : false;
-  const editable = review.status === "INTAKE_IN_PROGRESS" || review.status === "READY_FOR_PAYMENT";
+  const locked = !["INTAKE_IN_PROGRESS", "DRAFT"].includes(review.status) && review.status !== "READY_FOR_PAYMENT";
+  const editable = review.status === "INTAKE_IN_PROGRESS";
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [address, setAddress] = useState(review.applicant.address ?? "");
   const [phone, setPhone] = useState(review.applicant.phone ?? "");
@@ -106,7 +106,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
           <Message error={error} success={ok} />
           {editable && (
             <View style={{ gap: 10, marginTop: 8 }}>
-              <Button title={review.status === "READY_FOR_PAYMENT" ? "Update confirmation" : "Confirm facts"} onPress={confirm} loading={busy} disabled={review.factGroups.length === 0} />
+              <Button title="Confirm facts" onPress={confirm} loading={busy} disabled={review.factGroups.length === 0} />
               <Button variant="outline" title="Re-gather facts" onPress={prepare} disabled={busy} />
             </View>
           )}

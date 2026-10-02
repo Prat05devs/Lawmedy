@@ -37,6 +37,13 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      # File storage: set STORAGE_DRIVER=supabase together with the two keys below.
+      - key: STORAGE_DRIVER
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
       - key: GOOGLE_CLIENT_IDS
         sync: false
       - key: RAZORPAY_KEY_ID

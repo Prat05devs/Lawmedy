@@ -13,7 +13,7 @@ import { IntakeService } from "./intake/intake.service";
 import { EvidenceController } from "./evidence/evidence.controller";
 import { EvidenceService } from "./evidence/evidence.service";
 import {
-  LocalPrivateStorage,
+  LocalPrivateStorage, SupabasePrivateStorage,
   PrivateStorage,
 } from "./evidence/storage.service";
 import { ReviewService } from "./review/review.service";
@@ -94,7 +94,14 @@ import {
     PdfRendererService,
     TransactionalEmailService,
     RtiService,
-    { provide: PrivateStorage, useClass: LocalPrivateStorage },
+    {
+      provide: PrivateStorage,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): PrivateStorage =>
+        config.get<string>("STORAGE_DRIVER", "local") === "supabase"
+          ? new SupabasePrivateStorage(config)
+          : new LocalPrivateStorage(config),
+    },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

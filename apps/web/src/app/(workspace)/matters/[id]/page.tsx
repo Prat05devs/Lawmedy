@@ -24,6 +24,7 @@ import { DraftPanel } from "@/components/document";
 import { AdvocateRequestPanel } from "@/components/advocate-request";
 import { FinalDocumentPanel } from "@/components/final-document";
 import { RtiDetailsPanel } from "@/components/rti-details";
+import { ProgressTracker } from "@/components/progress-tracker";
 export const metadata = { title: "Your matter" };
 export default async function MatterPage({
   params,
@@ -79,6 +80,7 @@ export default async function MatterPage({
           {statusLabel[matter.status]}
         </span>
       </div>
+      <ProgressTracker status={matter.status} />
       <div className="detail-grid">
         <div>
           <section className="panel">

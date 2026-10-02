@@ -17,6 +17,7 @@ export type Matter = {
     | "DRAFT"
     | "INTAKE_IN_PROGRESS"
     | "READY_FOR_PAYMENT"
+    | "PAYMENT_VERIFICATION"
     | "PAID"
     | "AI_PROCESSING"
     | "DRAFT_GENERATED"
@@ -42,6 +43,7 @@ export type MatterReview = {
     | "DRAFT"
     | "INTAKE_IN_PROGRESS"
     | "READY_FOR_PAYMENT"
+    | "PAYMENT_VERIFICATION"
     | "PAID"
     | "AI_PROCESSING"
     | "DRAFT_GENERATED"
@@ -63,13 +65,18 @@ export type MatterReview = {
     email: string | null;
   };
   payment: null | {
-    status: "CREATED" | "PAID" | "FAILED";
+    status: "CREATED" | "SUBMITTED" | "PAID" | "FAILED" | "REJECTED";
     amount: number;
     currency: string;
+    providerPaymentId?: string | null;
+    submittedAt?: string | null;
+    reviewNote?: string | null;
   };
   applicant: { address: string | null; phone: string | null };
   pricing: { amount: number; currency: string };
   paymentConfigured: boolean;
+  paymentMode: "manual" | "razorpay";
+  paymentLink: string;
 };
 export type PublicAuthority = { id: string; name: string; department: string; governmentLevel: "CENTRAL" | "STATE" | "LOCAL"; state: string | null; address: string; rtiPortalUrl: string | null };
 export type RtiDetail = { id: string; matterId: string; governmentLevel: "CENTRAL" | "STATE" | "LOCAL"; state: string | null; department: string; publicAuthorityId: string; subject: string; periodFrom: string | null; periodTo: string | null; publicAuthority: PublicAuthority };
@@ -200,12 +207,13 @@ export const statusLabel = {
   DRAFT: "Draft",
   INTAKE_IN_PROGRESS: "Intake in progress",
   READY_FOR_PAYMENT: "Ready for payment",
-  PAID: "Paid",
-  AI_PROCESSING: "Draft being prepared",
-  DRAFT_GENERATED: "Draft ready for review",
+  PAYMENT_VERIFICATION: "Payment under verification",
+  PAID: "Payment verified",
+  AI_PROCESSING: "Work in progress",
+  DRAFT_GENERATED: "Work in progress",
   UNDER_ADVOCATE_REVIEW: "Under advocate review",
   USER_RESPONSE_REQUIRED: "Your response needed",
-  APPROVED: "Approved",
+  APPROVED: "Finalising your document",
   COMPLETED: "Completed",
 };
 

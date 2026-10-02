@@ -38,6 +38,25 @@ export async function authenticate(
   }
   redirect("/dashboard");
 }
+export async function googleSignIn(idToken: string): Promise<FormState> {
+  try {
+    const result = await api<{ accessToken: string }>(
+      "/auth/google",
+      { method: "POST", body: JSON.stringify({ idToken }) },
+      false,
+    );
+    (await cookies()).set("lawmedy_session", result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 86400,
+    });
+  } catch (error) {
+    return errorState(error);
+  }
+  redirect("/dashboard");
+}
 export async function logout() {
   (await cookies()).delete("lawmedy_session");
   redirect("/login");
@@ -207,6 +226,10 @@ export async function confirmReview(
       method: "POST",
       body: JSON.stringify({
         selections,
+        applicant: {
+          address: data.get("applicantAddress"),
+          phone: data.get("applicantPhone") || undefined,
+        },
         ...(data.get("recipientName") ? { recipient: {
           name: data.get("recipientName"),
           address: data.get("recipientAddress"),
@@ -247,6 +270,23 @@ export async function createPaymentOrder(
     return { checkout };
   } catch (error) {
     return errorState(error);
+  }
+}
+
+export async function verifyPayment(
+  id: string,
+  payment: { orderId: string; paymentId: string; signature: string },
+) {
+  try {
+    await api(`/matters/${encodeURIComponent(id)}/payment/verify`, {
+      method: "POST",
+      body: JSON.stringify(payment),
+    });
+    revalidatePath(`/matters/${id}`);
+    return true;
+  } catch {
+    // The signed webhook can still confirm the payment.
+    return false;
   }
 }
 

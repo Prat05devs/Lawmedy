@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+import "./design.css";
+
+const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
 export const metadata: Metadata = {
   title: {
-    default: "Lawmedy — A clearer way forward",
+    default: "Lawmedy — Legal notices & RTI, reviewed by advocates",
     template: "%s | Lawmedy",
   },
   description:
-    "A private place to start your legal matter and keep your story in one place.",
+    "Describe your problem, share your documents, and get a properly formatted legal notice or RTI application, checked by a human advocate.",
 };
 export default function RootLayout({
   children,
@@ -14,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );

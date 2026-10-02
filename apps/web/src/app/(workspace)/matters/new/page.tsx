@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, FileText, LockKeyhole } from "lucide-react";
 import { CreateMatterForm } from "@/components/forms";
@@ -9,13 +10,14 @@ export default function NewMatter() {
         <ArrowLeft size={16} /> All matters
       </Link>
       <div className="narrow">
+        <div className="matter-banner">
+          <Image src="/images/photos/lady-justice.jpg" alt="" fill sizes="800px" />
+          <div><small>LEGAL NOTICE</small><h2>Say it properly, in writing</h2></div>
+        </div>
         <p className="eyebrow">A NEW BEGINNING</p>
         <h1>Let’s start with your story.</h1>
         <p className="muted">Create a private matter for your legal notice.</p>
         <section className="panel new-matter">
-          <span className="large-icon">
-            <FileText size={30} />
-          </span>
           <h2>Legal notice</h2>
           <p>
             Give your situation a place of its own. Once you create a matter,
@@ -38,8 +40,9 @@ export default function NewMatter() {
           </p>
         </section>
         <p className="small muted">
-          Gemini will help understand your statement and ask follow-up
-          questions. This does not generate or send a legal notice.
+          Gemini reads your statement and any documents you upload, then asks
+          follow-up questions. Nothing is drafted until you confirm the facts.
+          Need public records instead? <Link href="/matters/new/rti" className="text-link">File an RTI</Link>.
         </p>
       </div>
     </>

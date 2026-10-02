@@ -13,6 +13,7 @@ import {
 import {
   confirmReview,
   createPaymentOrder,
+  verifyPayment,
   prepareReview,
   type CheckoutDetails,
 } from "@/lib/actions";
@@ -142,6 +143,7 @@ function FactReview({
               configured before confirming the case.
             </div>
           )}
+          <ApplicantFields applicant={review.applicant} matterType={review.matterType} />
           {review.matterType === "LEGAL_NOTICE" && <RecipientFields recipient={review.recipient} />}
           <label className="confirm-check">
             <input type="checkbox" name="confirmed" required />
@@ -169,6 +171,33 @@ function FactReview({
         </form>
       )}
     </section>
+  );
+}
+
+function ApplicantFields({
+  applicant,
+  matterType,
+}: {
+  applicant: MatterReview["applicant"];
+  matterType: MatterReview["matterType"];
+}) {
+  return (
+    <div className="recipient-fields">
+      <h3>Your contact details</h3>
+      <p className="muted small">
+        {matterType === "RTI"
+          ? "The public authority needs your postal address to send its reply."
+          : "Your address appears in the sender block of the notice."}
+      </p>
+      <label>
+        Your postal address
+        <textarea name="applicantAddress" rows={3} minLength={10} maxLength={2000} required defaultValue={applicant?.address ?? ""} />
+      </label>
+      <label>
+        Phone <span className="muted small">Optional</span>
+        <input name="applicantPhone" type="tel" defaultValue={applicant?.phone ?? ""} />
+      </label>
+    </div>
   );
 }
 
@@ -274,13 +303,17 @@ function PaymentPanel({
       return;
     openedOrder.current = state.checkout.orderId;
     void openCheckout(state.checkout, {
-      success: () => {
+      success: (response) => {
         setWaiting(true);
-        router.refresh();
+        void verifyPayment(matterId, {
+          orderId: response.razorpay_order_id,
+          paymentId: response.razorpay_payment_id,
+          signature: response.razorpay_signature,
+        }).then(() => router.refresh());
       },
       error: setClientError,
     });
-  }, [router, state.checkout]);
+  }, [router, state.checkout, matterId]);
 
   useEffect(() => {
     if (!waiting || review.status !== "READY_FOR_PAYMENT") return;
@@ -358,7 +391,10 @@ function PaymentPanel({
 
 async function openCheckout(
   checkout: CheckoutDetails,
-  callbacks: { success(): void; error(message: string): void },
+  callbacks: {
+    success(response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): void;
+    error(message: string): void;
+  },
 ) {
   try {
     await loadRazorpay();
@@ -417,7 +453,7 @@ function ActionMessages({
 }
 
 function label(value: string) {
-  return value.replaceAll("_", " ");
+  return value.replace(":", " – ").replaceAll("_", " ");
 }
 function sourceLabel(value: string) {
   return value.toLowerCase().replaceAll("_", " ");

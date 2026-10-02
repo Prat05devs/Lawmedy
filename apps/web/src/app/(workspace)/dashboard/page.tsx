@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -32,12 +33,14 @@ export default async function Dashboard() {
             Your matters, your progress. All in one place.
           </p>
         </div>
-        <Link className="button primary" href="/matters/new">
-          <Plus size={18} /> New Legal Notice
-        </Link>
-        <Link className="button outline" href="/matters/new/rti">
-          <Plus size={18} /> Draft an RTI
-        </Link>
+        <div className="heading-actions">
+          <Link className="button primary" href="/matters/new">
+            <Plus size={18} /> New Legal Notice
+          </Link>
+          <Link className="button outline" href="/matters/new/rti">
+            <Plus size={18} /> Draft an RTI
+          </Link>
+        </div>
       </div>
       {notifications.length > 0 && (
         <section className="notification-list" aria-label="Notifications">
@@ -54,6 +57,7 @@ export default async function Dashboard() {
         </section>
       )}
       <section className="welcome-banner">
+        <Image src="/images/photos/india-gate.jpg" alt="" fill sizes="(max-width: 1300px) 100vw, 1200px" className="banner-photo" />
         <div>
           <span className="banner-tag">ONE STEP AT A TIME</span>
           <h2>
@@ -69,22 +73,6 @@ export default async function Dashboard() {
           <Link href="/matters/new" className="text-link">
             Start a legal notice <ArrowRight size={17} />
           </Link>
-        </div>
-        <div className="document-art" aria-hidden="true">
-          <div className="art-circle" />
-          <div className="art-paper">
-            <span className="paper-icon">
-              <FileText size={26} />
-            </span>
-            <div className="paper-line dark" />
-            <div className="paper-line" />
-            <div className="paper-line" />
-            <div className="paper-line short" />
-            <span className="paper-sign">Your story matters.</span>
-          </div>
-          <div className="art-seal">
-            <CheckCircle2 size={27} />
-          </div>
         </div>
       </section>
       <section className="stats" aria-label="Matter totals">
@@ -123,8 +111,8 @@ export default async function Dashboard() {
           <div className="matter-list">
             {matters.map((m) => (
               <Link href={`/matters/${m.id}`} className="matter-row" key={m.id}>
-                <span className="matter-icon">
-                  <FileText size={22} />
+                <span className="matter-thumb">
+                  <Image src={m.type === "RTI" ? "/images/photos/rashtrapati.jpg" : "/images/photos/signing.jpg"} alt="" fill sizes="76px" />
                 </span>
                 <div className="matter-summary">
                   <span className="reference">{m.referenceNumber}</span>

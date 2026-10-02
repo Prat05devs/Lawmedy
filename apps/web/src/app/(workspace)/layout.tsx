@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, LogOut, LockKeyhole, Plus } from "lucide-react";
+import { Landmark, LayoutDashboard, LogOut, LockKeyhole, Plus } from "lucide-react";
 import { api, User } from "@/lib/api";
 import { logout } from "@/lib/actions";
 import { Brand } from "@/components/brand";
@@ -21,11 +21,14 @@ export default async function WorkspaceLayout({
         <Brand />
         <p className="nav-label">YOUR WORKSPACE</p>
         <nav>
-          <Link className="nav-item" href="/dashboard">
+          <Link className="nav-item active" href="/dashboard">
             <LayoutDashboard size={18} /> My matters
           </Link>
           <Link className="nav-item secondary" href="/matters/new">
             <Plus size={18} /> New legal notice
+          </Link>
+          <Link className="nav-item secondary" href="/matters/new/rti">
+            <Landmark size={18} /> New RTI application
           </Link>
         </nav>
         <div className="sidebar-bottom">

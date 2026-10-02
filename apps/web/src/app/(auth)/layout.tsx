@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Brand } from "@/components/brand";
 import { FileText, LockKeyhole, PenLine } from "lucide-react";
 export default function AuthLayout({
@@ -8,27 +9,18 @@ export default function AuthLayout({
   return (
     <main className="auth-layout">
       <section className="auth-story">
-        <Brand />
+        <Image src="/images/photos/gavel-dark.jpg" alt="" fill priority sizes="55vw" className="auth-photo" />
+        <Brand href="/" />
         <div className="auth-story-body">
-          <p className="eyebrow">YOUR STORY. A CLEARER START.</p>
+          <p className="eyebrow">LEGAL NOTICES &amp; RTI, DONE RIGHT</p>
           <h1>
-            A little clarity.
-            <br />A way forward.
+            Put it in writing.
+            <br />Properly.
           </h1>
           <p>
-            When something isn’t right, knowing where to begin makes all the
-            difference.
+            Describe the problem, share your documents, and let an advocate sign
+            off on the document before it reaches you.
           </p>
-          <div className="story-card">
-            <PenLine size={24} />
-            <h3>Start with your story</h3>
-            <p>
-              Describe what happened, save your progress, and keep your matter
-              in one place.
-            </p>
-            <div className="story-line" />
-            <div className="story-line short" />
-          </div>
           <div className="auth-benefits">
             <span>
               <LockKeyhole size={16} /> Private by design

@@ -67,6 +67,7 @@ export type MatterReview = {
     amount: number;
     currency: string;
   };
+  applicant: { address: string | null; phone: string | null };
   pricing: { amount: number; currency: string };
   paymentConfigured: boolean;
 };
@@ -93,7 +94,8 @@ export type MatterDocument = {
       sender: { name: string; address: string | null };
       recipient: { name: string; address: string | null };
       subject: string;
-      paragraphs: Array<{ text: string; caseFactIds: string[] }>;
+      paragraphs: Array<{ section?: "FACTS" | "DEFAULT"; text: string; caseFactIds: string[] }>;
+      legalBasisIds?: string[];
       demand: string;
       responsePeriod: string;
     } | {

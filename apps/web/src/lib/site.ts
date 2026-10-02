@@ -1,0 +1,10 @@
+// Public contact details shown on the legal and support pages.
+// Override with environment variables in each deployment.
+export const site = {
+  name: "Lawmedy",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://lawmedy.vercel.app",
+  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@lawmedy.in",
+  privacyEmail: process.env.NEXT_PUBLIC_PRIVACY_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@lawmedy.in",
+  address: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || "",
+  updated: "2 October 2026",
+};

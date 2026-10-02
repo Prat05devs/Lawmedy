@@ -13,3 +13,5 @@ test-results/
 .pnpm-store/
 tmp/
 .DS_Store
+.vercel
+.env*

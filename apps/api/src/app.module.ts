@@ -22,6 +22,7 @@ import { RazorpayService } from "./payment/razorpay.service";
 import { PaymentService } from "./payment/payment.service";
 import { AdminService } from "./admin/admin.service";
 import { RecoveryService } from "./recovery.service";
+import { AccountService } from "./account.service";
 import { AdminController } from "./admin/admin.controller";
 import { PaymentWebhookController } from "./payment/payment.controller";
 import { DocumentsService } from "./documents/documents.service";
@@ -96,6 +97,7 @@ import {
     PaymentService,
     AdminService,
     RecoveryService,
+    AccountService,
     DocumentsService,
     AdvocateService,
     RolesGuard,

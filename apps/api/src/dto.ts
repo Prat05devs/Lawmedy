@@ -163,3 +163,7 @@ export class AdvocatePasswordDto {
 export class AssignAdvocateDto {
   @IsUUID() advocateId!: string;
 }
+
+export class DeleteAccountDto {
+  @Equals("DELETE", { message: "Type DELETE to confirm." }) confirm!: string;
+}

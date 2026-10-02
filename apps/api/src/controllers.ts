@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -23,6 +24,7 @@ import {
   PaymentVerifyDto,
   ManualPaymentDto,
   GoogleLoginDto,
+  DeleteAccountDto,
 } from "./dto";
 import { MattersService } from "./matters.service";
 import { IntakeService } from "./intake/intake.service";
@@ -31,6 +33,7 @@ import { PaymentService } from "./payment/payment.service";
 import { DocumentsService } from "./documents/documents.service";
 import { AdvocateService } from "./advocate/advocate.service";
 import { EvidenceService } from "./evidence/evidence.service";
+import { AccountService } from "./account.service";
 import { FinalDocumentService } from "./final-document/final-document.service";
 import { RtiService } from "./rti/rti.service";
 
@@ -54,12 +57,19 @@ export class UsersController {
   constructor(
     private readonly auth: AuthService,
     private readonly advocates: AdvocateService,
+    private readonly account: AccountService,
   ) {}
   @Get("me") me(@UserId() userId: string) {
     return this.auth.me(userId);
   }
   @Get("notifications") notifications(@UserId() userId: string) {
     return this.advocates.notifications(userId);
+  }
+  // Permanently erases the user's content and anonymises the account. Needs the exact word
+  // DELETE so a stray tap cannot trigger it.
+  @Delete("me") @HttpCode(200) @Throttle({ default: { limit: 3, ttl: 60000 } })
+  deleteMe(@UserId() userId: string, @Body() dto: DeleteAccountDto) {
+    return this.account.deleteAccount(userId);
   }
   @Post("notifications/read") @HttpCode(200)
   markNotificationsRead(@UserId() userId: string) {

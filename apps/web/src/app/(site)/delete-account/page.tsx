@@ -8,7 +8,11 @@ export default function DeleteAccount() {
   const body = encodeURIComponent("Please delete my Lawmedy account and the data associated with it.\n\nAccount email: ");
   return (
     <LegalShell title="Delete your account" intro="You can ask us to permanently delete your Lawmedy account and the data tied to it.">
-      <h2>How to request deletion</h2>
+      <h2>Delete it yourself in the app</h2>
+      <p>Open the Lawmedy app, go to <strong>Account</strong>, tap <strong>Delete my account</strong> and type DELETE to confirm. Your content is erased straight away.</p>
+
+      <h2>Or ask us to do it</h2>
+      <p>If you cannot use the app, we will delete it for you:</p>
       <ol>
         <li>Send an email to <a href={`mailto:${site.privacyEmail}?subject=${subject}&body=${body}`}>{site.privacyEmail}</a> from the email address registered on your account, with the subject “Delete my Lawmedy account”.</li>
         <li>We confirm it is you and reply to acknowledge the request.</li>

@@ -122,9 +122,10 @@ export class AuthService {
   async me(id: string) {
     const user = await this.db.user.findUnique({
       where: { id },
-      select: publicUser,
+      select: { ...publicUser, active: true },
     });
-    if (!user) throw new UnauthorizedException();
-    return user;
+    if (!user || !user.active) throw new UnauthorizedException();
+    const { active: _active, ...visible } = user;
+    return visible;
   }
 }

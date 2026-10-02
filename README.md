@@ -53,7 +53,7 @@ If Turborepo reports that it cannot find the package manager, run `corepack enab
 
 For a fresh checkout without Docker, run `node scripts/local-db.mjs` after `pnpm install`, **before copying an API .env**. This development-only helper runs real PostgreSQL 17 on loopback port 5433 and creates `apps/api/.env` with random local credentials and a JWT secret. It never overwrites an existing `.env`. Keep that terminal running, then run `pnpm db:generate`, `pnpm db:migrate`, and `pnpm dev` in a second terminal. Ctrl+C stops PostgreSQL and preserves data in the ignored `.local/` directory. Restart using the same command. The bundled helper is a beta npm wrapper around PostgreSQL; Docker Compose remains the standard setup. Do not sync or commit `.local/` or use this helper for production.
 
-## VerifY
+## Verify
 
 1. Create an account at `/signup` and check that the dashboard opens.
 2. Click **New Legal Notice**, then **Create matter & continue**. Creation is a POST from a confirmation form, never an accidental GET during link prefetching.

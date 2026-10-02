@@ -124,3 +124,4 @@ h1, h2, .display { font-family: var(--font-serif), Georgia, serif; }
 .site-foot p { margin: 0; font-size: 12.5px; max-width: 70ch; }
 .auth-legal { font-size: 12.5px; color: var(--muted); margin-top: 16px; line-height: 1.6; }
 .auth-legal a { text-decoration: underline; text-underline-offset: 2px; }
+.auth-story .brand-logo { position: relative; z-index: 2; }

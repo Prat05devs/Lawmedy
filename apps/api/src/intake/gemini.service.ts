@@ -40,6 +40,23 @@ export function generationContents(input: unknown, documents: SupportingDocument
   }];
 }
 
+// Gemini rejects schemas with many size constraints ("invalid argument"). The model only
+// needs the shape; every response is still validated against the full zod schema afterwards.
+const UNSUPPORTED = new Set(["pattern", "format", "minLength", "maxLength", "minItems", "maxItems", "$schema"]);
+function strip(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(strip);
+  if (node && typeof node === "object")
+    return Object.fromEntries(
+      Object.entries(node as Record<string, unknown>)
+        .filter(([key]) => !UNSUPPORTED.has(key))
+        .map(([key, value]) => [key, strip(value)]),
+    );
+  return node;
+}
+function modelSchema(schema: z.ZodType) {
+  return strip(z.toJSONSchema(schema)) as Record<string, unknown>;
+}
+
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
@@ -68,11 +85,11 @@ export class GeminiService {
     params: Parameters<GoogleGenAI["models"]["generateContent"]>[0],
   ) {
     const fallbacks = this.config
-      .get<string>("GEMINI_FALLBACK_MODELS", "gemini-3.5-flash,gemini-2.5-flash")
+      .get<string>("GEMINI_FALLBACK_MODELS", "gemini-3.7-flash,gemini-3.6-flash")
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean);
-    const models = [params.model, ...fallbacks.filter((m) => m !== params.model)];
+    const models = [params.model, ...fallbacks.filter((m) => m !== params.model)].slice(0, 3);
     let lastError: unknown;
     for (const model of models) {
       try {
@@ -111,7 +128,7 @@ export class GeminiService {
         systemInstruction:
           matterType === "RTI" ? RTI_SYSTEM_PROMPT : SYSTEM_PROMPT,
         responseMimeType: "application/json",
-        responseJsonSchema: z.toJSONSchema(analysisSchema),
+        responseJsonSchema: modelSchema(analysisSchema),
         maxOutputTokens: 4096,
       },
     });
@@ -155,7 +172,7 @@ export class GeminiService {
       config: {
         systemInstruction: EVIDENCE_SYSTEM_PROMPT,
         responseMimeType: "application/json",
-        responseJsonSchema: z.toJSONSchema(evidenceExtractionSchema),
+        responseJsonSchema: modelSchema(evidenceExtractionSchema),
         maxOutputTokens: 4096,
       },
     });
@@ -212,7 +229,7 @@ export class GeminiService {
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        responseJsonSchema: z.toJSONSchema(schema),
+        responseJsonSchema: modelSchema(schema),
         maxOutputTokens: 8192,
       },
     });

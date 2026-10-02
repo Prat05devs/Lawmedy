@@ -1,4 +1,4 @@
-# Lawmedy · Phase 7
+# Lawmedy
 
 A private workspace for legal matters. The current build covers legal-notice intake, private evidence, fact reconciliation, recipient confirmation, Razorpay test-mode payment, grounded document generation, automated QA, recorded human advocate review, and private final-PDF delivery. RTI-specific screens remain deferred.
 
@@ -53,7 +53,7 @@ If Turborepo reports that it cannot find the package manager, run `corepack enab
 
 For a fresh checkout without Docker, run `node scripts/local-db.mjs` after `pnpm install`, **before copying an API .env**. This development-only helper runs real PostgreSQL 17 on loopback port 5433 and creates `apps/api/.env` with random local credentials and a JWT secret. It never overwrites an existing `.env`. Keep that terminal running, then run `pnpm db:generate`, `pnpm db:migrate`, and `pnpm dev` in a second terminal. Ctrl+C stops PostgreSQL and preserves data in the ignored `.local/` directory. Restart using the same command. The bundled helper is a beta npm wrapper around PostgreSQL; Docker Compose remains the standard setup. Do not sync or commit `.local/` or use this helper for production.
 
-## Verify Phase 7
+## VerifY
 
 1. Create an account at `/signup` and check that the dashboard opens.
 2. Click **New Legal Notice**, then **Create matter & continue**. Creation is a POST from a confirmation form, never an accidental GET during link prefetching.
@@ -124,7 +124,7 @@ The smoke test creates two uniquely named test users and matters in the configur
 
 `API_URL` is server-only. No secrets use a `NEXT_PUBLIC_` prefix. Only `.env.example` files are committed. The local servers bind to loopback by default. Production requires deployment configuration, a shared rate-limit/session revocation strategy if needed, database backups, and HTTPS.
 
-Useful Phase 7 routes include `POST /advocate/matters/:id/approve`, `GET /matters/:id/final-document`, `POST /matters/:id/final-document/retry`, and `GET /matters/:id/final-document/file`.
+Useful routes include `POST /advocate/matters/:id/approve`, `GET /matters/:id/final-document`, `POST /matters/:id/final-document/retry`, and `GET /matters/:id/final-document/file`.
 
 For schema changes use `pnpm --filter @lawmedy/api db:migrate:dev --name descriptive_name`. Apply committed migrations using `pnpm db:migrate`.
 

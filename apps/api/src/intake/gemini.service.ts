@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
@@ -42,6 +42,7 @@ export function generationContents(input: unknown, documents: SupportingDocument
 
 @Injectable()
 export class GeminiService {
+  private readonly logger = new Logger(GeminiService.name);
   constructor(private readonly config: ConfigService) {}
   settings() {
     return {
@@ -58,6 +59,33 @@ export class GeminiService {
       !!key &&
       !key.startsWith("replace-")
     );
+  }
+
+  // Gemini models occasionally answer 503 "high demand" or 429. Retry once, then fall
+  // back to other models so a provider spike does not fail the user's step.
+  private async generate(
+    client: GoogleGenAI,
+    params: Parameters<GoogleGenAI["models"]["generateContent"]>[0],
+  ) {
+    const fallbacks = this.config
+      .get<string>("GEMINI_FALLBACK_MODELS", "gemini-3.5-flash,gemini-2.5-flash")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const models = [params.model, ...fallbacks.filter((m) => m !== params.model)];
+    let lastError: unknown;
+    for (const model of models) {
+      try {
+        return await client.models.generateContent({ ...params, model });
+      } catch (error) {
+        lastError = error;
+        const text = error instanceof Error ? error.message : String(error);
+        const fallbackWorthy = /\b(404|429|500|502|503|504)\b|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|timed? ?out|abort/i.test(text);
+        this.logger.warn(`Gemini ${model} failed: ${text.replace(/key=[^&\s"]+/gi, "key=<redacted>").slice(0, 200)}`);
+        if (!fallbackWorthy) throw error;
+      }
+    }
+    throw lastError;
   }
   async classify(
     statement: string,
@@ -76,7 +104,7 @@ export class GeminiService {
       apiKey: key,
       httpOptions: { timeout: 45000, retryOptions: { attempts: 1 } },
     });
-    const response = await client.models.generateContent({
+    const response = await this.generate(client, {
       model,
       contents: JSON.stringify({ statement }),
       config: {
@@ -108,7 +136,7 @@ export class GeminiService {
       apiKey: key,
       httpOptions: { timeout: 60000, retryOptions: { attempts: 1 } },
     });
-    const response = await client.models.generateContent({
+    const response = await this.generate(client, {
       model,
       contents: [
         {
@@ -178,7 +206,7 @@ export class GeminiService {
       apiKey: key,
       httpOptions: { timeout: 60000, retryOptions: { attempts: 1 } },
     });
-    const response = await client.models.generateContent({
+    const response = await this.generate(client, {
       model,
       contents: generationContents(input, documents),
       config: {

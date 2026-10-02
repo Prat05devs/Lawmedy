@@ -17,6 +17,6 @@ async function bootstrap() {
     }),
   );
   app.enableShutdownHooks();
-  await app.listen(config.get("PORT", 4000), "127.0.0.1");
+  await app.listen(config.get("PORT", 4000), process.env.HOST || "127.0.0.1");
 }
 void bootstrap();

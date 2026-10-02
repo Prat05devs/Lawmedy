@@ -8,11 +8,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#0f2147",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0f2147"
-    },
     "ios": {
       "bundleIdentifier": "com.lawmedy.app",
       "supportsTablet": false,
@@ -20,7 +15,8 @@
         "NSCameraUsageDescription": "Lawmedy uses the camera so you can photograph documents to attach to your matter.",
         "NSPhotoLibraryUsageDescription": "Lawmedy lets you choose photos of documents to attach to your matter.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.lawmedy.app",
@@ -30,7 +26,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,9 +36,14 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-image",
-      "expo-sharing",
-      "expo-web-browser"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0f2147",
+          "imageWidth": 220
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "https://lawmedy-api.onrender.com"

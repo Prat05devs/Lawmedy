@@ -43,33 +43,20 @@ export default async function MatterPage({
     matter.statements.find(
       (statement) => statement.id === matter.currentStatementId,
     ) ?? matter.statements[0];
-  const intake =
-    latest
-      ? await api<Intake>(`/matters/${encodeURIComponent(id)}/intake`)
-      : null;
-  const evidence = await api<EvidenceItem[]>(
-    `/matters/${encodeURIComponent(id)}/evidence`,
-  );
-  const review =
-    latest
-      ? await api<MatterReview>(`/matters/${encodeURIComponent(id)}/review`)
-      : null;
-  const draft =
-    await api<MatterDocument>(`/matters/${encodeURIComponent(id)}/document`);
-  const advocateRequests =
-    matter.type === "LEGAL_NOTICE"
-      ? await api<AdvocateRequests>(
-          `/matters/${encodeURIComponent(id)}/advocate-requests`,
-        )
-      : null;
-  const finalDocument =
-    await api<FinalDocument>(
-          `/matters/${encodeURIComponent(id)}/final-document`,
-        );
-  const [authorities, rtiDetails] = matter.type === "RTI" ? await Promise.all([
-    api<PublicAuthority[]>("/matters/rti/public-authorities"),
-    api<RtiDetail | null>(`/matters/${encodeURIComponent(id)}/rti-details`),
-  ]) : [[], null];
+  const path = `/matters/${encodeURIComponent(id)}`;
+  const isRti = matter.type === "RTI";
+  // Independent API calls run in parallel; each waits on the slow API otherwise.
+  const [intake, evidence, review, draft, advocateRequests, finalDocument, authorities, rtiDetails] =
+    await Promise.all([
+      latest ? api<Intake>(`${path}/intake`) : null,
+      api<EvidenceItem[]>(`${path}/evidence`),
+      latest ? api<MatterReview>(`${path}/review`) : null,
+      api<MatterDocument>(`${path}/document`),
+      isRti ? null : api<AdvocateRequests>(`${path}/advocate-requests`),
+      api<FinalDocument>(`${path}/final-document`),
+      isRti ? api<PublicAuthority[]>("/matters/rti/public-authorities") : [],
+      isRti ? api<RtiDetail | null>(`${path}/rti-details`) : null,
+    ]);
   const editable =
     matter.status === "DRAFT" || matter.status === "INTAKE_IN_PROGRESS";
   return (

@@ -31,11 +31,13 @@ export class AdvocateService {
         SELECT status::text FROM "Matter" WHERE id = ${matterId} FOR UPDATE
       `;
       if (!rows.length || rows[0].status !== "DRAFT_GENERATED") return false;
-      const advocate = await tx.user.findFirst({
-        where: { role: "ADVOCATE" },
+      const candidates = await tx.user.findMany({
+        where: { role: "ADVOCATE", active: true },
+        select: { id: true, advocateAssignments: { where: { status: { not: "COMPLETED" } }, select: { id: true } } },
         orderBy: { createdAt: "asc" },
-        select: { id: true },
       });
+      // Least-loaded active advocate first; an admin can reassign from the dashboard.
+      const advocate = [...candidates].sort((a, b) => a.advocateAssignments.length - b.advocateAssignments.length)[0];
       if (!advocate) {
         // Keep the matter visible to operations instead of failing silently.
         await tx.auditLog.create({ data: { actorType: "SYSTEM", actorId: "lawmedy", action: "NO_ADVOCATE_AVAILABLE", entityType: "Matter", entityId: matterId } });

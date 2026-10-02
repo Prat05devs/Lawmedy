@@ -22,6 +22,10 @@ services:
         value: "29900"
       - key: EVIDENCE_MAX_BYTES
         value: "10485760"
+      - key: PAYMENT_MODE
+        value: manual
+      - key: PAYMENT_LINK_URL
+        value: https://razorpay.me/@aawasyojana
       - key: JWT_SECRET
         generateValue: true
       - key: FILE_SIGNING_SECRET

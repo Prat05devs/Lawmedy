@@ -68,7 +68,7 @@ export class AuthService {
       user?.passwordHash ??
       "$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW";
     const valid = await bcrypt.compare(dto.password, hash);
-    if (!user || !valid || Buffer.byteLength(dto.password, "utf8") > 72)
+    if (!user || !user.active || !valid || Buffer.byteLength(dto.password, "utf8") > 72)
       throw new UnauthorizedException("Email or password is incorrect.");
     await this.db.auditLog.create({
       data: {

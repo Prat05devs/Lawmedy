@@ -7,7 +7,8 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
 import { RazorpayService } from "./razorpay.service";
 import { DocumentsService } from "../documents/documents.service";
@@ -29,7 +30,146 @@ export class PaymentService {
     return amount;
   }
 
+  // "manual": the user pays on a hosted payment link, then our team verifies the
+  // reference by hand. "razorpay": automatic checkout (needs API keys).
+  manualSettings() {
+    const mode = this.config.get<string>("PAYMENT_MODE", "manual") === "razorpay" ? "razorpay" : "manual";
+    const link = this.config.get<string>("PAYMENT_LINK_URL", "https://razorpay.me/@aawasyojana").trim();
+    return { mode, link } as const;
+  }
+
+  async submitManual(userId: string, matterId: string, reference: string) {
+    if (this.manualSettings().mode !== "manual")
+      throw new ConflictException("Manual payment is not enabled.");
+    const matter = await this.db.matter.findFirst({ where: { id: matterId, userId } });
+    if (!matter) throw new NotFoundException("Matter not found.");
+    if (matter.status === "PAYMENT_VERIFICATION")
+      throw new ConflictException("Your payment is already being verified.");
+    if (matter.status !== "READY_FOR_PAYMENT")
+      throw new ConflictException("Confirm your case information first.");
+    const amount = this.price(matter.type);
+    const ref = reference.trim().replace(/\s+/g, " ").toUpperCase();
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const payment = await tx.payment.create({
+          data: {
+            matterId,
+            provider: "payment_link",
+            providerOrderId: `link-${randomUUID()}`,
+            providerPaymentId: ref,
+            amount,
+            currency: "INR",
+            status: "SUBMITTED",
+            submittedAt: new Date(),
+          },
+        });
+        const moved = await tx.matter.updateMany({
+          where: { id: matterId, status: "READY_FOR_PAYMENT" },
+          data: { status: "PAYMENT_VERIFICATION" },
+        });
+        if (!moved.count) throw new ConflictException("This matter can no longer accept a payment.");
+        await tx.notification.create({
+          data: {
+            userId,
+            matterId,
+            title: "Payment details received",
+            message: "We have your payment reference. Our team is verifying it and your dashboard will update as soon as it is confirmed.",
+          },
+        });
+        await tx.auditLog.create({
+          data: { actorId: userId, action: "PAYMENT_SUBMITTED", entityType: "Payment", entityId: payment.id },
+        });
+        return { status: "SUBMITTED" as const };
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+        throw new ConflictException("This payment reference has already been used. Please check it and try again.");
+      throw error;
+    }
+  }
+
+  listSubmitted() {
+    return this.db.payment.findMany({
+      where: { status: "SUBMITTED" },
+      orderBy: { submittedAt: "asc" },
+      include: {
+        matter: {
+          select: {
+            id: true,
+            referenceNumber: true,
+            type: true,
+            user: { select: { fullName: true, email: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async verifyManual(adminId: string, paymentId: string) {
+    const result = await this.db.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({ where: { id: paymentId } });
+      if (!payment) throw new NotFoundException("Payment not found.");
+      const updated = await tx.payment.updateMany({
+        where: { id: paymentId, status: "SUBMITTED" },
+        data: { status: "PAID", paidAt: new Date(), verifiedById: adminId, reviewNote: null },
+      });
+      if (!updated.count) throw new ConflictException("This payment is not waiting for verification.");
+      await tx.matter.updateMany({
+        where: { id: payment.matterId, status: "PAYMENT_VERIFICATION" },
+        data: { status: "PAID" },
+      });
+      const matter = await tx.matter.findUniqueOrThrow({ where: { id: payment.matterId }, select: { userId: true } });
+      await tx.notification.create({
+        data: {
+          userId: matter.userId,
+          matterId: payment.matterId,
+          title: "Payment verified",
+          message: "Your payment is verified and your document is now in progress. It usually takes 24 hours or less. You can follow the progress on your dashboard.",
+        },
+      });
+      await tx.auditLog.create({
+        data: { actorType: "ADMIN", actorId: adminId, action: "PAYMENT_VERIFIED", entityType: "Payment", entityId: paymentId },
+      });
+      return payment.matterId;
+    });
+    void this.documents.generateAfterPayment(result).catch(() => {
+      // Generation records its own safe failure state.
+    });
+    return { status: "PAID" as const };
+  }
+
+  async rejectManual(adminId: string, paymentId: string, note: string) {
+    await this.db.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({ where: { id: paymentId } });
+      if (!payment) throw new NotFoundException("Payment not found.");
+      const updated = await tx.payment.updateMany({
+        where: { id: paymentId, status: "SUBMITTED" },
+        data: { status: "REJECTED", verifiedById: adminId, reviewNote: note },
+      });
+      if (!updated.count) throw new ConflictException("This payment is not waiting for verification.");
+      await tx.matter.updateMany({
+        where: { id: payment.matterId, status: "PAYMENT_VERIFICATION" },
+        data: { status: "READY_FOR_PAYMENT" },
+      });
+      const matter = await tx.matter.findUniqueOrThrow({ where: { id: payment.matterId }, select: { userId: true } });
+      await tx.notification.create({
+        data: {
+          userId: matter.userId,
+          matterId: payment.matterId,
+          title: "We could not verify your payment",
+          message: `${note} Please check the amount and reference, then submit your payment again.`,
+        },
+      });
+      await tx.auditLog.create({
+        data: { actorType: "ADMIN", actorId: adminId, action: "PAYMENT_REJECTED", entityType: "Payment", entityId: paymentId },
+      });
+    });
+    return { status: "REJECTED" as const };
+  }
+
   async createOrder(userId: string, matterId: string) {
+    if (this.manualSettings().mode === "manual")
+      throw new ConflictException("Online checkout is not enabled. Use the payment link and submit your reference.");
     const matter = await this.db.matter.findFirst({
       where: { id: matterId, userId },
       include: { user: true },

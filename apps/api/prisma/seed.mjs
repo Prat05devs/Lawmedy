@@ -70,4 +70,18 @@ const user = await db.user.upsert({
 });
 console.log(`Seeded advocate ${user.email}`);
 console.log(`Seeded ${authorities.length} public authorities and workflow defaults`);
+
+// Optional admin account (full dashboard access): set ADMIN_EMAIL and ADMIN_PASSWORD.
+const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+const adminPassword = process.env.ADMIN_PASSWORD || "";
+if (adminEmail && adminPassword) {
+  if (!adminEmail.includes("@") || adminPassword.length < 12 || adminPassword.startsWith("replace-"))
+    throw new Error("ADMIN_PASSWORD must be at least 12 characters.");
+  const admin = await db.user.upsert({
+    where: { email: adminEmail },
+    update: { role: "ADMIN", active: true, passwordHash: await bcrypt.hash(adminPassword, 12) },
+    create: { email: adminEmail, fullName: (process.env.ADMIN_FULL_NAME || "Lawmedy Admin").trim(), role: "ADMIN", passwordHash: await bcrypt.hash(adminPassword, 12) },
+  });
+  console.log(`Seeded admin ${admin.email}`);
+}
 await db.$disconnect();

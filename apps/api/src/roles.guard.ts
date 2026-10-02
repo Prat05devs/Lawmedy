@@ -29,10 +29,10 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthRequest>();
     const user = await this.db.user.findUnique({
       where: { id: request.userId },
-      select: { role: true },
+      select: { role: true, active: true },
     });
-    if (!user || !roles.includes(user.role))
-      throw new ForbiddenException("This area is for assigned advocates.");
+    if (!user || !user.active || !roles.includes(user.role))
+      throw new ForbiddenException("You do not have access to this area.");
     return true;
   }
 }

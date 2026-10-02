@@ -232,13 +232,16 @@ export class ReviewService {
       applicant: { address: matter.applicantAddress, phone: matter.applicantPhone },
       payment: matter.payments[0] ?? null,
       pricing: { amount, currency: "INR" },
+      paymentMode: this.config.get<string>("PAYMENT_MODE", "manual") === "razorpay" ? "razorpay" : "manual",
+      paymentLink: this.config.get<string>("PAYMENT_LINK_URL", "https://razorpay.me/@aawasyojana").trim(),
       paymentConfigured:
-        !!keyId &&
+        this.config.get<string>("PAYMENT_MODE", "manual") !== "razorpay" ||
+        (!!keyId &&
         !!keySecret &&
         !!webhookSecret &&
         !keyId.startsWith("replace-") &&
         !keySecret.startsWith("replace-") &&
-        !webhookSecret.startsWith("replace-"),
+        !webhookSecret.startsWith("replace-")),
     };
   }
 

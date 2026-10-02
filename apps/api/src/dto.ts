@@ -141,3 +141,25 @@ export class PaymentVerifyDto {
 export class GoogleLoginDto {
   @IsString() @Length(20, 4096) idToken!: string;
 }
+
+export class ManualPaymentDto {
+  // UTR / transaction reference shown after paying on the payment link.
+  @Transform(trim) @IsString() @Length(6, 64) @Matches(/^[A-Za-z0-9][A-Za-z0-9 _\-/]{4,63}$/, { message: "Enter the payment reference exactly as shown on your receipt." }) reference!: string;
+}
+export class RejectPaymentDto {
+  @Transform(trim) @IsString() @Length(3, 500) note!: string;
+}
+export class CreateAdvocateDto {
+  @Transform(trim) @IsString() @Length(2, 120) fullName!: string;
+  @Transform(({ value }) => (typeof value === "string" ? value.trim().toLowerCase() : value)) @IsEmail() email!: string;
+  @IsString() @Length(8, 72) password!: string;
+}
+export class AdvocateActiveDto {
+  @IsBoolean() active!: boolean;
+}
+export class AdvocatePasswordDto {
+  @IsString() @Length(8, 72) password!: string;
+}
+export class AssignAdvocateDto {
+  @IsUUID() advocateId!: string;
+}

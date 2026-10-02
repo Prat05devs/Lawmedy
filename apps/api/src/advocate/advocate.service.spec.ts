@@ -4,7 +4,7 @@ import { AdvocateService } from "./advocate.service";
 describe("AdvocateService assignment and approval", () => {
   const tx = {
     $queryRaw: jest.fn(),
-    user: { findFirst: jest.fn() },
+    user: { findFirst: jest.fn(), findMany: jest.fn() },
     matterAssignment: { upsert: jest.fn() },
     matter: { update: jest.fn() },
     auditLog: { create: jest.fn() },
@@ -16,14 +16,20 @@ describe("AdvocateService assignment and approval", () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it("assigns the oldest advocate and advances the matter", async () => {
+  it("assigns the least-loaded active advocate and advances the matter", async () => {
     tx.$queryRaw.mockResolvedValue([{ status: "DRAFT_GENERATED" }]);
-    tx.user.findFirst.mockResolvedValue({ id: "advocate-1" });
+    tx.user.findMany.mockResolvedValue([
+      { id: "busy", advocateAssignments: [{ id: "a" }, { id: "b" }] },
+      { id: "advocate-1", advocateAssignments: [{ id: "c" }] },
+    ]);
     tx.matterAssignment.upsert.mockResolvedValue({ id: "assignment-1" });
 
     await expect(service.assign("matter-1")).resolves.toBe(true);
-    expect(tx.user.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { role: "ADVOCATE" } }),
+    expect(tx.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { role: "ADVOCATE", active: true } }),
+    );
+    expect(tx.matterAssignment.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ create: { matterId: "matter-1", advocateId: "advocate-1" } }),
     );
     expect(tx.matter.update).toHaveBeenCalledWith({
       where: { id: "matter-1" },
@@ -34,7 +40,7 @@ describe("AdvocateService assignment and approval", () => {
 
   it("keeps a generated draft unassigned when no advocate is seeded", async () => {
     tx.$queryRaw.mockResolvedValue([{ status: "DRAFT_GENERATED" }]);
-    tx.user.findFirst.mockResolvedValue(null);
+    tx.user.findMany.mockResolvedValue([]);
 
     await expect(service.assign("matter-1")).resolves.toBe(false);
     expect(tx.matterAssignment.upsert).not.toHaveBeenCalled();

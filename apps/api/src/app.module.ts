@@ -19,6 +19,8 @@ import {
 import { ReviewService } from "./review/review.service";
 import { RazorpayService } from "./payment/razorpay.service";
 import { PaymentService } from "./payment/payment.service";
+import { AdminService } from "./admin/admin.service";
+import { AdminController } from "./admin/admin.controller";
 import { PaymentWebhookController } from "./payment/payment.controller";
 import { DocumentsService } from "./documents/documents.service";
 import { AdvocateService } from "./advocate/advocate.service";
@@ -64,6 +66,7 @@ import {
   ],
   controllers: [
     HealthController,
+    AdminController,
     AuthController,
     UsersController,
     MattersController,
@@ -83,6 +86,7 @@ import {
     ReviewService,
     RazorpayService,
     PaymentService,
+    AdminService,
     DocumentsService,
     AdvocateService,
     RolesGuard,

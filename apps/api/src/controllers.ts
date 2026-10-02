@@ -21,6 +21,7 @@ import {
   AdvocateResponseDto,
   RtiDetailDto,
   PaymentVerifyDto,
+  ManualPaymentDto,
   GoogleLoginDto,
 } from "./dto";
 import { MattersService } from "./matters.service";
@@ -152,6 +153,15 @@ export class MattersController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.payment.createOrder(uid, id);
+  }
+  @Post(":id/payment/manual")
+  @HttpCode(200)
+  submitManualPayment(
+    @UserId() uid: string,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ManualPaymentDto,
+  ) {
+    return this.payment.submitManual(uid, id, dto.reference);
   }
   @Post(":id/payment/verify")
   @HttpCode(200)

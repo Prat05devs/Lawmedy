@@ -23,6 +23,7 @@ enum MatterStatus {
   DRAFT
   INTAKE_IN_PROGRESS
   READY_FOR_PAYMENT
+  PAYMENT_VERIFICATION
   PAID
   AI_PROCESSING
   DRAFT_GENERATED
@@ -44,6 +45,7 @@ model User {
   passwordHash String
   fullName     String
   role         UserRole   @default(USER)
+  active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
   matters      Matter[]
   evidence     Evidence[] @relation("EvidenceUploader")
@@ -296,8 +298,10 @@ model MatterRecipient {
 
 enum PaymentStatus {
   CREATED
+  SUBMITTED
   PAID
   FAILED
+  REJECTED
 }
 
 model Payment {
@@ -312,6 +316,9 @@ model Payment {
   status            PaymentStatus @default(CREATED)
   createdAt         DateTime      @default(now())
   paidAt            DateTime?
+  submittedAt       DateTime?
+  verifiedById      String?
+  reviewNote        String?
 
   @@index([matterId, createdAt])
 }

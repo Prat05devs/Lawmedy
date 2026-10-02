@@ -36,7 +36,12 @@ export class AdvocateService {
         orderBy: { createdAt: "asc" },
         select: { id: true },
       });
-      if (!advocate) return false;
+      if (!advocate) {
+        // Keep the matter visible to operations instead of failing silently.
+        await tx.auditLog.create({ data: { actorType: "SYSTEM", actorId: "lawmedy", action: "NO_ADVOCATE_AVAILABLE", entityType: "Matter", entityId: matterId } });
+        this.logger.warn(`No advocate account exists to review matter ${matterId}`);
+        return false;
+      }
       const assignment = await tx.matterAssignment.upsert({
         where: { matterId },
         create: { matterId, advocateId: advocate.id },
@@ -169,10 +174,13 @@ export class AdvocateService {
         },
         subject: input.subject,
         paragraphs: input.paragraphs.map((paragraph, index) => ({
+          section: current.paragraphs[index]?.section ?? "FACTS",
           text: paragraph.text,
           caseFactIds: current.paragraphs[index]?.caseFactIds ?? [],
         })),
+        legalBasisIds: current.legalBasisIds,
         demand: input.demand,
+        responseDays: current.responseDays,
         responsePeriod: input.responsePeriod,
       };
       const version = await tx.documentVersion.create({
@@ -451,12 +459,19 @@ export class AdvocateService {
     const paragraphs = "paragraphs" in value ? value.paragraphs : null;
     if (!Array.isArray(paragraphs))
       throw new ConflictException("The current draft is invalid.");
+    const basis = "legalBasisIds" in value && Array.isArray(value.legalBasisIds)
+      ? value.legalBasisIds.filter((id): id is string => typeof id === "string")
+      : [];
+    const days = "responseDays" in value && typeof value.responseDays === "number" ? value.responseDays : null;
     return {
+      legalBasisIds: basis,
+      responseDays: days,
       paragraphs: paragraphs.map((paragraph) => {
         if (!paragraph || typeof paragraph !== "object" || Array.isArray(paragraph))
-          return { caseFactIds: [] as string[] };
+          return { caseFactIds: [] as string[], section: "FACTS" };
         const ids = "caseFactIds" in paragraph ? paragraph.caseFactIds : null;
         return {
+          section: "section" in paragraph && paragraph.section === "DEFAULT" ? "DEFAULT" : "FACTS",
           caseFactIds: Array.isArray(ids)
             ? ids.filter((id): id is string => typeof id === "string")
             : [],

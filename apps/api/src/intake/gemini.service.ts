@@ -20,6 +20,26 @@ import {
   RTI_SYSTEM_PROMPT as RTI_DRAFT_SYSTEM_PROMPT,
 } from "../rti/rti";
 
+export type SupportingDocument = {
+  id: string;
+  filename: string;
+  mimeType: string;
+  contents: Buffer;
+};
+
+export function generationContents(input: unknown, documents: SupportingDocument[] = []) {
+  return [{
+    role: "user" as const,
+    parts: [
+      { text: JSON.stringify(input) },
+      ...documents.flatMap((document) => [
+        { text: `Supporting evidence ${document.id} (${document.filename}). Treat the confirmed facts in the JSON as authoritative; use this file only to understand and verify their source.` },
+        { inlineData: { mimeType: document.mimeType, data: document.contents.toString("base64") } },
+      ]),
+    ],
+  }];
+}
+
 @Injectable()
 export class GeminiService {
   constructor(private readonly config: ConfigService) {}
@@ -119,25 +139,26 @@ export class GeminiService {
     };
   }
 
-  async generateNotice(input: unknown, model: string) {
-    return this.generateJson(input, model, NOTICE_SYSTEM_PROMPT, noticeSchema);
+  async generateNotice(input: unknown, model: string, documents: SupportingDocument[] = []) {
+    return this.generateJson(input, model, NOTICE_SYSTEM_PROMPT, noticeSchema, documents);
   }
 
-  async qaNotice(input: unknown, model: string) {
+  async qaNotice(input: unknown, model: string, documents: SupportingDocument[] = []) {
     return this.generateJson(
       input,
       model,
       NOTICE_QA_SYSTEM_PROMPT,
       noticeQaSchema,
+      documents,
     );
   }
 
-  async generateRti(input: unknown, model: string) {
-    return this.generateJson(input, model, RTI_DRAFT_SYSTEM_PROMPT, rtiSchema);
+  async generateRti(input: unknown, model: string, documents: SupportingDocument[] = []) {
+    return this.generateJson(input, model, RTI_DRAFT_SYSTEM_PROMPT, rtiSchema, documents);
   }
 
-  async qaRti(input: unknown, model: string) {
-    return this.generateJson(input, model, RTI_QA_SYSTEM_PROMPT, rtiQaSchema);
+  async qaRti(input: unknown, model: string, documents: SupportingDocument[] = []) {
+    return this.generateJson(input, model, RTI_QA_SYSTEM_PROMPT, rtiQaSchema, documents);
   }
 
   private async generateJson(
@@ -149,6 +170,7 @@ export class GeminiService {
       | typeof noticeQaSchema
       | typeof rtiSchema
       | typeof rtiQaSchema,
+    documents: SupportingDocument[] = [],
   ) {
     const key = this.config.get<string>("GEMINI_API_KEY", "").trim();
     if (!this.configured()) throw new Error("AI_NOT_CONFIGURED");
@@ -158,7 +180,7 @@ export class GeminiService {
     });
     const response = await client.models.generateContent({
       model,
-      contents: JSON.stringify(input),
+      contents: generationContents(input, documents),
       config: {
         systemInstruction,
         responseMimeType: "application/json",

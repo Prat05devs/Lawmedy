@@ -1,4 +1,5 @@
 import type { Notice } from "../documents/notice";
+import { legalBasisText } from "../documents/legal-basis";
 
 export type LegalNoticeTemplateInput = {
   referenceNumber: string;
@@ -42,9 +43,20 @@ export function renderLegalNoticeHtml(input: LegalNoticeTemplateInput) {
     year: "numeric",
     timeZone: "Asia/Kolkata",
   }).format(input.issuedAt);
-  const paragraphs = content.paragraphs
-    .map((paragraph) => `<li>${escapeHtml(paragraph.text)}</li>`)
-    .join("");
+  let counter = 0;
+  const section = (heading: string, items: string[]) =>
+    items.length
+      ? `<h2>${heading}</h2><ol start="${counter + 1}">${items.map((text) => { counter += 1; return `<li>${escapeHtml(text)}</li>`; }).join("")}</ol>`
+      : "";
+  const factTexts = content.paragraphs.filter((paragraph) => paragraph.section !== "DEFAULT").map((paragraph) => paragraph.text);
+  const defaultTexts = content.paragraphs.filter((paragraph) => paragraph.section === "DEFAULT").map((paragraph) => paragraph.text);
+  const basis = legalBasisText(content.legalBasisIds ?? []).map((text) => `The above conduct is relevant to ${text}`);
+  const body = [
+    `<p>I, <strong>${escapeHtml(content.sender.name)}</strong>, give you this notice regarding the matter stated below.</p>`,
+    section("Facts", factTexts),
+    section("Your default", defaultTexts),
+    section("Legal basis", basis),
+  ].join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -64,6 +76,8 @@ export function renderLegalNoticeHtml(input: LegalNoticeTemplateInput) {
     .party { margin: 12px 0; }
     .label { display: block; font: 700 8.5pt/1.4 Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #62716c; }
     .subject { margin: 24px 0 18px; padding: 11px 13px; background: #f1f4f2; border-left: 3px solid #315f55; }
+    h2 { font: 700 10pt/1.4 Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #315f55; margin: 20px 0 8px; }
+    .warning { margin-top: 16px; text-align: justify; }
     ol { padding-left: 24px; }
     li { padding-left: 8px; margin: 0 0 12px; text-align: justify; break-inside: avoid; }
     .demand { margin-top: 20px; padding: 14px; border: 1px solid #b9c5c1; break-inside: avoid; }
@@ -83,8 +97,9 @@ export function renderLegalNoticeHtml(input: LegalNoticeTemplateInput) {
   <h1>LEGAL NOTICE</h1>
   <div class="subject"><strong>Subject:</strong> ${escapeHtml(content.subject)}</div>
   <p>Sir/Madam,</p>
-  <ol>${paragraphs}</ol>
+  ${body}
   <div class="demand"><span class="label">Demand</span>${escapeHtml(content.demand)}<br><strong>Response requested:</strong> ${escapeHtml(content.responsePeriod)}</div>
+  <p class="warning">If you fail to comply within the period stated above, I will be compelled to initiate appropriate legal proceedings against you, entirely at your risk as to costs and consequences. This notice is issued without prejudice to my other rights and remedies.</p>
   <div class="signature">
     <div class="signature-line"><strong>${escapeHtml(input.reviewedBy)}</strong><br>Reviewing Advocate</div>
   </div>

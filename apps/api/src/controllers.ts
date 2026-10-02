@@ -20,6 +20,8 @@ import {
   ConfirmReviewDto,
   AdvocateResponseDto,
   RtiDetailDto,
+  PaymentVerifyDto,
+  GoogleLoginDto,
 } from "./dto";
 import { MattersService } from "./matters.service";
 import { IntakeService } from "./intake/intake.service";
@@ -35,6 +37,9 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
   @Post("signup") signup(@Body() dto: SignupDto) {
     return this.auth.signup(dto);
+  }
+  @Post("google") @HttpCode(200) google(@Body() dto: GoogleLoginDto) {
+    return this.auth.google(dto.idToken);
   }
   @Post("login") @HttpCode(200) login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
@@ -147,6 +152,15 @@ export class MattersController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.payment.createOrder(uid, id);
+  }
+  @Post(":id/payment/verify")
+  @HttpCode(200)
+  verifyPayment(
+    @UserId() uid: string,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: PaymentVerifyDto,
+  ) {
+    return this.payment.verifyCheckout(uid, id, dto);
   }
   @Get(":id/document")
   document(@UserId() uid: string, @Param("id", ParseUUIDPipe) id: string) {

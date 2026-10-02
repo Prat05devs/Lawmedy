@@ -6,6 +6,7 @@ type ReadyEmail = {
   fullName: string;
   referenceNumber: string;
   matterUrl: string;
+  documentLabel: string;
 };
 
 @Injectable()
@@ -35,9 +36,9 @@ export class TransactionalEmailService {
         body: JSON.stringify({
           from,
           to: [input.to],
-          subject: `Your legal notice ${input.referenceNumber} is ready`,
-          text: `Hello ${input.fullName},\n\nYour advocate-reviewed legal notice is ready. Sign in to Lawmedy to download it:\n${input.matterUrl}\n\nLawmedy`,
-          html: `<p>Hello ${this.escape(input.fullName)},</p><p>Your advocate-reviewed legal notice <strong>${this.escape(input.referenceNumber)}</strong> is ready.</p><p><a href="${this.escape(input.matterUrl)}">Open your Lawmedy matter to download the PDF</a></p>`,
+          subject: `Your ${input.documentLabel} ${input.referenceNumber} is ready`,
+          text: `Hello ${input.fullName},\n\nYour ${input.documentLabel} is ready. Sign in to Lawmedy to download it:\n${input.matterUrl}\n\nLawmedy`,
+          html: `<p>Hello ${this.escape(input.fullName)},</p><p>Your ${this.escape(input.documentLabel)} <strong>${this.escape(input.referenceNumber)}</strong> is ready.</p><p><a href="${this.escape(input.matterUrl)}">Open your Lawmedy matter to download the PDF</a></p>`,
         }),
         signal: controller.signal,
       });

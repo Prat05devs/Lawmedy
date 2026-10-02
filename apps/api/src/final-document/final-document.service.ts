@@ -134,6 +134,7 @@ export class FinalDocumentService {
       fullName: matter.user.fullName,
       referenceNumber: matter.referenceNumber,
       matterUrl: `${this.webOrigin}/matters/${matter.id}`,
+      documentLabel: matter.type === "RTI" ? "RTI application" : "legal notice",
     });
     return this.db.finalDocument.findUniqueOrThrow({
       where: { id: finalDocument.id },
@@ -147,6 +148,7 @@ export class FinalDocumentService {
       fullName: string;
       referenceNumber: string;
       matterUrl: string;
+      documentLabel: string;
     },
   ) {
     try {

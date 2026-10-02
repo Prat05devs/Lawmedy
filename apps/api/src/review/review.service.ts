@@ -229,6 +229,7 @@ export class ReviewService {
       prepared,
       factGroups,
       recipient: matter.recipient,
+      applicant: { address: matter.applicantAddress, phone: matter.applicantPhone },
       payment: matter.payments[0] ?? null,
       pricing: { amount, currency: "INR" },
       paymentConfigured:
@@ -264,6 +265,7 @@ export class ReviewService {
     userId: string,
     matterId: string,
     input: {
+      applicant: { address: string; phone?: string };
       selections: { type: string; caseFactId: string }[];
       recipient?: {
         name: string;
@@ -341,7 +343,11 @@ export class ReviewService {
         });
       await tx.matter.update({
         where: { id: matterId },
-        data: { status: "READY_FOR_PAYMENT" },
+        data: {
+          status: "READY_FOR_PAYMENT",
+          applicantAddress: input.applicant.address,
+          applicantPhone: input.applicant.phone || null,
+        },
       });
       await tx.auditLog.create({
         data: {

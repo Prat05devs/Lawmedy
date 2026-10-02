@@ -12,3 +12,4 @@ test-results/
 .local/
 .pnpm-store/
 tmp/
+.DS_Store

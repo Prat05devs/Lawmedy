@@ -98,3 +98,37 @@ describe("PaymentService webhook", () => {
     expect(documents.generateAfterPayment).not.toHaveBeenCalled();
   });
 });
+
+describe("PaymentService checkout verification", () => {
+  const keySecret = "test-key-secret-for-checkout";
+  function setup() {
+    const tx = {
+      payment: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      matter: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const db = {
+      payment: { findFirst: jest.fn().mockResolvedValue({ id: "row", matterId: "m1", providerOrderId: "order_1" }) },
+      $transaction: jest.fn(async (callback: (value: typeof tx) => unknown) => callback(tx)),
+    };
+    const documents = { generateAfterPayment: jest.fn().mockResolvedValue(undefined) };
+    const service = new PaymentService(db as never, { settings: () => ({ configured: true, keySecret }) } as never, { get: jest.fn() } as never, documents as never);
+    return { service, tx, documents };
+  }
+
+  it("marks the matter paid only for a valid checkout signature", async () => {
+    const { service, tx, documents } = setup();
+    const signature = createHmac("sha256", keySecret).update("order_1|pay_1").digest("hex");
+    await service.verifyCheckout("u1", "m1", { orderId: "order_1", paymentId: "pay_1", signature });
+    expect(tx.payment.updateMany).toHaveBeenCalled();
+    expect(documents.generateAfterPayment).toHaveBeenCalledWith("m1");
+  });
+
+  it("rejects a forged signature without touching the database", async () => {
+    const { service, tx } = setup();
+    await expect(
+      service.verifyCheckout("u1", "m1", { orderId: "order_1", paymentId: "pay_1", signature: "0".repeat(64) }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(tx.payment.updateMany).not.toHaveBeenCalled();
+  });
+});

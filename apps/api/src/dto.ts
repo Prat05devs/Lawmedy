@@ -66,7 +66,17 @@ export class RecipientDto {
   phone?: string;
   @Transform(trim) @IsOptional() @IsEmail() @MaxLength(254) email?: string;
 }
+export class ApplicantDto {
+  @Transform(trim) @IsString() @Length(10, 2000) address!: string;
+  @Transform(trim)
+  @IsOptional()
+  @Matches(/^[+0-9() -]{7,30}$/)
+  phone?: string;
+}
 export class ConfirmReviewDto {
+  @ValidateNested()
+  @Type(() => ApplicantDto)
+  applicant!: ApplicantDto;
   @IsArray()
   @ArrayMaxSize(30)
   @ValidateNested({ each: true })
@@ -121,4 +131,13 @@ export class AdvocateApprovalDto {
 export class AdvocateResponseDto {
   @IsUUID() questionId!: string;
   @Transform(trim) @IsString() @Length(1, 5000) answer!: string;
+}
+
+export class PaymentVerifyDto {
+  @IsString() @Length(5, 100) orderId!: string;
+  @IsString() @Length(5, 100) paymentId!: string;
+  @IsString() @Matches(/^[a-f0-9]{64}$/) signature!: string;
+}
+export class GoogleLoginDto {
+  @IsString() @Length(20, 4096) idToken!: string;
 }

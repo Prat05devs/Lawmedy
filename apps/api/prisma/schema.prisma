@@ -62,6 +62,8 @@ model Matter {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   statements         MatterStatement[]  @relation("Statements")
+  applicantAddress   String?
+  applicantPhone     String?
   currentStatementId String?            @unique
   currentStatement   MatterStatement?   @relation("CurrentStatement", fields: [currentStatementId], references: [id], onDelete: SetNull)
   aiRuns             AiRun[]

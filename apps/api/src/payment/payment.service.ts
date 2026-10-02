@@ -143,37 +143,46 @@ export class PaymentService {
       event.status !== "captured"
     )
       throw new BadRequestException("Payment details do not match the order.");
+    await this.settle(payment.id, payment.matterId, event.paymentId, "razorpay");
+    return { received: true };
+  }
+
+
+  // Shared by the signed webhook and the signature-verified checkout callback.
+  private async settle(paymentRowId: string, matterId: string, providerPaymentId: string, actor: string) {
     const shouldGenerate = await this.db.$transaction(async (tx) => {
       const updated = await tx.payment.updateMany({
-        where: { id: payment.id, status: "CREATED" },
-        data: {
-          status: "PAID",
-          providerPaymentId: event.paymentId,
-          paidAt: new Date(),
-        },
+        where: { id: paymentRowId, status: "CREATED" },
+        data: { status: "PAID", providerPaymentId, paidAt: new Date() },
       });
       if (!updated.count) return false;
-      await tx.matter.updateMany({
-        where: { id: payment.matterId, status: "READY_FOR_PAYMENT" },
-        data: { status: "PAID" },
-      });
+      await tx.matter.updateMany({ where: { id: matterId, status: "READY_FOR_PAYMENT" }, data: { status: "PAID" } });
       await tx.auditLog.create({
-        data: {
-          actorType: "SYSTEM",
-          actorId: "razorpay",
-          action: "PAYMENT_CONFIRMED",
-          entityType: "Payment",
-          entityId: payment.id,
-        },
+        data: { actorType: "SYSTEM", actorId: actor, action: "PAYMENT_CONFIRMED", entityType: "Payment", entityId: paymentRowId },
       });
       return true;
     });
     if (shouldGenerate)
-      void this.documents.generateAfterPayment(payment.matterId).catch(() => {
-        // Generation records its own safe failure state; the signed webhook is
-        // still acknowledged so Razorpay does not retry a settled payment.
+      void this.documents.generateAfterPayment(matterId).catch(() => {
+        // Generation records its own safe failure state.
       });
-    return { received: true };
+  }
+
+  // Checkout callback: Razorpay signs "order_id|payment_id" with the key secret.
+  async verifyCheckout(userId: string, matterId: string, input: { orderId: string; paymentId: string; signature: string }) {
+    const settings = this.razorpay.settings();
+    if (!settings.configured) throw new ServiceUnavailableException("Online payment is not configured.");
+    const payment = await this.db.payment.findFirst({
+      where: { matterId, providerOrderId: input.orderId, matter: { userId } },
+    });
+    if (!payment) throw new NotFoundException("Payment not found.");
+    const expected = createHmac("sha256", settings.keySecret).update(`${input.orderId}|${input.paymentId}`).digest("hex");
+    const supplied = Buffer.from(input.signature, "hex");
+    const expectedBuffer = Buffer.from(expected, "hex");
+    if (supplied.length !== expectedBuffer.length || !timingSafeEqual(supplied, expectedBuffer))
+      throw new UnauthorizedException("Payment signature is invalid.");
+    await this.settle(payment.id, matterId, input.paymentId, "razorpay-checkout");
+    return { status: "PAID" };
   }
 
   private paymentEvent(payload: unknown) {

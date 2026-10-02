@@ -9,11 +9,14 @@ describe("renderLegalNoticeHtml", () => {
     subject: "Demand for repayment",
     paragraphs: [
       {
+        section: "FACTS" as const,
         text: "The confirmed amount remains unpaid.",
         caseFactIds: ["00000000-0000-4000-8000-000000000001"],
       },
     ],
+    legalBasisIds: ["ICA_S73"],
     demand: "Repay the confirmed amount.",
+    responseDays: 15,
     responsePeriod: "Within 15 days",
   };
 
@@ -32,6 +35,9 @@ describe("renderLegalNoticeHtml", () => {
     expect(html).toContain("The confirmed amount remains unpaid.");
     expect(html).toContain("Advocate Meera");
     expect(html).not.toContain("Asha <Rao>");
+    expect(html).toContain("Section 73 of the Indian Contract Act, 1872");
+    expect(html).toContain("<h2>Facts</h2>");
+    expect(html).toContain("legal proceedings");
   });
 
   it("rejects content that is not ready for delivery", () => {

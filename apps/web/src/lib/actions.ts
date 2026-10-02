@@ -366,3 +366,12 @@ export async function submitManualPayment(
   revalidatePath("/dashboard");
   return { success: "Payment details received." };
 }
+
+export async function markNotificationsRead(): Promise<void> {
+  try {
+    await api("/users/notifications/read", { method: "POST" });
+  } catch {
+    // Dismissing is best effort; the list simply stays.
+  }
+  revalidatePath("/dashboard");
+}

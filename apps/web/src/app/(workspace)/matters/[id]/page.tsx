@@ -1,23 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Lightbulb } from "lucide-react";
-import {
-  api,
-  ApiError,
-  EvidenceItem,
-  MatterReview,
-  Matter,
-  MatterDocument,
-  FinalDocument,
-  PublicAuthority,
-  RtiDetail,
-  AdvocateRequests,
-  date,
-  statusLabel,
-} from "@/lib/api";
+import { api, ApiError, Overview, date, statusLabel } from "@/lib/api";
 import { StatementForm } from "@/components/forms";
 import { IntakePanel } from "@/components/intake";
-import type { Intake } from "@/lib/intake-types";
 import { EvidencePanel } from "@/components/evidence";
 import { ReviewPanel } from "@/components/review";
 import { DraftPanel } from "@/components/document";
@@ -25,6 +11,7 @@ import { AdvocateRequestPanel } from "@/components/advocate-request";
 import { FinalDocumentPanel } from "@/components/final-document";
 import { RtiDetailsPanel } from "@/components/rti-details";
 import { ProgressTracker } from "@/components/progress-tracker";
+import { AutoRefresh } from "@/components/auto-refresh";
 export const metadata = { title: "Your matter" };
 export default async function MatterPage({
   params,
@@ -32,32 +19,25 @@ export default async function MatterPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  let matter: Matter;
-  try {
-    matter = await api<Matter>(`/matters/${encodeURIComponent(id)}`);
-  } catch (error) {
-    if (error instanceof ApiError && [400, 404].includes(error.status))
-      notFound();
-    throw error;
-  }
-  const latest =
-    matter.statements.find(
-      (statement) => statement.id === matter.currentStatementId,
-    ) ?? matter.statements[0];
   const path = `/matters/${encodeURIComponent(id)}`;
-  const isRti = matter.type === "RTI";
-  // Independent API calls run in parallel; each waits on the slow API otherwise.
-  const [intake, evidence, review, draft, advocateRequests, finalDocument, authorities, rtiDetails] =
-    await Promise.all([
-      latest ? api<Intake>(`${path}/intake`) : null,
-      api<EvidenceItem[]>(`${path}/evidence`),
-      latest ? api<MatterReview>(`${path}/review`) : null,
-      api<MatterDocument>(`${path}/document`),
-      isRti ? null : api<AdvocateRequests>(`${path}/advocate-requests`),
-      api<FinalDocument>(`${path}/final-document`),
-      isRti ? api<PublicAuthority[]>("/matters/rti/public-authorities") : [],
-      isRti ? api<RtiDetail | null>(`${path}/rti-details`) : null,
-    ]);
+  // The matter itself plus every panel's data in one API call.
+  const view = await api<Overview>(`${path}/overview`).catch((error) => {
+    if (error instanceof ApiError && [400, 404].includes(error.status)) notFound();
+    throw error;
+  });
+  const { matter, intake, evidence, review, draft, advocateRequests, finalDocument, authorities, rtiDetails } = {
+    ...view,
+    draft: view.document,
+  };
+  const latest =
+    matter.statements.find((statement) => statement.id === matter.currentStatementId) ??
+    matter.statements[0];
+  const working =
+    intake?.status === "RUNNING" ||
+    evidence.some((item) => item.status === "PROCESSING") ||
+    draft.state === "PROCESSING" ||
+    finalDocument.state === "PENDING" ||
+    ["PAYMENT_VERIFICATION", "PAID", "AI_PROCESSING", "DRAFT_GENERATED", "UNDER_ADVOCATE_REVIEW", "APPROVED"].includes(matter.status);
   const editable =
     matter.status === "DRAFT" || matter.status === "INTAKE_IN_PROGRESS";
   return (
@@ -80,6 +60,7 @@ export default async function MatterPage({
           {statusLabel[matter.status]}
         </span>
       </div>
+      <AutoRefresh active={working} />
       <ProgressTracker status={matter.status} />
       <div className="detail-grid">
         <div>

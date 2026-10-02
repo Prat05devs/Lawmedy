@@ -74,7 +74,6 @@ export const noticeQaSchema = z.object({
 });
 
 export type Notice = z.infer<typeof noticeSchema>;
-export type NoticeQa = z.infer<typeof noticeQaSchema>;
 
 function json(text: string) {
   try {

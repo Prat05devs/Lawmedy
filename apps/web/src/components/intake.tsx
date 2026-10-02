@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { CheckCircle2, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { retryIntake, saveAnswers } from "@/lib/actions";
 import type { Intake } from "@/lib/intake-types";
@@ -15,17 +14,10 @@ export function IntakePanel({
   intake: Intake;
   readOnly: boolean;
 }) {
-  const router = useRouter();
   const [state, action, pending] = useActionState(
     retryIntake.bind(null, id),
     {},
   );
-
-  useEffect(() => {
-    if (intake.status !== "RUNNING") return;
-    const timer = window.setInterval(() => router.refresh(), 3000);
-    return () => window.clearInterval(timer);
-  }, [intake.status, router]);
 
   if (intake.analysis) {
     return (

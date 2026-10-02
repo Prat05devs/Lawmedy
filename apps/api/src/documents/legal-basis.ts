@@ -1,14 +1,14 @@
 // Vetted statutory references a legal notice may rely on. The model can only
 // pick ids from this list; the wording that appears in the notice is ours, so
 // a citation can never be invented. An advocate still reviews every notice.
-export type LegalBasis = {
+type LegalBasis = {
   id: string;
   categories: string[];
   appliesWhen: string;
   text: string;
 };
 
-export const LEGAL_BASIS: LegalBasis[] = [
+const LEGAL_BASIS: LegalBasis[] = [
   {
     id: "ICA_S73",
     categories: ["MONEY_RECOVERY", "CONSUMER", "PROPERTY_DISPUTE"],

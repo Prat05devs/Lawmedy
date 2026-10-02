@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BriefcaseBusiness, LogOut, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/brand";
-import { api, type User } from "@/lib/api";
+import { getMe } from "@/lib/api";
 import { logout } from "@/lib/actions";
 
 export default async function AdvocateLayout({ children }: { children: React.ReactNode }) {
-  const user = await api<User>("/users/me");
+  const user = await getMe();
   if (user.role !== "ADVOCATE") redirect("/dashboard");
   const initials = user.fullName
     .split(" ")

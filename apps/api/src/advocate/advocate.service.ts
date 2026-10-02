@@ -391,6 +391,12 @@ export class AdvocateService {
     return this.requestsForUser(userId, matterId);
   }
 
+  markNotificationsRead(userId: string) {
+    return this.db.notification
+      .updateMany({ where: { userId, readAt: null }, data: { readAt: new Date() } })
+      .then((result) => ({ updated: result.count }));
+  }
+
   notifications(userId: string) {
     return this.db.notification.findMany({
       where: { userId },

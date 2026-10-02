@@ -83,6 +83,7 @@ model Matter {
   rtiDetail          RtiDetail?
 
   @@index([userId, createdAt])
+  @@index([status, updatedAt])
 }
 
 model PublicAuthority {
@@ -202,6 +203,7 @@ model Evidence {
   extraction       EvidenceExtraction?
 
   @@index([matterId, createdAt])
+  @@index([status, createdAt])
 }
 
 model EvidenceExtraction {
@@ -321,6 +323,7 @@ model Payment {
   reviewNote        String?
 
   @@index([matterId, createdAt])
+  @@index([status, submittedAt])
 }
 
 enum LegalDocumentStatus {

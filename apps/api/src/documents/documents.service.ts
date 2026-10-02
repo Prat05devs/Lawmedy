@@ -43,7 +43,7 @@ export class DocumentsService {
     const state = version && document?.status === "READY" ? "READY"
       : document?.status === "MISSING_INFORMATION" ? "MISSING_INFORMATION"
       : lastRun?.error === "AI_NOT_CONFIGURED" ? "WAITING_FOR_CONFIGURATION"
-      : running || matter.status === "AI_PROCESSING" ? document?.status === "FAILED" ? "FAILED" : "PROCESSING"
+      : running || matter.status === "AI_PROCESSING" || matter.status === "PAID" ? document?.status === "FAILED" ? "FAILED" : "PROCESSING"
       : "NOT_STARTED";
     return {
       matterStatus: matter.status, state, configured: this.gemini.configured(), matterType: matter.type,

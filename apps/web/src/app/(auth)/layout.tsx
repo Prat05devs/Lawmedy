@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Brand } from "@/components/brand";
-import { FileText, LockKeyhole, PenLine } from "lucide-react";
+import { FileText, LockKeyhole } from "lucide-react";
 export default function AuthLayout({
   children,
 }: {

@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 export type User = {
   id: string;
@@ -243,3 +244,18 @@ export function date(value: string) {
     timeZone: "Asia/Kolkata",
   }).format(new Date(value));
 }
+
+export type Overview = {
+  matter: Matter;
+  intake: import("@/lib/intake-types").Intake | null;
+  evidence: EvidenceItem[];
+  review: MatterReview | null;
+  document: MatterDocument;
+  advocateRequests: AdvocateRequests | null;
+  finalDocument: FinalDocument;
+  authorities: PublicAuthority[];
+  rtiDetails: RtiDetail | null;
+};
+
+// Layout and page both need the signed-in user; cache() makes that one API call per request.
+export const getMe = cache(() => api<User>("/users/me"));

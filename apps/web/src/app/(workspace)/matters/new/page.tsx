@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, FileText, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { CreateMatterForm } from "@/components/forms";
 export const metadata = { title: "New legal notice" };
 export default function NewMatter() {

@@ -299,6 +299,10 @@ export class ReviewService {
       if (matter.type === "RTI" && !matter.rtiDetail)
         throw new BadRequestException("Select the public authority and save the RTI details first.");
       const facts = await tx.caseFact.findMany({ where: { matterId } });
+      if (facts.length === 0)
+        throw new ConflictException(
+          "We could not find any facts from your statement yet. Check that it was analysed, then gather your facts again.",
+        );
       const grouped = new Map<string, typeof facts>();
       facts.forEach((fact) => {
         const list = grouped.get(fact.type) ?? [];

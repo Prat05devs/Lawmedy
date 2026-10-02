@@ -11,11 +11,12 @@ import {
   ArrowRight,
   Bell,
 } from "lucide-react";
-import { api, Matter, Notification, User, date, statusLabel } from "@/lib/api";
+import { api, getMe, Matter, Notification, date, statusLabel } from "@/lib/api";
+import { markNotificationsRead } from "@/lib/actions";
 export const metadata = { title: "My matters" };
 export default async function Dashboard() {
   const [user, matters, notifications] = await Promise.all([
-    api<User>("/users/me"),
+    getMe(),
     api<Matter[]>("/matters"),
     api<Notification[]>("/users/notifications"),
   ]);
@@ -42,9 +43,9 @@ export default async function Dashboard() {
           </Link>
         </div>
       </div>
-      {notifications.length > 0 && (
+      {notifications.some((n) => !n.readAt) && (
         <section className="notification-list" aria-label="Notifications">
-          {notifications.map((notification) => (
+          {notifications.filter((n) => !n.readAt).map((notification) => (
             <Link href={`/matters/${notification.matterId}`} key={notification.id}>
               <Bell size={17} />
               <span>
@@ -54,6 +55,9 @@ export default async function Dashboard() {
               <ArrowRight size={15} />
             </Link>
           ))}
+          <form action={markNotificationsRead} className="notification-dismiss">
+            <button className="button ghost">Mark all as read</button>
+          </form>
         </section>
       )}
       <section className="welcome-banner">

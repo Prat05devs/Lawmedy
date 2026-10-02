@@ -28,7 +28,6 @@ export const evidenceExtractionSchema = z.object({
     .max(30),
 });
 
-export type EvidenceExtractionResult = z.infer<typeof evidenceExtractionSchema>;
 
 export function parseEvidenceExtraction(text: string) {
   let value: unknown;

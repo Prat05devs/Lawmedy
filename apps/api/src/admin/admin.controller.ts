@@ -5,12 +5,16 @@ import { AuthGuard, UserId } from "../auth.guard";
 import { Roles, RolesGuard } from "../roles.guard";
 import { AdvocateActiveDto, AdvocatePasswordDto, AssignAdvocateDto, CreateAdvocateDto, RejectPaymentDto } from "../dto";
 import { AdminService } from "./admin.service";
+import { RecoveryService } from "../recovery.service";
 
 @Controller("admin")
 @UseGuards(AuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService) {}
+
+  // Re-trigger interrupted background work now instead of waiting for the next sweep.
+  @Post("recover") @HttpCode(200) recover() { return this.recovery.sweep(true); }
 
   @Get("dashboard") dashboard() { return this.admin.dashboard(); }
 

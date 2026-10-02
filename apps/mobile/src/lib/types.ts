@@ -95,3 +95,15 @@ export const progressStage: Record<MatterStatus, number> = {
   DRAFT: 0, INTAKE_IN_PROGRESS: 0, READY_FOR_PAYMENT: 1, PAYMENT_VERIFICATION: 1, PAID: 2, AI_PROCESSING: 2,
   DRAFT_GENERATED: 2, UNDER_ADVOCATE_REVIEW: 3, USER_RESPONSE_REQUIRED: 3, APPROVED: 4, COMPLETED: 5,
 };
+
+export type Overview = {
+  matter: Matter;
+  intake: Intake | null;
+  evidence: EvidenceItem[];
+  review: MatterReview | null;
+  document: MatterDocument;
+  advocateRequests: AdvocateRequests | null;
+  finalDocument: FinalDocument;
+  authorities: PublicAuthority[];
+  rtiDetails: RtiDetail | null;
+};

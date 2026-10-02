@@ -320,12 +320,6 @@ function PaymentPanel({
     });
   }, [router, state.checkout, matterId]);
 
-  useEffect(() => {
-    if (!waiting || review.status !== "READY_FOR_PAYMENT") return;
-    const timer = window.setInterval(() => router.refresh(), 3000);
-    return () => window.clearInterval(timer);
-  }, [review.status, router, waiting]);
-
   const paid = review.status === "PAID" || review.payment?.status === "PAID";
   return (
     <section className="panel payment-panel">

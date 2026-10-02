@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import {
   CheckCircle2,
   FileCheck2,
@@ -19,17 +18,10 @@ export function DraftPanel({
   matterId: string;
   draft: MatterDocument;
 }) {
-  const router = useRouter();
   const [state, action, pending] = useActionState(
     retryDocument.bind(null, matterId),
     {},
   );
-  useEffect(() => {
-    if (draft.state !== "PROCESSING") return;
-    const timer = window.setInterval(() => router.refresh(), 3000);
-    return () => window.clearInterval(timer);
-  }, [draft.state, router]);
-
   if (
     draft.matterStatus !== "PAID" &&
     draft.matterStatus !== "AI_PROCESSING" &&

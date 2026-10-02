@@ -2,13 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BriefcaseBusiness, CreditCard, FolderOpen, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/brand";
-import { api, type User } from "@/lib/api";
+import { getMe } from "@/lib/api";
 import { logout } from "@/lib/actions";
 
 export const metadata = { title: "Admin", robots: { index: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await api<User>("/users/me");
+  const user = await getMe();
   if (user.role !== "ADMIN") redirect(user.role === "ADVOCATE" ? "/advocate" : "/dashboard");
   const initials = user.fullName.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("");
   return (

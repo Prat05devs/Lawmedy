@@ -3,7 +3,8 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { APP_GUARD } from "@nestjs/core";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { AppThrottlerGuard } from "./throttler.guard";
 import { PrismaService } from "./prisma.service";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth.guard";
@@ -20,6 +21,7 @@ import { ReviewService } from "./review/review.service";
 import { RazorpayService } from "./payment/razorpay.service";
 import { PaymentService } from "./payment/payment.service";
 import { AdminService } from "./admin/admin.service";
+import { RecoveryService } from "./recovery.service";
 import { AdminController } from "./admin/admin.controller";
 import { PaymentWebhookController } from "./payment/payment.controller";
 import { DocumentsService } from "./documents/documents.service";
@@ -39,7 +41,13 @@ import {
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ThrottlerModule.forRoot([
+      // Per user (or per email on login/signup).
+      { name: "default", ttl: 60000, limit: 240 },
+      // Per client IP. Generous everywhere because the website's server shares a few IPs;
+      // the auth endpoints tighten it to slow down one machine trying many accounts.
+      { name: "ip", ttl: 60000, limit: 6000, getTracker: (req) => `ip:${req.ip}` },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
@@ -87,6 +95,7 @@ import {
     RazorpayService,
     PaymentService,
     AdminService,
+    RecoveryService,
     DocumentsService,
     AdvocateService,
     RolesGuard,
@@ -102,7 +111,7 @@ import {
           ? new SupabasePrivateStorage(config)
           : new LocalPrivateStorage(config),
     },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
   ],
 })
 export class AppModule {}

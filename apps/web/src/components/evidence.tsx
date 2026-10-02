@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Eye,
@@ -25,20 +24,11 @@ export function EvidencePanel({
   evidence: EvidenceItem[];
   readOnly: boolean;
 }) {
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(
     uploadEvidence.bind(null, matterId),
     {},
   );
-  const processing = evidence.some((item) => item.status === "PROCESSING");
-
-  useEffect(() => {
-    if (!processing) return;
-    const timer = window.setInterval(() => router.refresh(), 2500);
-    return () => window.clearInterval(timer);
-  }, [processing, router]);
-
   useEffect(() => {
     if (state.success) formRef.current?.reset();
   }, [state.success]);

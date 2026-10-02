@@ -30,10 +30,12 @@ import { ReviewService } from "./review/review.service";
 import { PaymentService } from "./payment/payment.service";
 import { DocumentsService } from "./documents/documents.service";
 import { AdvocateService } from "./advocate/advocate.service";
+import { EvidenceService } from "./evidence/evidence.service";
+import { FinalDocumentService } from "./final-document/final-document.service";
 import { RtiService } from "./rti/rti.service";
 
 @Controller("auth")
-@Throttle({ default: { limit: 10, ttl: 60000 } })
+@Throttle({ default: { limit: 10, ttl: 60000 }, ip: { limit: 120, ttl: 60000 } })
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
   @Post("signup") signup(@Body() dto: SignupDto) {
@@ -59,6 +61,10 @@ export class UsersController {
   @Get("notifications") notifications(@UserId() userId: string) {
     return this.advocates.notifications(userId);
   }
+  @Post("notifications/read") @HttpCode(200)
+  markNotificationsRead(@UserId() userId: string) {
+    return this.advocates.markNotificationsRead(userId);
+  }
 }
 @Controller("matters")
 @UseGuards(AuthGuard)
@@ -71,6 +77,8 @@ export class MattersController {
     private readonly documents: DocumentsService,
     private readonly advocates: AdvocateService,
     private readonly rti: RtiService,
+    private readonly evidence: EvidenceService,
+    private readonly finalDocuments: FinalDocumentService,
   ) {}
   @Post() create(@UserId() uid: string, @Body() dto: CreateMatterDto) {
     return this.matters.create(uid, dto.type);
@@ -88,13 +96,32 @@ export class MattersController {
   ) {
     return this.matters.get(uid, id);
   }
+  // One round trip for the whole matter screen. Clients used to fire 8 to 9 separate
+  // requests per view and poll each of them, which is costly against a small Render instance.
+  @Get(":id/overview")
+  async overview(@UserId() uid: string, @Param("id", ParseUUIDPipe) id: string) {
+    const matter = await this.matters.get(uid, id);
+    const hasStatement = matter.statements.length > 0;
+    const isRti = matter.type === "RTI";
+    const [intake, evidence, review, document, advocateRequests, finalDocument, authorities, rtiDetails] =
+      await Promise.all([
+        hasStatement ? this.intake.get(uid, id) : null,
+        this.evidence.list(uid, id),
+        hasStatement ? this.review.get(uid, id) : null,
+        this.documents.get(uid, id),
+        isRti ? null : this.advocates.requestsForUser(uid, id),
+        this.finalDocuments.get(uid, id),
+        isRti ? this.rti.authorities() : [],
+        isRti ? this.rti.get(uid, id) : null,
+      ]);
+    return { matter, intake, evidence, review, document, advocateRequests, finalDocument, authorities, rtiDetails };
+  }
   @Post(":id/statement") async statement(
     @UserId() uid: string,
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: StatementDto,
   ) {
     const saved = await this.matters.saveStatement(uid, id, dto.statement);
-    const matter = await this.matters.get(uid, id);
     await this.intake.analyze(uid, id, saved.id);
     return saved;
   }

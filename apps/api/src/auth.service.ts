@@ -13,7 +13,7 @@ import { randomBytes } from "node:crypto";
 import { PrismaService } from "./prisma.service";
 import { LoginDto, SignupDto } from "./dto";
 
-export const publicUser = {
+const publicUser = {
   id: true,
   email: true,
   fullName: true,

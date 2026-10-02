@@ -2,8 +2,9 @@
 import { useActionState } from "react";
 import { BadgeCheck, CircleAlert, ExternalLink, Hourglass, LoaderCircle, ShieldCheck } from "lucide-react";
 import { submitManualPayment } from "@/lib/actions";
-import { date, type MatterReview } from "@/lib/api";
+import type { MatterReview } from "@/lib/api";
 
+const date = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 const money = (paise: number, currency = "INR") =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 0 }).format(paise / 100);
 

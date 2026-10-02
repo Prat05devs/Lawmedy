@@ -15,3 +15,6 @@ tmp/
 .DS_Store
 .vercel
 .env*
+.expo
+expo-env.d.ts
+apps/mobile/.claude

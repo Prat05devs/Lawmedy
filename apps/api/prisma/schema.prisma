@@ -150,8 +150,9 @@ enum AiRunStatus {
 
 model AiRun {
   id                 String              @id @default(uuid())
-  matterId           String
-  matter             Matter              @relation(fields: [matterId], references: [id])
+  // Null for runs made before an account exists (the guest quick check).
+  matterId           String?
+  matter             Matter?             @relation(fields: [matterId], references: [id])
   taskType           String
   provider           String
   modelName          String
@@ -449,4 +450,21 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+// Customer quotes shown on the landing page and in the app. Only rows with published = true
+// are public, and publishing requires the person's recorded permission.
+model Testimonial {
+  id           String       @id @default(uuid())
+  name         String
+  descriptor   String?
+  quote        String       @db.Text
+  matterType   MatterType?
+  consentGiven Boolean      @default(false)
+  published    Boolean      @default(false)
+  position     Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([published, position])
 }

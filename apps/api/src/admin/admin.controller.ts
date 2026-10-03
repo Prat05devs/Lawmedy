@@ -3,7 +3,7 @@ import type { Response } from "express";
 import { UserRole } from "@prisma/client";
 import { AuthGuard, UserId } from "../auth.guard";
 import { Roles, RolesGuard } from "../roles.guard";
-import { AdvocateActiveDto, AdvocatePasswordDto, AssignAdvocateDto, CreateAdvocateDto, RejectPaymentDto } from "../dto";
+import { TestimonialDto, AdvocateActiveDto, AdvocatePasswordDto, AssignAdvocateDto, CreateAdvocateDto, RejectPaymentDto } from "../dto";
 import { AdminService } from "./admin.service";
 import { RecoveryService } from "../recovery.service";
 
@@ -53,6 +53,14 @@ export class AdminController {
   verify(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string) { return this.admin.verifyPayment(adminId, id); }
   @Post("payments/:id/reject") @HttpCode(200)
   reject(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string, @Body() dto: RejectPaymentDto) { return this.admin.rejectPayment(adminId, id, dto.note); }
+
+  @Get("testimonials") testimonials() { return this.admin.listTestimonials(); }
+  @Post("testimonials")
+  createTestimonial(@UserId() adminId: string, @Body() dto: TestimonialDto) { return this.admin.saveTestimonial(adminId, null, dto); }
+  @Post("testimonials/:id") @HttpCode(200)
+  updateTestimonial(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string, @Body() dto: TestimonialDto) { return this.admin.saveTestimonial(adminId, id, dto); }
+  @Post("testimonials/:id/delete") @HttpCode(200)
+  deleteTestimonial(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string) { return this.admin.deleteTestimonial(adminId, id); }
 
   @Get("advocates") advocates() { return this.admin.advocates(); }
   @Post("advocates")

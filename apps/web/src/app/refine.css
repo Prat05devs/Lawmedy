@@ -110,3 +110,5 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outli
 .site-foot { background: var(--ink); }
 .site-foot .brand-logo img { filter: invert(1); height: 28px; }
 .site-main h1 { font-size: clamp(32px, 4.4vw, 48px); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+.check input { width: auto; margin-top: 3px; }

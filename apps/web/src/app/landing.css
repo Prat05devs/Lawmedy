@@ -93,3 +93,8 @@ html:has(.lp) { scroll-behavior: smooth; }
   .lp-table tr { display: block; padding: 12px 0; border-top: 1px solid var(--line); }
   .lp-steps li { grid-template-columns: 40px minmax(0, 1fr); }
 }
+
+.lp-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; max-width: 980px; }
+.lp-quotes figure { margin: 0; }
+.lp-quotes blockquote { margin: 0 0 12px; font-family: var(--font-serif), Georgia, serif; font-size: 21px; line-height: 1.4; }
+.lp-quotes figcaption { color: var(--muted); font-size: 15px; }

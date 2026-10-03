@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BriefcaseBusiness, CreditCard, FolderOpen, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { BriefcaseBusiness, MessageSquareQuote, CreditCard, FolderOpen, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { getMe } from "@/lib/api";
 import { logout } from "@/lib/actions";
@@ -20,6 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link className="nav-item" href="/admin/matters"><FolderOpen size={18} /> Matters</Link>
           <Link className="nav-item" href="/admin/payments"><CreditCard size={18} /> Payments</Link>
           <Link className="nav-item" href="/admin/advocates"><BriefcaseBusiness size={18} /> Advocates</Link>
+          <Link className="nav-item" href="/admin/testimonials"><MessageSquareQuote size={18} /> Testimonials</Link>
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-card">

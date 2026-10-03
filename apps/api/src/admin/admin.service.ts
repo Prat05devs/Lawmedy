@@ -178,4 +178,30 @@ export class AdminService {
     await this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "ADVOCATE_PASSWORD_RESET", entityType: "User", entityId: advocateId } });
     return { ok: true };
   }
+
+  listTestimonials() {
+    return this.db.testimonial.findMany({ orderBy: [{ position: "asc" }, { createdAt: "desc" }] });
+  }
+
+  private checkTestimonial(input: { published: boolean; consentGiven: boolean }) {
+    if (input.published && !input.consentGiven)
+      throw new ConflictException("Confirm you have the person's permission before publishing their words.");
+  }
+
+  async saveTestimonial(adminId: string, id: string | null, input: { name: string; descriptor?: string; quote: string; matterType?: "LEGAL_NOTICE" | "RTI"; consentGiven: boolean; published: boolean }) {
+    this.checkTestimonial(input);
+    const data = { name: input.name, descriptor: input.descriptor || null, quote: input.quote, matterType: input.matterType ?? null, consentGiven: input.consentGiven, published: input.published };
+    const row = id
+      ? await this.db.testimonial.update({ where: { id }, data }).catch(() => { throw new NotFoundException("Testimonial not found."); })
+      : await this.db.testimonial.create({ data });
+    await this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: id ? "TESTIMONIAL_UPDATED" : "TESTIMONIAL_CREATED", entityType: "Testimonial", entityId: row.id } });
+    return row;
+  }
+
+  async deleteTestimonial(adminId: string, id: string) {
+    const result = await this.db.testimonial.deleteMany({ where: { id } });
+    if (!result.count) throw new NotFoundException("Testimonial not found.");
+    await this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "TESTIMONIAL_DELETED", entityType: "Testimonial", entityId: id } });
+    return { deleted: true };
+  }
 }

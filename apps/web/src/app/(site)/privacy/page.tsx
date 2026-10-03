@@ -16,6 +16,8 @@ export default function Privacy() {
         <li><strong>Contact details for the document:</strong> your postal address and phone number, and the recipient or public authority details you provide.</li>
         <li><strong>Payment information:</strong> the status, amount and reference of a payment. Card, UPI and bank details are entered with our payment processor and are never stored by us.</li>
         <li><strong>Review activity:</strong> edits, comments and questions exchanged with the advocate reviewing your matter.</li>
+        <li><strong>Free check without an account:</strong> if you try the quick check before signing up, we send the text you typed to our AI provider to give you a result. We do not save the text or link it to you; we keep an automated log of the AI&rsquo;s response for diagnostics.</li>
+        <li><strong>Testimonials:</strong> we show a customer&rsquo;s words and name only with their permission, which we record.</li>
         <li><strong>Technical records:</strong> logs of actions on your account (for security and audit), and basic device and request information needed to run the service.</li>
       </ul>
       <p>We do not use advertising trackers and we do not sell your personal information.</p>

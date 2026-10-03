@@ -22,6 +22,8 @@ import { RazorpayService } from "./payment/razorpay.service";
 import { PaymentService } from "./payment/payment.service";
 import { AdminService } from "./admin/admin.service";
 import { RecoveryService } from "./recovery.service";
+import { PublicController } from "./public.controller";
+import { QuickCheckService } from "./quick-check.service";
 import { AccountService } from "./account.service";
 import { AdminController } from "./admin/admin.controller";
 import { PaymentWebhookController } from "./payment/payment.controller";
@@ -75,6 +77,7 @@ import {
   ],
   controllers: [
     HealthController,
+    PublicController,
     AdminController,
     AuthController,
     UsersController,
@@ -97,6 +100,7 @@ import {
     PaymentService,
     AdminService,
     RecoveryService,
+    QuickCheckService,
     AccountService,
     DocumentsService,
     AdvocateService,

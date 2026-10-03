@@ -50,3 +50,29 @@ export async function resetAdvocatePasswordAction(advocateId: string, _: FormSta
   revalidatePath("/admin/advocates");
   return { success: "Password updated." };
 }
+
+export async function saveTestimonialAction(id: string | null, _: FormState, data: FormData): Promise<FormState> {
+  const type = String(data.get("matterType") || "");
+  try {
+    await api(id ? `/admin/testimonials/${enc(id)}` : "/admin/testimonials", {
+      method: "POST",
+      body: JSON.stringify({
+        name: data.get("name"),
+        descriptor: data.get("descriptor") || undefined,
+        quote: data.get("quote"),
+        matterType: type === "LEGAL_NOTICE" || type === "RTI" ? type : undefined,
+        consentGiven: data.get("consentGiven") === "on",
+        published: data.get("published") === "on",
+      }),
+    });
+  } catch (e) { return fail(e); }
+  revalidatePath("/admin/testimonials"); revalidatePath("/");
+  return { success: id ? "Saved." : "Testimonial added." };
+}
+
+export async function deleteTestimonialAction(id: string, _: FormState): Promise<FormState> {
+  try { await api(`/admin/testimonials/${enc(id)}/delete`, { method: "POST" }); }
+  catch (e) { return fail(e); }
+  revalidatePath("/admin/testimonials"); revalidatePath("/");
+  return { success: "Deleted." };
+}

@@ -183,3 +183,17 @@ export class AssignAdvocateDto {
 export class DeleteAccountDto {
   @Equals("DELETE", { message: "Type DELETE to confirm." }) confirm!: string;
 }
+
+export class TestimonialDto {
+  @Transform(trim) @IsString() @Length(2, 80) name!: string;
+  @Transform(trim) @IsOptional() @IsString() @Length(0, 120) descriptor?: string;
+  @Transform(trim) @IsString() @Length(20, 600) quote!: string;
+  @IsOptional() @IsEnum(MatterType) matterType?: MatterType;
+  @IsBoolean() consentGiven!: boolean;
+  @IsBoolean() published!: boolean;
+}
+
+export class QuickCheckDto {
+  @Transform(trim) @IsString() @Length(30, 3000) statement!: string;
+  @IsEnum(MatterType) type!: MatterType;
+}

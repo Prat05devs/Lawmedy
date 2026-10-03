@@ -34,8 +34,19 @@ const faqs = [
   { q: "Can I delete my data?", a: "Yes. In the app, open Account and choose Delete my account. Your matters, uploads and drafts are erased." },
 ];
 
+type Testimonial = { id: string; name: string; descriptor: string | null; quote: string };
+async function testimonials(): Promise<Testimonial[]> {
+  try {
+    const response = await fetch(`${process.env.API_URL || "http://127.0.0.1:4000"}/public/testimonials`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(5000) });
+    return response.ok ? ((await response.json()) as Testimonial[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
   if ((await cookies()).get("lawmedy_session")) redirect("/dashboard");
+  const quotes = await testimonials();
   return (
     <div className="lp">
       <LandingNav />
@@ -92,6 +103,20 @@ export default async function Home() {
           </tbody>
         </table>
       </section>
+
+      {quotes.length > 0 && (
+        <section className="lp-block" id="people">
+          <h2>What customers say</h2>
+          <div className="lp-quotes">
+            {quotes.map((q) => (
+              <figure key={q.id}>
+                <blockquote>{q.quote}</blockquote>
+                <figcaption>{q.name}{q.descriptor ? `, ${q.descriptor}` : ""}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="lp-block lp-narrow">
         <h2>Your files</h2>

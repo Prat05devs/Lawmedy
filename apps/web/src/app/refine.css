@@ -101,3 +101,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outli
 .sidebar nav { margin-top: 28px; }
 .workspace-footer { justify-content: flex-start; }
 .secure-note { display: none; }
+
+/* Legal and support pages share the landing page's light header and ink footer */
+.site-bar { background: var(--paper); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; padding: 14px clamp(20px, 5vw, 64px); }
+.site-bar .brand-logo img { height: 28px; }
+.site-bar nav a:not(.button) { color: var(--ink); }
+.site-bar .button { padding: 9px 18px; }
+.site-foot { background: var(--ink); }
+.site-foot .brand-logo img { filter: invert(1); height: 28px; }
+.site-main h1 { font-size: clamp(32px, 4.4vw, 48px); }

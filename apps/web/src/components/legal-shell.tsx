@@ -14,10 +14,10 @@ export function LegalShell({ title, intro, children }: { title: string; intro?: 
   return (
     <div className="site">
       <header className="site-bar">
-        <Brand href="/" />
+        <Brand href="/" tone="dark" />
         <nav aria-label="Site">
           <Link href="/login">Log in</Link>
-          <Link href="/signup" className="button gold">Get started</Link>
+          <Link href="/signup" className="button primary">Get started</Link>
         </nav>
       </header>
       <main className="site-main">

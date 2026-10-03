@@ -10,7 +10,7 @@ export default async function AdminPayments() {
   const pending = await api<Pending[]>("/admin/payments");
   return (
     <>
-      <div className="page-heading"><div><p className="eyebrow">ADMIN DESK</p><h1>Payments to verify</h1>
+      <div className="page-heading"><div><h1>Payments to verify</h1>
         <p className="muted">Open the payment dashboard, find the reference below, and confirm the amount matches before you verify.</p></div></div>
       {pending.length === 0 && <section className="panel"><p className="muted">Nothing waiting. New payment submissions appear here.</p></section>}
       {pending.map((p) => (

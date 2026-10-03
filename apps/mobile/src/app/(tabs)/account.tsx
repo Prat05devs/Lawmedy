@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
-import { Body, Button, Card, Eyebrow, H1, Field, Message, Screen } from "@/components/ui";
+import { Body, Button, Card, H1, Field, Message, Screen } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth";
@@ -32,7 +32,6 @@ export default function Account() {
   }
   return (
     <Screen>
-      <Eyebrow>YOUR ACCOUNT</Eyebrow>
       <H1>{user?.fullName}</H1>
       <Body muted style={{ marginBottom: 22 }}>{user?.email}</Body>
       <Card style={{ paddingVertical: 6 }}>

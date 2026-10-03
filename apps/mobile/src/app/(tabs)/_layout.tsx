@@ -7,7 +7,7 @@ const icon = (name: keyof typeof Ionicons.glyphMap) => ({ color, size }: { color
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.navy, tabBarInactiveTintColor: "#9aa3b5", tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 }, tabBarStyle: { backgroundColor: "#fff", borderTopColor: colors.line } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: "#9b9484", tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
       <Tabs.Screen name="index" options={{ title: "Matters", tabBarIcon: icon("folder-open-outline") }} />
       <Tabs.Screen name="new" options={{ title: "New", tabBarIcon: icon("add-circle-outline") }} />
       <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("person-circle-outline") }} />

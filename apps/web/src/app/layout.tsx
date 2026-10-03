@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Newsreader, Public_Sans } from "next/font/google";
 import "./globals.css";
 import "./design.css";
+import "./refine.css";
 
-const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const serif = Newsreader({ subsets: ["latin"], variable: "--font-serif", display: "swap", style: ["normal", "italic"] });
+const sans = Public_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: {

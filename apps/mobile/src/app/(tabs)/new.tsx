@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Body, Card, Eyebrow, H1, Message, PhotoBanner, Screen } from "@/components/ui";
+import { Body, H1, Message, Screen } from "@/components/ui";
 import { post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
-import { photos } from "@/lib/photos";
 import { colors, fonts } from "@/lib/theme";
 import type { Matter, MatterType } from "@/lib/types";
 
-const options: { type: MatterType; title: string; text: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { type: "LEGAL_NOTICE", title: "Legal notice", text: "For money owed, refunds, deposits, broken agreements, consumer or property disputes.", icon: "hammer-outline" },
-  { type: "RTI", title: "RTI application", text: "Ask a public authority for records and decisions under the Right to Information Act.", icon: "business-outline" },
+const options: { type: MatterType; title: string; text: string }[] = [
+  { type: "LEGAL_NOTICE", title: "Legal notice", text: "For money owed, a deposit or refund not returned, a broken agreement, or a consumer or property dispute." },
+  { type: "RTI", title: "RTI application", text: "A request for records from a public authority under the Right to Information Act." },
 ];
 
 export default function NewMatter() {
@@ -30,27 +28,24 @@ export default function NewMatter() {
 
   return (
     <Screen>
-      <Eyebrow>START A MATTER</Eyebrow>
-      <H1>What do you need?</H1>
-      <Body muted style={{ marginBottom: 18 }}>Both documents are reviewed by our in-house advocate before you receive them.</Body>
-      <PhotoBanner source={photos.ladyJustice} eyebrow="STEP BY STEP" title="You tell us. We draft. An advocate reviews." height={150} />
+      <H1>Start a matter</H1>
+      <Body muted style={{ marginBottom: 22 }}>An advocate reviews every document before you receive it.</Body>
       <Message error={error} />
-      {options.map((o) => (
-        <Pressable key={o.type} disabled={!!busy} onPress={() => start(o.type)}>
-          <Card style={[{ flexDirection: "row", gap: 14, alignItems: "center" }, busy === o.type && { opacity: 0.6 }]}>
-            <View style={s.icon}><Ionicons name={o.icon} size={24} color={colors.gold2} /></View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.title}>{o.title}</Text>
-              <Body muted small>{o.text}</Body>
-            </View>
-            <Ionicons name="arrow-forward" size={20} color={colors.navy} />
-          </Card>
+      {options.map((o, i) => (
+        <Pressable key={o.type} disabled={!!busy} onPress={() => start(o.type)} style={[s.row, i === 0 && s.first, busy === o.type && { opacity: 0.55 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.title}>{o.title}</Text>
+            <Body muted small>{o.text}</Body>
+          </View>
+          <Text style={s.arrow}>›</Text>
         </Pressable>
       ))}
     </Screen>
   );
 }
 const s = StyleSheet.create({
-  icon: { width: 52, height: 52, borderRadius: 14, backgroundColor: colors.navy, alignItems: "center", justifyContent: "center" },
-  title: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink, marginBottom: 4 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.line },
+  first: { borderTopWidth: 1, borderTopColor: colors.line },
+  title: { fontFamily: fonts.serif, fontSize: 21, color: colors.ink, marginBottom: 4 },
+  arrow: { fontFamily: fonts.sans, fontSize: 28, color: colors.muted },
 });

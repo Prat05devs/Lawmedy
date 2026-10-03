@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#0f2147",
+    "backgroundColor": "#f6f2ea",
     "ios": {
       "bundleIdentifier": "com.lawmedy.app",
       "supportsTablet": false,
@@ -21,7 +21,7 @@
     "android": {
       "package": "com.lawmedy.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0f2147",
+        "backgroundColor": "#f6f2ea",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -40,8 +40,8 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "backgroundColor": "#0f2147",
-          "imageWidth": 220
+          "backgroundColor": "#f6f2ea",
+          "imageWidth": 200
         }
       ]
     ],

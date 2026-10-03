@@ -66,7 +66,7 @@ function DraftEditForm({
     <form action={action} className="panel advocate-draft-form form-stack">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">CURRENT VERSION {version.versionNumber}</p>
+          <p className="eyebrow">Version {version.versionNumber}</p>
           <h2>Review and edit the draft</h2>
         </div>
         <span className="badge under_advocate_review"><span /> {version.createdByType.toLowerCase()}</span>
@@ -139,7 +139,7 @@ function RtiEditForm({ matterId, versionNumber, content, editable }: { matterId:
     <form action={action} className="panel advocate-draft-form form-stack">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">CURRENT VERSION {versionNumber}</p>
+          <p className="eyebrow">Version {versionNumber}</p>
           <h2>Review and edit the RTI application</h2>
         </div>
       </div>

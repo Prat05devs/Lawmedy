@@ -21,7 +21,6 @@ export function LegalShell({ title, intro, children }: { title: string; intro?: 
         </nav>
       </header>
       <main className="site-main">
-        <p className="eyebrow">LAWMEDY</p>
         <h1>{title}</h1>
         {intro && <p className="site-intro">{intro}</p>}
         <p className="site-updated">Last updated {site.updated}</p>

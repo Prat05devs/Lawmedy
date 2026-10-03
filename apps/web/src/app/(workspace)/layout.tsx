@@ -22,7 +22,6 @@ export default async function WorkspaceLayout({
     <div className="workspace">
       <aside className="sidebar">
         <Brand />
-        <p className="nav-label">YOUR WORKSPACE</p>
         <nav>
           <Link className="nav-item active" href="/dashboard">
             <LayoutDashboard size={18} /> My matters
@@ -70,7 +69,6 @@ export default async function WorkspaceLayout({
         <main className="main-content">{children}</main>
         <footer className="workspace-footer">
           <span>© {new Date().getFullYear()} Lawmedy</span>
-          <span>A clearer way forward.</span>
         </footer>
       </div>
     </div>

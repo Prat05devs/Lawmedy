@@ -43,7 +43,7 @@ export function RtiDetailsPanel({ matterId, authorities, details, editable, onCh
       <Text style={{ fontFamily: fonts.sansMedium, fontSize: 13, color: colors.ink, marginBottom: 8 }}>Public authority</Text>
       <View style={{ gap: 8, marginBottom: 16 }}>
         {authorities.map((a) => (
-          <Pressable key={a.id} disabled={!editable} onPress={() => pick(a)} style={{ flexDirection: "row", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: a.id === authorityId ? colors.navy : colors.line, backgroundColor: a.id === authorityId ? "#eef2fa" : "#fff" }}>
+          <Pressable key={a.id} disabled={!editable} onPress={() => pick(a)} style={{ flexDirection: "row", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: a.id === authorityId ? colors.navy : colors.line, backgroundColor: a.id === authorityId ? colors.tint : colors.card }}>
             <Ionicons name={a.id === authorityId ? "radio-button-on" : "radio-button-off"} size={20} color={colors.navy} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink }}>{a.name}</Text>

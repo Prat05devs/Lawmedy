@@ -7,7 +7,7 @@ export default async function AdminAdvocates() {
   const advocates = await api<Adv[]>("/admin/advocates");
   return (
     <>
-      <div className="page-heading"><div><p className="eyebrow">ADMIN DESK</p><h1>Advocates</h1>
+      <div className="page-heading"><div><h1>Advocates</h1>
         <p className="muted">The people who review and approve documents. New matters go to the least-loaded active advocate; you can reassign any matter.</p></div></div>
       <CreateAdvocateForm />
       <section className="panel admin-table">

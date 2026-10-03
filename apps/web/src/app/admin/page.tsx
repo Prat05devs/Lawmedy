@@ -14,11 +14,11 @@ export default async function AdminDashboard() {
   ];
   return (
     <>
-      <div className="page-heading"><div><p className="eyebrow">ADMIN DESK</p><h1>Overview</h1><p className="muted">What needs your attention right now.</p></div></div>
+      <div className="page-heading"><div><h1>Overview</h1><p className="muted">What needs your attention right now.</p></div></div>
       <div className="admin-cards">
         {cards.map(({ href, label, value, Icon, hot }) => (
           <Link key={label} href={href} className={`admin-stat ${hot ? "hot" : ""}`}>
-            <Icon size={22} /><strong>{value}</strong><span>{label}</span>
+            <strong>{value}</strong><span>{label}</span>
           </Link>
         ))}
       </div>

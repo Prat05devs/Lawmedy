@@ -40,7 +40,7 @@ export default async function AdvocateMatterPage({
         <div>
           <p className="eyebrow">{matter.referenceNumber}</p>
           <h1>{matter.user.fullName}</h1>
-          <p className="eyebrow">{matter.type === "RTI" ? "RTI APPLICATION" : "LEGAL NOTICE"}</p>
+          <p className="muted">{matter.type === "RTI" ? "RTI application" : "Legal notice"}</p>
           <p className="muted">{matter.user.email} · Assigned {date(detail.assignedAt)}</p>
         </div>
         <span className={`badge ${matter.status.toLowerCase()}`}><span /> {statusLabel[matter.status]}</span>

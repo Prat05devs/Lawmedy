@@ -31,7 +31,6 @@ export default async function AdvocateDashboard() {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">ASSIGNED TO YOU</p>
           <h1>Review queue</h1>
           <p className="muted">Review the facts, evidence, QA flags, and current draft.</p>
         </div>

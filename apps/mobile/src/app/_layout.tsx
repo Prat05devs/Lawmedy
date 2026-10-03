@@ -3,15 +3,15 @@ import { ActivityIndicator, View } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useFonts, Fraunces_500Medium } from "@expo-google-fonts/fraunces";
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
+import { useFonts, Newsreader_500Medium } from "@expo-google-fonts/newsreader";
+import { PublicSans_400Regular, PublicSans_500Medium, PublicSans_600SemiBold } from "@expo-google-fonts/public-sans";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { colors } from "@/lib/theme";
 
 function Routes() {
   const { user, loading } = useAuth();
   if (loading)
-    return <View style={{ flex: 1, backgroundColor: colors.navy, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color="#fff" /></View>;
+    return <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.ink} /></View>;
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!user}>
@@ -26,7 +26,7 @@ function Routes() {
 }
 
 export default function Root() {
-  const [loaded] = useFonts({ Fraunces_500Medium, Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
+  const [loaded] = useFonts({ Newsreader_500Medium, PublicSans_400Regular, PublicSans_500Medium, PublicSans_600SemiBold });
   if (!loaded) return null;
   return (
     <SafeAreaProvider>

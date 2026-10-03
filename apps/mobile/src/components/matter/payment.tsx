@@ -40,8 +40,8 @@ export function PaymentPanel({ matterId, review, step, onChanged }: { matterId: 
         <View style={{ flexDirection: "row", gap: 12, padding: 14, borderRadius: 12, backgroundColor: colors.warnBg }}>
           <Ionicons name="hourglass-outline" size={22} color="#8a6414" />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: fonts.sansMedium, color: "#6b4d10" }}>Reference {review.payment?.providerPaymentId}</Text>
-            <Body small style={{ color: "#6b4d10", marginTop: 4 }}>
+            <Text style={{ fontFamily: fonts.sansMedium, color: colors.warnText }}>Reference {review.payment?.providerPaymentId}</Text>
+            <Body small style={{ color: colors.warnText, marginTop: 4 }}>
               {review.payment?.submittedAt ? `Submitted ${shortDate(review.payment.submittedAt)}. ` : ""}
               Nothing else to do. We will notify you as soon as it is verified, and your document work starts right after.
             </Body>

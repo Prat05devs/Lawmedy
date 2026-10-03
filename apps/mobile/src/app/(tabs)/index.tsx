@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link, useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Body, Button, Card, Eyebrow, H1, Loading, Message, StatusBadge } from "@/components/ui";
+import { Body, Button, H1, Loading, Message, StatusBadge } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { errorMessage, shortDate } from "@/lib/hooks";
@@ -26,44 +25,42 @@ export default function Matters() {
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.paper }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
-        <Eyebrow>A CLEARER WAY FORWARD</Eyebrow>
-        <H1>Hello, {user?.fullName.split(" ")[0]}.</H1>
-        <Body muted style={{ marginBottom: 22 }}>Your matters, your progress, all in one place.</Body>
+        <H1>Hello, {user?.fullName.split(" ")[0]}</H1>
+        <Body muted style={{ marginBottom: 20 }}>
+          {matters && matters.length > 0 ? `${matters.length} ${matters.length === 1 ? "matter" : "matters"}` : "You have not started a matter yet."}
+        </Body>
         <Message error={error} />
         {!matters && !error ? <Loading /> : null}
         {matters && matters.length === 0 && (
-          <Card style={{ alignItems: "center", paddingVertical: 32 }}>
-            <Ionicons name="document-text-outline" size={36} color={colors.gold} />
-            <Text style={[s.title, { marginTop: 10 }]}>No matters yet</Text>
-            <Body muted style={{ textAlign: "center", marginBottom: 18 }}>Start a legal notice or an RTI application. We guide you step by step.</Body>
-            <Button title="Start a matter" icon="add" onPress={() => router.push("/new")} />
-          </Card>
+          <View style={{ gap: 14 }}>
+            <Body>Write what happened in your own words. You confirm every fact before anything is drafted.</Body>
+            <Button title="Start a matter" onPress={() => router.push("/new")} />
+          </View>
         )}
-        {matters?.map((m) => (
-          <Link key={m.id} href={{ pathname: "/matter/[id]", params: { id: m.id } }} asChild>
-            <Pressable>
-              <Card style={{ gap: 10 }}>
-                <View style={s.row}>
-                  <View style={s.icon}><Ionicons name={m.type === "RTI" ? "business-outline" : "hammer-outline"} size={20} color={colors.gold2} /></View>
-                  <View style={{ flex: 1 }}>
+        {matters && matters.length > 0 && (
+          <View style={{ borderTopWidth: 1, borderTopColor: colors.line }}>
+            {matters.map((m) => (
+              <Link key={m.id} href={{ pathname: "/matter/[id]", params: { id: m.id } }} asChild>
+                <Pressable style={s.row}>
+                  <View style={{ flex: 1, gap: 6 }}>
                     <Text style={s.title}>{m.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
                     <Text style={s.ref}>{m.referenceNumber} · {shortDate(m.createdAt)}</Text>
+                    <StatusBadge status={m.status} />
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#9aa3b5" />
-                </View>
-                <StatusBadge status={m.status} />
-              </Card>
-            </Pressable>
-          </Link>
-        ))}
+                  <Text style={s.arrow}>›</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  icon: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.navy, alignItems: "center", justifyContent: "center" },
-  title: { fontFamily: fonts.serif, fontSize: 18, color: colors.ink },
-  ref: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.muted, marginTop: 2 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.line },
+  title: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink },
+  ref: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted },
+  arrow: { fontFamily: fonts.sans, fontSize: 28, color: colors.muted },
 });

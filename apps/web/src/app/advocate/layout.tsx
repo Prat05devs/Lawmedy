@@ -18,7 +18,6 @@ export default async function AdvocateLayout({ children }: { children: React.Rea
     <div className="workspace advocate-workspace">
       <aside className="sidebar">
         <Brand href="/advocate" />
-        <p className="nav-label">ADVOCATE WORKSPACE</p>
         <nav>
           <Link className="nav-item" href="/advocate">
             <BriefcaseBusiness size={18} /> Assigned matters

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Lightbulb } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { api, ApiError, Overview, date, statusLabel } from "@/lib/api";
 import { StatementForm } from "@/components/forms";
 import { IntakePanel } from "@/components/intake";
@@ -108,7 +108,6 @@ export default async function MatterPage({
           )}
         </div>
         <aside className="tips">
-          <Lightbulb size={23} />
           <h3>A few helpful details</h3>
           <p>You don’t need to use legal language. Focus on what you know.</p>
           <ul>

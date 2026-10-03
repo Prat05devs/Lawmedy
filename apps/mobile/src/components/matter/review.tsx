@@ -74,7 +74,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
               {g.values.map((v) => {
                 const on = selected[g.type] === v.id;
                 return (
-                  <Pressable key={v.id} disabled={!editable} onPress={() => setSelected((p) => ({ ...p, [g.type]: v.id }))} style={{ flexDirection: "row", gap: 10, padding: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1.5, borderColor: on ? colors.navy : colors.line, backgroundColor: on ? "#eef2fa" : "#fff" }}>
+                  <Pressable key={v.id} disabled={!editable} onPress={() => setSelected((p) => ({ ...p, [g.type]: v.id }))} style={{ flexDirection: "row", gap: 10, padding: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1.5, borderColor: on ? colors.navy : colors.line, backgroundColor: on ? colors.tint : colors.card }}>
                     <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={20} color={colors.navy} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14.5, color: colors.ink }}>{v.value}</Text>

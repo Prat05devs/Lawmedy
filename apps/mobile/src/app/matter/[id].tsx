@@ -47,7 +47,7 @@ export default function MatterScreen() {
         <H1>{isRti ? "Your RTI application" : "Your legal notice"}</H1>
         <Text style={{ fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginBottom: 12 }}>Started {shortDate(mt.createdAt)}</Text>
         <View style={{ marginBottom: 20 }}><StatusBadge status={mt.status} /></View>
-        <View style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: 14, backgroundColor: "#fff", borderWidth: 1, borderColor: colors.line, marginBottom: 18 }}>
+        <View style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, marginBottom: 18 }}>
           <Ionicons name={mt.status === "COMPLETED" ? "checkmark-circle" : "information-circle-outline"} size={22} color={mt.status === "COMPLETED" ? colors.ok : colors.navy2} />
           <Body style={{ flex: 1, fontSize: 14 }}>{progressNote[mt.status]}</Body>
         </View>

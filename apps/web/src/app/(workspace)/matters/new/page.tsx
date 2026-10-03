@@ -14,7 +14,6 @@ export default function NewMatter() {
           <Image src="/images/photos/lady-justice.jpg" alt="" fill sizes="800px" />
           <div><small>LEGAL NOTICE</small><h2>Say it properly, in writing</h2></div>
         </div>
-        <p className="eyebrow">A NEW BEGINNING</p>
         <h1>Let’s start with your story.</h1>
         <p className="muted">Create a private matter for your legal notice.</p>
         <section className="panel new-matter">

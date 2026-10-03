@@ -13,7 +13,7 @@ export default async function AdminMatters({ searchParams }: { searchParams: Pro
   const rows = await api<Row[]>(`/admin/matters?${query}`);
   return (
     <>
-      <div className="page-heading"><div><p className="eyebrow">ADMIN DESK</p><h1>Matters</h1><p className="muted">Everything users have submitted.</p></div></div>
+      <div className="page-heading"><div><h1>Matters</h1><p className="muted">Everything users have submitted.</p></div></div>
       <form className="admin-filter" action="/admin/matters">
         <label className="search"><Search size={16} /><input name="q" defaultValue={q} placeholder="Search reference, name or email" /></label>
         <select name="status" defaultValue={status}>

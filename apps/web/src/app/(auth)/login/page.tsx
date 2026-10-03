@@ -5,9 +5,8 @@ export const metadata = { title: "Log in" };
 export default function Login() {
   return (
     <div className="auth-form-wrap">
-      <p className="eyebrow">GOOD TO SEE YOU AGAIN</p>
-      <h2>Welcome back.</h2>
-      <p className="muted">Log in to pick up where you left off.</p>
+      <h2>Log in</h2>
+      <p className="muted">Continue where you left off.</p>
       <GoogleButton />
       <AuthForm mode="login" />
       <p className="auth-switch">

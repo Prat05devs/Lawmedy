@@ -40,6 +40,7 @@ export default async function AdvocateMatterPage({
         <div>
           <p className="eyebrow">{matter.referenceNumber}</p>
           <h1>{matter.user.fullName}</h1>
+          <p className="eyebrow">{matter.type === "RTI" ? "RTI APPLICATION" : "LEGAL NOTICE"}</p>
           <p className="muted">{matter.user.email} · Assigned {date(detail.assignedAt)}</p>
         </div>
         <span className={`badge ${matter.status.toLowerCase()}`}><span /> {statusLabel[matter.status]}</span>
@@ -62,6 +63,20 @@ export default async function AdvocateMatterPage({
                 </div>
               ))}
             </dl>
+            {matter.rtiDetail && (
+              <div className="advocate-recipient">
+                <h3>Public authority</h3>
+                <p><strong>{matter.rtiDetail.publicAuthority.name}</strong><br />{matter.rtiDetail.department}<br />{matter.rtiDetail.publicAuthority.address}</p>
+                <small>{matter.rtiDetail.governmentLevel.toLowerCase()}{matter.rtiDetail.state ? ` · ${matter.rtiDetail.state}` : ""}</small>
+              </div>
+            )}
+            {(matter.applicantAddress || matter.applicantPhone) && (
+              <div className="advocate-recipient">
+                <h3>Applicant contact</h3>
+                <p className="pre-wrap">{matter.applicantAddress}</p>
+                {matter.applicantPhone && <small>{matter.applicantPhone}</small>}
+              </div>
+            )}
             {matter.recipient && (
               <div className="advocate-recipient">
                 <h3>Recipient</h3>

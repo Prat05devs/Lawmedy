@@ -60,7 +60,7 @@ export default async function AdvocateDashboard() {
                       <div className="matter-summary">
                         <span className="reference">{assignment.matter.referenceNumber}</span>
                         <h3>{assignment.matter.user.fullName}</h3>
-                        <p>{assignment.matter.statements[0]?.statement || "Legal notice draft"}</p>
+                        <p>{assignment.matter.statements[0]?.statement || (assignment.matter.type === "RTI" ? "RTI application draft" : "Legal notice draft")}</p>
                       </div>
                       {assignment.newInformation && <span className="new-info">New info</span>}
                       <time>{date(assignment.assignedAt)}</time>

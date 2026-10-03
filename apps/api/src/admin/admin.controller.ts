@@ -14,7 +14,7 @@ export class AdminController {
   constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService) {}
 
   // Re-trigger interrupted background work now instead of waiting for the next sweep.
-  @Post("recover") @HttpCode(200) recover() { return this.recovery.sweep(true); }
+  @Post("recover") @HttpCode(202) recover() { void this.recovery.sweep(true); return { started: true }; }
 
   @Get("dashboard") dashboard() { return this.admin.dashboard(); }
 

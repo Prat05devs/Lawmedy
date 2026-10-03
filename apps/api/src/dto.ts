@@ -120,6 +120,22 @@ export class AdvocateDraftDto {
   @Transform(trim) @IsString() @Length(1, 500) responsePeriod!: string;
 }
 
+export class AdvocateRtiRequestItemDto {
+  @Transform(trim) @IsString() @Length(1, 5000) text!: string;
+}
+// RTI drafts: the advocate edits the subject and the numbered information requests.
+// The applicant and the public authority come from the saved records and are not editable.
+export class AdvocateRtiDraftDto {
+  @IsInt() @Min(1) expectedVersion!: number;
+  @Transform(trim) @IsString() @Length(1, 1000) subject!: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => AdvocateRtiRequestItemDto)
+  informationRequests!: AdvocateRtiRequestItemDto[];
+}
+
 export class AdvocateRequestDto {
   @Transform(trim) @IsString() @Length(3, 5000) question!: string;
 }

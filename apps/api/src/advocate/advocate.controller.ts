@@ -17,6 +17,7 @@ import {
   AdvocateApprovalDto,
   AdvocateDraftDto,
   AdvocateRequestDto,
+  AdvocateRtiDraftDto,
 } from "../dto";
 import { AdvocateService } from "./advocate.service";
 
@@ -47,6 +48,16 @@ export class AdvocateController {
     @Body() dto: AdvocateDraftDto,
   ) {
     return this.advocates.editDraft(advocateId, matterId, dto);
+  }
+
+  @Post("matters/:id/rti-draft")
+  @HttpCode(200)
+  editRti(
+    @UserId() advocateId: string,
+    @Param("id", ParseUUIDPipe) matterId: string,
+    @Body() dto: AdvocateRtiDraftDto,
+  ) {
+    return this.advocates.editRtiDraft(advocateId, matterId, dto);
   }
 
   @Post("matters/:id/request-information")

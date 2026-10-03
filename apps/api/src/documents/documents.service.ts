@@ -92,7 +92,7 @@ export class DocumentsService {
       const category = matter.analyses[0]?.category ?? "*";
       const specific = await tx.matterWorkflowConfiguration.findUnique({ where: { matterType_category: { matterType: type, category } } });
       const fallback = specific ?? await tx.matterWorkflowConfiguration.findUnique({ where: { matterType_category: { matterType: type, category: "*" } } });
-      const requiresAdvocateReview = fallback?.requiresAdvocateReview ?? type === "LEGAL_NOTICE";
+      const requiresAdvocateReview = fallback?.requiresAdvocateReview ?? true;
       const generationTask = taskTypes[0];
       const run = await tx.aiRun.create({ data: {
         matterId, taskType: generationTask, provider: settings.provider, modelName: settings.modelName || "NOT_CONFIGURED",

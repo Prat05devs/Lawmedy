@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
+import { callFallback, contentsToText, fallbackProviders, type ModelResponse } from "./llm-fallback";
 import { analysisSchema, RTI_SYSTEM_PROMPT, SYSTEM_PROMPT } from "./analysis";
 import {
   evidenceExtractionSchema,
@@ -83,7 +84,8 @@ export class GeminiService {
   private async generate(
     client: GoogleGenAI,
     params: Parameters<GoogleGenAI["models"]["generateContent"]>[0],
-  ) {
+    options: { allowFallback?: boolean } = {},
+  ): Promise<ModelResponse> {
     const fallbacks = this.config
       .get<string>("GEMINI_FALLBACK_MODELS", "gemini-3.7-flash,gemini-3.6-flash")
       .split(",")
@@ -100,6 +102,22 @@ export class GeminiService {
         const fallbackWorthy = /\b(404|429|500|502|503|504)\b|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|timed? ?out|abort/i.test(text);
         this.logger.warn(`Gemini ${model} failed: ${text.replace(/key=[^&\s"]+/gi, "key=<redacted>").slice(0, 200)}`);
         if (!fallbackWorthy) throw error;
+      }
+    }
+    // Every Gemini model is unavailable: try the extra providers. They only see text, so steps
+    // that need an attached image or PDF (reading uploads) are not offered to them.
+    if (options.allowFallback !== false) {
+      const system = typeof params.config?.systemInstruction === "string" ? params.config.systemInstruction : "";
+      const user = contentsToText(params.contents);
+      for (const provider of fallbackProviders(this.config)) {
+        try {
+          const response = await callFallback(provider, { system, user, schema: params.config?.responseJsonSchema });
+          this.logger.warn(`Gemini unavailable; answered by ${response.servedBy}`);
+          return response;
+        } catch (error) {
+          lastError = error;
+          this.logger.warn(`Fallback ${provider.name} failed: ${(error instanceof Error ? error.message : String(error)).slice(0, 200)}`);
+        }
       }
     }
     throw lastError;
@@ -175,7 +193,7 @@ export class GeminiService {
         responseJsonSchema: modelSchema(evidenceExtractionSchema),
         maxOutputTokens: 4096,
       },
-    });
+    }, { allowFallback: false });
     return {
       text: response.text ?? "",
       raw: JSON.parse(JSON.stringify(response)) as Record<string, unknown>,

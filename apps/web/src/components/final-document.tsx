@@ -35,7 +35,7 @@ export function FinalDocumentPanel({
         <div className="final-document-ready">
           <FileCheck2 size={32} />
           <div>
-            <h3>{matterType === "RTI" ? "Structured RTI PDF" : "Advocate-reviewed PDF"}</h3>
+            <h3>Advocate-reviewed PDF</h3>
             <p className="muted small">
               Generated {new Date(finalDocument.generatedAt).toLocaleDateString("en-IN")}
               {` · ${Math.max(1, Math.ceil(finalDocument.sizeBytes / 1024))} KB`}

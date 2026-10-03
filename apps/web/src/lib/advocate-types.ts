@@ -11,6 +11,15 @@ export type NoticeContent = {
   responsePeriod: string;
 };
 
+export type RtiContent = {
+  status: "READY";
+  applicant: { name: string; address?: string | null; phone?: string | null };
+  publicAuthority: { name: string; department: string; address: string };
+  subject: string;
+  period: { from: string | null; to: string | null } | null;
+  informationRequests: Array<{ text: string; caseFactIds: string[] }>;
+};
+
 export type AdvocateAssignment = {
   id: string;
   status: "PENDING" | "WAITING_FOR_USER" | "COMPLETED";
@@ -35,6 +44,17 @@ export type AdvocateMatterDetail = {
       value: { text?: string; sourceLabel?: string };
       source: string;
     }>;
+    applicantAddress: string | null;
+    applicantPhone: string | null;
+    rtiDetail: null | {
+      subject: string;
+      department: string;
+      governmentLevel: string;
+      state: string | null;
+      periodFrom: string | null;
+      periodTo: string | null;
+      publicAuthority: { name: string; address: string };
+    };
     recipient: null | {
       name: string;
       address: string;
@@ -59,7 +79,7 @@ export type AdvocateMatterDetail = {
         versionNumber: number;
         createdByType: "AI" | "ADVOCATE";
         createdAt: string;
-        content: NoticeContent;
+        content: NoticeContent | RtiContent;
         qa: null | {
           passed: boolean;
           issues: Array<{

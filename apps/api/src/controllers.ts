@@ -119,7 +119,7 @@ export class MattersController {
         this.evidence.list(uid, id),
         hasStatement ? this.review.get(uid, id) : null,
         this.documents.get(uid, id),
-        isRti ? null : this.advocates.requestsForUser(uid, id),
+        this.advocates.requestsForUser(uid, id),
         this.finalDocuments.get(uid, id),
         isRti ? this.rti.authorities() : [],
         isRti ? this.rti.get(uid, id) : null,

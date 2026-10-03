@@ -28,4 +28,9 @@ async function bootstrap() {
   server.keepAliveTimeout = 65_000;
   server.headersTimeout = 66_000;
 }
+// Background work (sweeps, post-response jobs) runs outside any request. Log its failures
+// instead of letting one stray rejection exit the process.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason instanceof Error ? reason.message : reason);
+});
 void bootstrap();

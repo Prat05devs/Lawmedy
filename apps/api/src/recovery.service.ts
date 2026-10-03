@@ -44,7 +44,9 @@ export class RecoveryService implements OnApplicationBootstrap, OnModuleDestroy 
     let recovered = 0;
     try {
       const now = Date.now();
-      const ago = (minutes: number) => new Date(now - minutes * MINUTE);
+      // A forced (admin) sweep skips the "stuck for N minutes" cutoffs; the services' own claim
+      // logic still prevents a running task from being started twice.
+      const ago = (minutes: number) => new Date(force ? now + MINUTE : now - minutes * MINUTE);
 
       const drafts = await this.db.matter.findMany({
         where: { OR: [{ status: "PAID", updatedAt: { lt: ago(2) } }, { status: "AI_PROCESSING", updatedAt: { lt: ago(5) } }] },
@@ -97,6 +99,9 @@ export class RecoveryService implements OnApplicationBootstrap, OnModuleDestroy 
         this.logger.warn(`Recovering final PDF for matter ${id}`);
         await this.finalDocuments.generateAndDeliver(id).catch((error: unknown) => this.logger.error(`Final PDF recovery failed for ${id}`, error instanceof Error ? error.message : String(error)));
       }
+    } catch (error) {
+      // A database blip or provider error must never take the API down; the next sweep retries.
+      this.logger.error(`Recovery sweep failed: ${error instanceof Error ? error.message.split("\n").pop() : String(error)}`);
     } finally {
       this.running = false;
     }

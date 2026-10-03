@@ -2,11 +2,12 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, LoaderCircle, MessageSquarePlus, Save } from "lucide-react";
-import type { AdvocateMatterDetail } from "@/lib/advocate-types";
+import type { AdvocateMatterDetail, NoticeContent, RtiContent } from "@/lib/advocate-types";
 import {
   approveAdvocateDraft,
   requestAdvocateInformation,
   saveAdvocateDraft,
+  saveAdvocateRtiDraft,
 } from "@/lib/advocate-actions";
 
 export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail }) {
@@ -18,11 +19,15 @@ export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail
   if (!version) return <p className="message error">No draft is available.</p>;
   return (
     <div className="advocate-action-stack">
-      <DraftEditForm
-        matterId={detail.matter.id}
-        version={version}
-        editable={editable}
-      />
+      {detail.matter.type === "RTI" ? (
+        <RtiEditForm matterId={detail.matter.id} versionNumber={version.versionNumber} content={version.content as RtiContent} editable={editable} />
+      ) : (
+        <DraftEditForm
+          matterId={detail.matter.id}
+          version={version}
+          editable={editable}
+        />
+      )}
       {detail.matter.status === "UNDER_ADVOCATE_REVIEW" && (
         <div className="advocate-decision-grid">
           <InformationRequestForm matterId={detail.matter.id} />
@@ -56,7 +61,7 @@ function DraftEditForm({
     saveAdvocateDraft.bind(null, matterId),
     {},
   );
-  const content = version.content;
+  const content = version.content as NoticeContent;
   return (
     <form action={action} className="panel advocate-draft-form form-stack">
       <div className="section-heading">
@@ -117,6 +122,51 @@ function DraftEditForm({
         Response period
         <input name="responsePeriod" defaultValue={content.responsePeriod} required disabled={!editable} />
       </label>
+      {editable && (
+        <button className="button primary" disabled={pending}>
+          {pending ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
+          {pending ? "Saving…" : "Save as new version"}
+        </button>
+      )}
+      <Messages state={state} />
+    </form>
+  );
+}
+
+function RtiEditForm({ matterId, versionNumber, content, editable }: { matterId: string; versionNumber: number; content: RtiContent; editable: boolean }) {
+  const [state, action, pending] = useActionState(saveAdvocateRtiDraft.bind(null, matterId), {});
+  return (
+    <form action={action} className="panel advocate-draft-form form-stack">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">CURRENT VERSION {versionNumber}</p>
+          <h2>Review and edit the RTI application</h2>
+        </div>
+      </div>
+      <input type="hidden" name="expectedVersion" value={versionNumber} />
+      <div className="message payment-pending">
+        The applicant and the public authority come from the details the user saved and cannot be edited here.
+      </div>
+      <label>
+        Subject
+        <input name="subject" defaultValue={content.subject} required maxLength={1000} disabled={!editable} />
+      </label>
+      <div className="advocate-paragraphs">
+        <h3>Information requested</h3>
+        {content.informationRequests.map((request, index) => (
+          <label key={index}>
+            Request {index + 1}
+            <textarea name="request" defaultValue={request.text} rows={4} maxLength={5000} disabled={!editable} />
+            <span className="field-note">Based on {request.caseFactIds.length} confirmed fact reference(s). Clear the box to remove this request.</span>
+          </label>
+        ))}
+        {editable && (
+          <label>
+            Add another request <span className="muted small">Optional</span>
+            <textarea name="request" rows={3} maxLength={5000} placeholder="One identifiable record per request." />
+          </label>
+        )}
+      </div>
       {editable && (
         <button className="button primary" disabled={pending}>
           {pending ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}

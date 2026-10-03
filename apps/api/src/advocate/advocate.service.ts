@@ -12,6 +12,7 @@ import type {
   AdvocateDraftDto,
   AdvocateRequestDto,
   AdvocateResponseDto,
+  AdvocateRtiDraftDto,
 } from "../dto";
 import { FinalDocumentService } from "../final-document/final-document.service";
 
@@ -79,11 +80,7 @@ export class AdvocateService {
           include: {
             user: { select: { fullName: true, email: true } },
             statements: { orderBy: { createdAt: "desc" }, take: 1 },
-            documents: {
-              where: { documentType: "LEGAL_NOTICE" },
-              select: { currentVersion: true },
-              take: 1,
-            },
+            documents: { select: { currentVersion: true }, take: 1 },
           },
         },
       },
@@ -107,8 +104,8 @@ export class AdvocateService {
               orderBy: { createdAt: "asc" },
               include: { extraction: true },
             },
+            rtiDetail: { include: { publicAuthority: true } },
             documents: {
-              where: { documentType: "LEGAL_NOTICE" },
               include: { versions: { orderBy: { versionNumber: "desc" } } },
               take: 1,
             },
@@ -157,7 +154,7 @@ export class AdvocateService {
         },
       });
       if (!document || !document.versions[0])
-        throw new ConflictException("No draft is available to edit.");
+        throw new ConflictException("No legal notice draft is available to edit.");
       if (document.currentVersion !== input.expectedVersion)
         throw new ConflictException(
           "The draft changed. Refresh before saving your edits.",
@@ -211,6 +208,47 @@ export class AdvocateService {
           entityType: "DocumentVersion",
           entityId: version.id,
         },
+      });
+    });
+    return this.get(advocateId, matterId);
+  }
+
+  async editRtiDraft(advocateId: string, matterId: string, input: AdvocateRtiDraftDto) {
+    await this.db.$transaction(async (tx) => {
+      await this.lockAssigned(tx, advocateId, matterId, ["UNDER_ADVOCATE_REVIEW", "USER_RESPONSE_REQUIRED"]);
+      const document = await tx.legalDocument.findFirst({
+        where: { matterId, documentType: "RTI" },
+        include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } },
+      });
+      if (!document || !document.versions[0]) throw new ConflictException("No RTI draft is available to edit.");
+      if (document.currentVersion !== input.expectedVersion)
+        throw new ConflictException("The draft changed. Refresh before saving your edits.");
+      const current = document.versions[0].content;
+      if (!current || typeof current !== "object" || Array.isArray(current) || !Array.isArray((current as Record<string, unknown>).informationRequests))
+        throw new ConflictException("The current draft is invalid.");
+      const base = current as Record<string, unknown> & { informationRequests: { text?: string; caseFactIds?: string[] }[] };
+      // Each request keeps the confirmed-fact references it was drafted from. A request the
+      // advocate adds borrows the draft's references so the stored application stays valid.
+      const fallbackIds = base.informationRequests.find((item) => item.caseFactIds?.length)?.caseFactIds ?? [];
+      const content: Prisma.InputJsonValue = {
+        ...(base as Prisma.InputJsonObject),
+        status: "READY",
+        missingInformation: [],
+        subject: input.subject,
+        informationRequests: input.informationRequests.map((item, index) => ({
+          text: item.text,
+          caseFactIds: base.informationRequests[index]?.caseFactIds?.length ? base.informationRequests[index].caseFactIds! : fallbackIds,
+        })),
+      };
+      const version = await tx.documentVersion.create({
+        data: { documentId: document.id, versionNumber: document.currentVersion + 1, content, createdByType: "ADVOCATE", createdById: advocateId },
+      });
+      await tx.legalDocument.update({
+        where: { id: document.id },
+        data: { currentVersion: version.versionNumber, status: "READY", reviewedById: null, reviewedAt: null },
+      });
+      await tx.auditLog.create({
+        data: { actorType: "ADVOCATE", actorId: advocateId, action: "ADVOCATE_DRAFT_EDITED", entityType: "DocumentVersion", entityId: version.id },
       });
     });
     return this.get(advocateId, matterId);
@@ -272,8 +310,9 @@ export class AdvocateService {
       const assignment = await this.lockAssigned(tx, advocateId, matterId, [
         "UNDER_ADVOCATE_REVIEW",
       ]);
+      const matter = await tx.matter.findUniqueOrThrow({ where: { id: matterId }, select: { type: true } });
       const document = await tx.legalDocument.findFirst({
-        where: { matterId, documentType: "LEGAL_NOTICE", status: "READY" },
+        where: { matterId, documentType: matter.type === "RTI" ? "RTI" : "LEGAL_NOTICE", status: "READY" },
       });
       if (!document || document.currentVersion < 1)
         throw new ConflictException("No final draft is available to approve.");
@@ -294,8 +333,8 @@ export class AdvocateService {
         data: {
           userId: assignment.userId,
           matterId,
-          title: "Your legal notice was approved",
-          message: "Your advocate has approved the final draft.",
+          title: matter.type === "RTI" ? "Your RTI application was approved" : "Your legal notice was approved",
+          message: "Your advocate has approved the final draft. We are preparing your PDF.",
         },
       });
       await tx.auditLog.create({

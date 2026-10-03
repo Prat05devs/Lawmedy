@@ -30,3 +30,12 @@ describe("RecoveryService", () => {
     expect(documents.generateAfterPayment).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("RecoveryService resilience", () => {
+  it("logs a database failure instead of throwing, so a timer can never crash the API", async () => {
+    const db = { matter: { findMany: jest.fn().mockRejectedValue(new Error("Can't reach database server")) }, evidence: { findMany: jest.fn() }, aiRun: { count: jest.fn(), findFirst: jest.fn() } };
+    const service = new RecoveryService(db as never, {} as never, {} as never, {} as never);
+    await expect(service.sweep()).resolves.toEqual({ recovered: 0, skipped: false });
+    await expect(service.sweep()).resolves.toEqual({ recovered: 0, skipped: false });
+  });
+});

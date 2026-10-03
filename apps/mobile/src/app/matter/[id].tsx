@@ -59,8 +59,8 @@ export default function MatterScreen() {
         {review && <ReviewPanel matterId={mt.id} review={review} step={isRti ? "05" : "04"} onChanged={reloadAll} />}
         {review && <PaymentPanel matterId={mt.id} review={review} step={isRti ? "06" : "05"} onChanged={reloadAll} />}
         <DraftPanel matterId={mt.id} draft={draft} step={isRti ? "07" : "06"} onChanged={reloadAll} />
-        {advocateRequests && <AdvocatePanel matterId={mt.id} data={advocateRequests} step="07" onChanged={reloadAll} />}
-        <FinalPanel matterId={mt.id} doc={finalDocument} type={mt.type} step="08" onChanged={reloadAll} />
+        {advocateRequests && <AdvocatePanel matterId={mt.id} data={advocateRequests} step={isRti ? "08" : "07"} onChanged={reloadAll} />}
+        <FinalPanel matterId={mt.id} doc={finalDocument} type={mt.type} step={isRti ? "09" : "08"} onChanged={reloadAll} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

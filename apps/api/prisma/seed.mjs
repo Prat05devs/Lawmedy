@@ -49,7 +49,7 @@ for (const authority of authorities)
   });
 for (const configuration of [
   { matterType: "LEGAL_NOTICE", category: "*", requiresAdvocateReview: true },
-  { matterType: "RTI", category: "*", requiresAdvocateReview: false },
+  { matterType: "RTI", category: "*", requiresAdvocateReview: true },
 ])
   await db.matterWorkflowConfiguration.upsert({
     where: {

@@ -43,6 +43,33 @@ export async function saveAdvocateDraft(
   return { success: "A new advocate version has been saved." };
 }
 
+export async function saveAdvocateRtiDraft(
+  matterId: string,
+  _: FormState,
+  data: FormData,
+): Promise<FormState> {
+  const informationRequests = data
+    .getAll("request")
+    .map((value) => String(value).trim())
+    .filter(Boolean)
+    .map((text) => ({ text }));
+  try {
+    await api(`/advocate/matters/${encodeURIComponent(matterId)}/rti-draft`, {
+      method: "POST",
+      body: JSON.stringify({
+        expectedVersion: Number(data.get("expectedVersion")),
+        subject: data.get("subject"),
+        informationRequests,
+      }),
+    });
+  } catch (error) {
+    return failure(error);
+  }
+  revalidatePath(`/advocate/matters/${matterId}`);
+  revalidatePath("/advocate");
+  return { success: "A new advocate version has been saved." };
+}
+
 export async function requestAdvocateInformation(
   matterId: string,
   _: FormState,

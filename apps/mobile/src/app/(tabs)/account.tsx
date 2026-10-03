@@ -3,6 +3,8 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { Body, Button, Card, H1, Field, Message, Screen } from "@/components/ui";
+import { Group, GroupLabel, ListRow } from "@/components/app-ui";
+import { useRouter } from "expo-router";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +20,7 @@ const links = [
 
 export default function Account() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [word, setWord] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,14 +37,11 @@ export default function Account() {
     <Screen>
       <H1>{user?.fullName}</H1>
       <Body muted style={{ marginBottom: 22 }}>{user?.email}</Body>
-      <Card style={{ paddingVertical: 6 }}>
-        {links.map((l, i) => (
-          <Pressable key={l.path} onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}${l.path}`)} style={[s.row, i > 0 && s.border]}>
-            <Text style={s.label}>{l.label}</Text>
-            <Ionicons name="open-outline" size={17} color="#9aa3b5" />
-          </Pressable>
-        ))}
-      </Card>
+      <Group>
+        {links.map((l) => <ListRow key={l.path} title={l.label} onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}${l.path}`)} />)}
+        <ListRow title="Photo credits" onPress={() => router.push("/credits")} last />
+      </Group>
+      <GroupLabel>Account</GroupLabel>
       <Card>
         <Text style={s.label}>Delete your account</Text>
         {!deleting ? (

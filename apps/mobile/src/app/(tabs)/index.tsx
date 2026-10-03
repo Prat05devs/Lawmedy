@@ -1,13 +1,18 @@
 import React, { useCallback, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link, useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Body, Button, H1, Loading, Message, StatusBadge } from "@/components/ui";
+import { Group, GroupLabel, PhotoCard, tap } from "@/components/app-ui";
+import { Body, Loading, Message, StatusBadge } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { courts } from "@/lib/courts";
 import { errorMessage, shortDate } from "@/lib/hooks";
-import { colors, fonts } from "@/lib/theme";
-import type { Matter } from "@/lib/types";
+import { colors, fonts, radius } from "@/lib/theme";
+import { progressNote, type Matter } from "@/lib/types";
+
+const NEEDS_YOU: Matter["status"][] = ["DRAFT", "INTAKE_IN_PROGRESS", "READY_FOR_PAYMENT", "USER_RESPONSE_REQUIRED"];
 
 export default function Matters() {
   const { user } = useAuth();
@@ -21,37 +26,50 @@ export default function Matters() {
     catch (e) { setError(errorMessage(e)); }
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+  const open = (m: Matter) => { tap(); router.push({ pathname: "/matter/[id]", params: { id: m.id } }); };
+  const next = matters?.find((m) => NEEDS_YOU.includes(m.status));
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.paper }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
-        <H1>Hello, {user?.fullName.split(" ")[0]}</H1>
-        <Body muted style={{ marginBottom: 20 }}>
-          {matters && matters.length > 0 ? `${matters.length} ${matters.length === 1 ? "matter" : "matters"}` : "You have not started a matter yet."}
-        </Body>
+        <Text style={s.hello}>Hello, {user?.fullName.split(" ")[0]}</Text>
+        <Text style={s.title}>Your matters</Text>
         <Message error={error} />
         {!matters && !error ? <Loading /> : null}
+
         {matters && matters.length === 0 && (
           <View style={{ gap: 14 }}>
-            <Body>Write what happened in your own words. You confirm every fact before anything is drafted.</Body>
-            <Button title="Start a matter" onPress={() => router.push("/new")} />
+            <Body muted>Nothing here yet. Start with what you need.</Body>
+            <PhotoCard photo={courts.bombayHighCourtStreet} title="Send a legal notice" onPress={() => router.push("/new")} />
+            <PhotoCard photo={courts.supremeCourtWide} title="File an RTI application" onPress={() => router.push("/new")} />
           </View>
         )}
+
+        {next && (
+          <Pressable onPress={() => open(next)} style={s.next} accessibilityRole="button">
+            <Text style={s.nextLabel}>Needs you</Text>
+            <Text style={s.nextTitle}>{next.type === "RTI" ? "RTI application" : "Legal notice"} · {next.referenceNumber}</Text>
+            <Text style={s.nextText}>{progressNote[next.status]}</Text>
+            <View style={s.nextGo}><Text style={s.nextGoText}>Continue</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></View>
+          </Pressable>
+        )}
+
         {matters && matters.length > 0 && (
-          <View style={{ borderTopWidth: 1, borderTopColor: colors.line }}>
-            {matters.map((m) => (
-              <Link key={m.id} href={{ pathname: "/matter/[id]", params: { id: m.id } }} asChild>
-                <Pressable style={s.row}>
+          <>
+            <GroupLabel>All matters</GroupLabel>
+            <Group>
+              {matters.map((m, i) => (
+                <Pressable key={m.id} onPress={() => open(m)} style={({ pressed }) => [s.row, i === matters.length - 1 && { borderBottomWidth: 0 }, pressed && { backgroundColor: colors.tint }]} accessibilityRole="button">
                   <View style={{ flex: 1, gap: 6 }}>
-                    <Text style={s.title}>{m.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
-                    <Text style={s.ref}>{m.referenceNumber} · {shortDate(m.createdAt)}</Text>
+                    <Text style={s.rowTitle}>{m.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
+                    <Text style={s.rowMeta}>{m.referenceNumber} · {shortDate(m.createdAt)}</Text>
                     <StatusBadge status={m.status} />
                   </View>
-                  <Text style={s.arrow}>›</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.muted} />
                 </Pressable>
-              </Link>
-            ))}
-          </View>
+              ))}
+            </Group>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -59,8 +77,15 @@ export default function Matters() {
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.line },
-  title: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink },
-  ref: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted },
-  arrow: { fontFamily: fonts.sans, fontSize: 28, color: colors.muted },
+  hello: { fontFamily: fonts.sans, fontSize: 15, color: colors.muted, marginTop: 8 },
+  title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 40, color: colors.ink, marginBottom: 16 },
+  next: { backgroundColor: colors.ink, borderRadius: radius.md, padding: 18, marginBottom: 6 },
+  nextLabel: { fontFamily: fonts.sansMedium, fontSize: 13, color: "#cfc8b8", marginBottom: 6 },
+  nextTitle: { fontFamily: fonts.serif, fontSize: 22, color: "#fff", marginBottom: 6 },
+  nextText: { fontFamily: fonts.sans, fontSize: 14.5, lineHeight: 21, color: "#e9e3d6" },
+  nextGo: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, alignSelf: "flex-start" },
+  nextGoText: { fontFamily: fonts.sansBold, fontSize: 15, color: "#fff" },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  rowTitle: { fontFamily: fonts.serif, fontSize: 19, color: colors.ink },
+  rowMeta: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted },
 });

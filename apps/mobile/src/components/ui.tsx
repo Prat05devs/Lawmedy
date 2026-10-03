@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View, ViewStyle, StyleProp,
 } from "react-native";
@@ -66,7 +66,12 @@ export function Card({ children, style }: { children: React.ReactNode; style?: S
   return <View style={[s.card, style]}>{children}</View>;
 }
 
+// Inside the matter stepper the step row already shows the title, so panels hide their own.
+export const PanelHeaderVisible = createContext(true);
+
 export function PanelHeader({ step, title, subtitle }: { step: string; title: string; subtitle?: string }) {
+  const visible = useContext(PanelHeaderVisible);
+  if (!visible) return subtitle ? <Text style={[s.body, { color: colors.muted, fontSize: 14, marginBottom: 12 }]}>{subtitle}</Text> : null;
   return (
     <View style={{ flexDirection: "row", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
       <Text style={s.stepNum}>{step}</Text>

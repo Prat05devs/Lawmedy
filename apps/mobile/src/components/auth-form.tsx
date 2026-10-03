@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Body, Button, Field, H1, Message } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
@@ -11,6 +11,7 @@ import { WEB_URL } from "@/lib/links";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const { login, signup } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +38,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.paper }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 28, paddingHorizontal: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={10} style={{ marginBottom: 18 }}><Text style={s.link}>‹ Back</Text></Pressable>
         <Image source={require("../../assets/logo-dark.png")} style={{ width: 140, height: 38, marginBottom: 40 }} contentFit="contain" contentPosition="left" />
         <H1>{mode === "login" ? "Log in" : "Create your account"}</H1>
         <Body muted style={{ marginBottom: 24 }}>

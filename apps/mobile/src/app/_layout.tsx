@@ -16,10 +16,13 @@ function Routes() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="matter/[id]" options={{ headerShown: true, title: "", headerTintColor: colors.navy, headerStyle: { backgroundColor: colors.paper }, headerShadowVisible: false, headerBackTitle: "Matters" }} />
+        <Stack.Screen name="resume" />
+        <Stack.Screen name="matter/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
-        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(public)" />
+        <Stack.Screen name="onboarding" options={{ animation: "fade" }} />
+        <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
       </Stack.Protected>
     </Stack>
   );

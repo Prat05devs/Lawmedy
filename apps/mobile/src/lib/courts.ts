@@ -5,8 +5,6 @@ import credits from "../../assets/courts/credits.json";
 export const courts = {
   supremeCourt: require("../../assets/courts/supreme-court.jpg"),
   supremeCourtWide: require("../../assets/courts/supreme-court-2.jpg"),
-  supremeCourtGate: require("../../assets/courts/supreme-court-grounds.jpg"),
-  bombayHighCourt: require("../../assets/courts/bombay-high-court.jpg"),
   bombayHighCourtStreet: require("../../assets/courts/bombay-high-court-2.jpg"),
   madrasHighCourt: require("../../assets/courts/madras-high-court.jpg"),
   calcuttaHighCourt: require("../../assets/courts/calcutta-high-court.jpg"),
@@ -16,8 +14,6 @@ export const courts = {
 export const courtNames: Record<string, string> = {
   "supreme-court.jpg": "Supreme Court of India, New Delhi",
   "supreme-court-2.jpg": "Supreme Court of India, New Delhi",
-  "supreme-court-grounds.jpg": "Supreme Court of India, New Delhi",
-  "bombay-high-court.jpg": "Bombay High Court, Mumbai",
   "bombay-high-court-2.jpg": "Bombay High Court, Mumbai",
   "madras-high-court.jpg": "Madras High Court, Chennai",
   "calcutta-high-court.jpg": "Calcutta High Court, Kolkata",

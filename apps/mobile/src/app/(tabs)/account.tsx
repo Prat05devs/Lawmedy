@@ -37,6 +37,9 @@ export default function Account() {
     <Screen>
       <H1>{user?.fullName}</H1>
       <Body muted style={{ marginBottom: 22 }}>{user?.email}</Body>
+      <Group style={{ marginBottom: 24 }}>
+        <ListRow icon="folder" title="My matters" text="Every legal notice and RTI application you started" onPress={() => router.push("/matters")} last />
+      </Group>
       <Group>
         {links.map((l) => <ListRow key={l.path} title={l.label} onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}${l.path}`)} />)}
         <ListRow title="Photo credits" onPress={() => router.push("/credits")} last />

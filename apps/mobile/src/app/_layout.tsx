@@ -18,6 +18,7 @@ function Routes() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="resume" />
         <Stack.Screen name="matter/[id]" />
+        <Stack.Screen name="matters" />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
         <Stack.Screen name="(public)" />

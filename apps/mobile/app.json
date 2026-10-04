@@ -66,7 +66,12 @@
       ]
     ],
     "extra": {
-      "apiUrl": "https://lawmedy-api.onrender.com"
-    }
+      "apiUrl": "https://lawmedy-api.onrender.com",
+      "router": {},
+      "eas": {
+        "projectId": "2476c535-9857-4fd1-af74-6621da960759"
+      }
+    },
+    "owner": "wtsolutions5"
   }
 }

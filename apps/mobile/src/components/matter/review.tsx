@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { Body, Button, Card, Field, Message, PanelHeader } from "@/components/ui";
 import { post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
@@ -62,7 +62,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
       {!review.prepared && editable ? (
         <>
           <Body muted style={{ marginBottom: 12 }}>When you are done with the questions and documents, gather your facts to review.</Body>
-          <Button title="Prepare my facts" icon="sparkles-outline" onPress={prepare} loading={busy} />
+          <Button title="Prepare my facts" icon="cpu" onPress={prepare} loading={busy} />
         </>
       ) : (
         <>
@@ -75,7 +75,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
                 const on = selected[g.type] === v.id;
                 return (
                   <Pressable key={v.id} disabled={!editable} onPress={() => setSelected((p) => ({ ...p, [g.type]: v.id }))} style={{ flexDirection: "row", gap: 10, padding: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1.5, borderColor: on ? colors.navy : colors.line, backgroundColor: on ? colors.tint : colors.card }}>
-                    <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={20} color={colors.navy} />
+                    <Feather name={on ? "check-circle" : "circle"} size={20} color={colors.navy} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14.5, color: colors.ink }}>{v.value}</Text>
                       <Body muted small>{sourceName[v.source]} · {v.sourceLabel}</Body>
@@ -85,12 +85,12 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
               })}
             </View>
           ))}
-          <Text style={{ fontFamily: fonts.serif, fontSize: 17, color: colors.ink, marginBottom: 10 }}>Your contact details</Text>
+          <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>Your contact details</Text>
           <Field label="Your postal address" editable={editable} multiline value={address} onChangeText={setAddress} placeholder="So the reply reaches you" style={{ minHeight: 80 }} />
           <Field label="Phone (optional)" editable={editable} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+91" />
           {review.matterType === "LEGAL_NOTICE" && (
             <>
-              <Text style={{ fontFamily: fonts.serif, fontSize: 17, color: colors.ink, marginBottom: 10 }}>The other party</Text>
+              <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>The other party</Text>
               <Field label="Name" editable={editable} value={rName} onChangeText={setRName} placeholder="Person or company" />
               <Field label="Address" editable={editable} multiline value={rAddress} onChangeText={setRAddress} placeholder="Where the notice will be sent" style={{ minHeight: 80 }} />
               <Field label="Phone (optional)" editable={editable} value={rPhone} onChangeText={setRPhone} keyboardType="phone-pad" />
@@ -99,7 +99,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
           )}
           {editable && (
             <Pressable onPress={() => setAgree((v) => !v)} style={{ flexDirection: "row", gap: 10, marginVertical: 10 }}>
-              <Ionicons name={agree ? "checkbox" : "square-outline"} size={24} color={colors.navy} />
+              <Feather name={agree ? "check-square" : "square"} size={24} color={colors.navy} />
               <Body style={{ flex: 1, fontSize: 14 }}>I have checked these facts and confirm they are accurate to the best of my knowledge.</Body>
             </Pressable>
           )}

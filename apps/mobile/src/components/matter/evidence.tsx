@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, Text, View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { Body, Button, Card, Message, PanelHeader } from "@/components/ui";
 import { post, uploadFile } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
@@ -45,7 +45,7 @@ export function EvidencePanel({ matterId, items, editable, step, onChanged }: { 
       <PanelHeader step={step} title="Your documents" subtitle="Optional. Agreements, receipts, transfers, screenshots." />
       {items.map((e) => (
         <View key={e.id} style={{ flexDirection: "row", gap: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line, alignItems: "flex-start" }}>
-          <Ionicons name={e.mimeType === "application/pdf" ? "document-text-outline" : "image-outline"} size={22} color={colors.navy2} />
+          <Feather name={e.mimeType === "application/pdf" ? "file-text" : "image"} size={22} color={colors.navy2} />
           <View style={{ flex: 1 }}>
             <Text numberOfLines={1} style={{ fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink }}>{e.originalFilename}</Text>
             <Body muted small>
@@ -58,10 +58,10 @@ export function EvidencePanel({ matterId, items, editable, step, onChanged }: { 
       <Message error={error} />
       {editable && (
         <View style={{ gap: 10, marginTop: 12 }}>
-          <Button variant="outline" title="Choose a PDF or image" icon="attach" onPress={pickFile} loading={busy} />
+          <Button variant="outline" title="Choose a PDF or image" icon="paperclip" onPress={pickFile} loading={busy} />
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Button variant="outline" title="Camera" icon="camera-outline" onPress={() => pickPhoto(true)} disabled={busy} style={{ flex: 1 }} />
-            <Button variant="outline" title="Photos" icon="images-outline" onPress={() => pickPhoto(false)} disabled={busy} style={{ flex: 1 }} />
+            <Button variant="outline" title="Camera" icon="camera" onPress={() => pickPhoto(true)} disabled={busy} style={{ flex: 1 }} />
+            <Button variant="outline" title="Photos" icon="image" onPress={() => pickPhoto(false)} disabled={busy} style={{ flex: 1 }} />
           </View>
         </View>
       )}

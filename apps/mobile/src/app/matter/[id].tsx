@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, KeyboardAvoidingView, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BarButton, tap } from "@/components/app-ui";
 import { Body, Loading, Message, PanelHeaderVisible, StatusBadge } from "@/components/ui";
@@ -70,10 +70,10 @@ export default function MatterScreen() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.paper }}>
-      <View style={s.bar}><BarButton icon="chevron-back" label="Matters" onPress={() => router.back()} /></View>
+      <View style={s.bar}><BarButton icon="chevron-left" label="Matters" onPress={() => router.back()} /></View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} />}>
-          <Text style={s.title}>{mt.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>{mt.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
           <Text style={s.meta}>{mt.referenceNumber} · started {shortDate(mt.createdAt)}</Text>
           <View style={{ marginTop: 10 }}><StatusBadge status={mt.status} /></View>
           <View style={s.note}><Body style={{ fontSize: 15 }}>{progressNote[mt.status]}</Body></View>
@@ -94,13 +94,13 @@ export default function MatterScreen() {
                       accessibilityState={{ expanded, disabled: !expandable }}
                     >
                       <View style={[s.dot, state === "done" && s.dotDone, state === "now" && s.dotNow]}>
-                        {state === "done" ? <Ionicons name="checkmark" size={14} color="#fff" /> : <Text style={[s.dotText, state === "now" && { color: "#fff" }]}>{index + 1}</Text>}
+                        {state === "done" ? <Feather name="check" size={14} color="#fff" /> : <Text style={[s.dotText, state === "now" && { color: "#fff" }]}>{index + 1}</Text>}
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[s.stepTitle, state === "later" && { color: colors.muted }]}>{step.title}</Text>
                         <Text style={s.stepState}>{state === "done" ? "Done" : state === "now" ? "Your next step" : step.optional ? "Optional" : state === "open" ? "" : "Later"}</Text>
                       </View>
-                      {expandable ? <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} /> : null}
+                      {expandable ? <Feather name={expanded ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} /> : null}
                     </Pressable>
                     {expanded ? <View style={{ paddingTop: 4, paddingBottom: 8 }}>{step.render()}</View> : null}
                   </View>
@@ -116,7 +116,7 @@ export default function MatterScreen() {
 
 const s = StyleSheet.create({
   bar: { height: 48, paddingHorizontal: 12, justifyContent: "center" },
-  title: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 38, color: colors.ink },
+  title: { fontFamily: fonts.display, fontSize: 28, lineHeight: 31, letterSpacing: -0.8, color: colors.ink },
   meta: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.muted, marginTop: 4 },
   note: { marginTop: 14, padding: 14, borderRadius: radius.md, backgroundColor: colors.tint },
   steps: { marginTop: 18, backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14 },

@@ -36,14 +36,14 @@ export function IntakePanel({ matterId, intake, editable, onChanged }: { matterI
       {intake.status === "FAILED" && (
         <>
           <Message error={intake.message || "We could not read your statement just now."} />
-          {editable && <Button variant="outline" title="Try again" icon="refresh" onPress={retry} loading={busy} style={{ marginTop: 12 }} />}
+          {editable && <Button variant="outline" title="Try again" icon="refresh-cw" onPress={retry} loading={busy} style={{ marginTop: 12 }} />}
         </>
       )}
       {intake.status === "SUCCEEDED" && a && (
         <>
           <Text style={{ fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 1.5, color: colors.gold, marginBottom: 6 }}>{a.category.replace(/_/g, " ")}</Text>
           <Body style={{ marginBottom: 14 }}>{a.summary}</Body>
-          {a.questions.length > 0 && <Text style={{ fontFamily: fonts.serif, fontSize: 17, color: colors.ink, marginBottom: 10 }}>A few questions</Text>}
+          {a.questions.length > 0 && <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>A few questions</Text>}
           {a.questions.map((q) => (
             <Field key={q.id} label={q.question} editable={editable} multiline value={answers[q.id] ?? q.answer?.answer ?? ""} onChangeText={(t) => setAnswers((p) => ({ ...p, [q.id]: t }))} placeholder="Your answer" style={{ minHeight: 70 }} />
           ))}

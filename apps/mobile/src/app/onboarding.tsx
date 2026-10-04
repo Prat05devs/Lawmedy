@@ -39,7 +39,7 @@ export default function Onboarding() {
           <View key={p.title} style={{ width }}>
             <Image source={p.photo} style={[s.photo, { height: Math.round(height * 0.55) }]} contentFit="cover" />
             <View style={s.copy}>
-              <Text style={s.title}>{p.title}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={s.title}>{p.title}</Text>
               <Text style={s.text}>{p.text}</Text>
             </View>
           </View>
@@ -59,7 +59,7 @@ export default function Onboarding() {
 const s = StyleSheet.create({
   photo: { width: "100%", backgroundColor: colors.tint },
   copy: { paddingHorizontal: 24, paddingTop: 28 },
-  title: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 38, color: colors.ink, marginBottom: 12 },
+  title: { fontFamily: fonts.display, fontSize: 28, lineHeight: 31, letterSpacing: -0.8, color: colors.ink, marginBottom: 12 },
   text: { fontFamily: fonts.sans, fontSize: 17, lineHeight: 25, color: colors.muted },
   skipWrap: { position: "absolute", top: 0, right: 0, left: 0, alignItems: "flex-end" },
   skip: { margin: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: "rgba(250,250,250,0.92)" },

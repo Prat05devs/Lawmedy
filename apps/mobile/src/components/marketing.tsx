@@ -29,7 +29,7 @@ export function FeatureBlock({ photo, title, text, action, onAction }: { photo: 
   return (
     <View style={{ marginBottom: 30 }}>
       <Image source={photo} style={s.photo} contentFit="cover" accessibilityIgnoresInvertColors />
-      <Text style={s.featureTitle}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={s.featureTitle}>{title}</Text>
       <Body muted>{text}</Body>
       {action ? <Pressable onPress={onAction} hitSlop={8}><Text style={s.link}>{action}</Text></Pressable> : null}
     </View>
@@ -41,7 +41,7 @@ export function Steps({ items }: { items: { title: string; text: string }[] }) {
     <View>
       {items.map((item, index) => (
         <View key={item.title} style={[s.step, index === 0 && { borderTopWidth: 1, borderTopColor: colors.line }]}>
-          <Text style={s.stepNum}>{index + 1}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.stepNum}>{index + 1}</Text>
           <View style={{ flex: 1 }}>
             <Text style={s.stepTitle}>{item.title}</Text>
             <Body muted small>{item.text}</Body>
@@ -74,10 +74,10 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
   if (!items.length) return null;
   return (
     <View style={{ marginBottom: 30 }}>
-      <Text style={s.sectionTitle}>What customers say</Text>
+      <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>What customers say</Text>
       {items.map((t) => (
         <View key={t.id} style={s.quote}>
-          <Text style={s.quoteText}>{t.quote}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.quoteText}>{t.quote}</Text>
           <Text style={s.quoteBy}>{t.name}{t.descriptor ? `, ${t.descriptor}` : ""}</Text>
         </View>
       ))}
@@ -85,7 +85,7 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
   );
 }
 
-export const SectionTitle = ({ children }: { children: React.ReactNode }) => <Text style={s.sectionTitle}>{children}</Text>;
+export const SectionTitle = ({ children }: { children: React.ReactNode }) => <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>{children}</Text>;
 
 const s = StyleSheet.create({
   page: { backgroundColor: "#fffefb", borderWidth: 1, borderColor: colors.line, padding: 18 },
@@ -96,16 +96,16 @@ const s = StyleSheet.create({
   bold: { fontWeight: "700" },
   sign: { fontFamily: "Georgia", fontStyle: "italic", fontSize: 12, color: "#5b554a", marginTop: 12 },
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: colors.tint, marginBottom: 14 },
-  featureTitle: { fontFamily: fonts.serif, fontSize: 24, color: colors.ink, marginBottom: 6 },
+  featureTitle: { fontFamily: fonts.displayBold, fontSize: 23, lineHeight: 30, letterSpacing: -0.3, color: colors.ink, marginBottom: 6 },
   link: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink, textDecorationLine: "underline", marginTop: 10 },
   step: { flexDirection: "row", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line },
-  stepNum: { fontFamily: fonts.serif, fontSize: 28, lineHeight: 30, color: colors.gold, width: 28 },
+  stepNum: { fontFamily: fonts.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.8, color: colors.gold, width: 28 },
   stepTitle: { fontFamily: fonts.sansBold, fontSize: 16, color: colors.ink, marginBottom: 3 },
   faq: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line },
   faqQ: { fontFamily: fonts.sansBold, fontSize: 15.5, color: colors.ink, flex: 1 },
   faqPlus: { fontFamily: fonts.sans, fontSize: 22, color: colors.ink, lineHeight: 22 },
-  sectionTitle: { fontFamily: fonts.serif, fontSize: 28, lineHeight: 33, color: colors.ink, marginBottom: 16 },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.8, color: colors.ink, marginBottom: 16 },
   quote: { marginBottom: 22 },
-  quoteText: { fontFamily: fonts.serif, fontSize: 21, lineHeight: 29, color: colors.ink, marginBottom: 8 },
+  quoteText: { fontFamily: fonts.displayBold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: colors.ink, marginBottom: 8 },
   quoteBy: { fontFamily: fonts.sans, fontSize: 14, color: colors.muted },
 });

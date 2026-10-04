@@ -26,7 +26,7 @@ export function DraftPanel({ matterId, draft, step, onChanged }: { matterId: str
       {draft.state === "FAILED" && (
         <>
           <Message error={draft.message || "We could not prepare the draft."} />
-          <Button variant="outline" title="Try again" icon="refresh" onPress={retry} loading={busy} style={{ marginTop: 12 }} />
+          <Button variant="outline" title="Try again" icon="refresh-cw" onPress={retry} loading={busy} style={{ marginTop: 12 }} />
         </>
       )}
       {draft.state === "READY" && draft.document && (

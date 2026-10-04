@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tap } from "@/components/app-ui";
 import { greeting, topics, type AssistantAction, type Topic } from "@/lib/assistant";
@@ -62,8 +62,8 @@ export function AssistantButton({ onPress }: { onPress: () => void }) {
       <Animated.View style={{ transform: [{ translateY }] }}>
         {!reduced && <Animated.View pointerEvents="none" style={[s.ring, { opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] }), transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }] }]} />}
         <Pressable onPress={() => { tap(); setShowTag(false); onPress(); }} accessibilityRole="button" accessibilityLabel="Open the Lawmedy assistant" style={({ pressed }) => [s.fab, pressed && { transform: [{ scale: 0.94 }] }]}>
-          <MaterialIcons name="chat-bubble" size={24} color="#fff" />
-          <View style={s.spark}><MaterialIcons name="auto-awesome" size={11} color={colors.ink} /></View>
+          <Feather name="message-circle" size={24} color="#fff" />
+          <View style={s.spark}><Feather name="cpu" size={11} color={colors.ink} /></View>
         </Pressable>
       </Animated.View>
     </View>
@@ -101,7 +101,7 @@ function Bubble({ message, onAction }: { message: Message; onAction: (to: Assist
       {message.action && (
         <Pressable onPress={() => { tap(); onAction(message.action!.to); }} accessibilityRole="button" style={({ pressed }) => [s.actionBtn, pressed && { backgroundColor: colors.tint2 }]}>
           <Text style={s.actionText}>{message.action.label}</Text>
-          <MaterialIcons name="arrow-forward" size={16} color={colors.ink} />
+          <Feather name="arrow-right" size={16} color={colors.ink} />
         </Pressable>
       )}
     </Animated.View>
@@ -119,16 +119,19 @@ export function AssistantSheet({ visible, onClose, onAction, prices }: { visible
   const scroller = useRef<ScrollView>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const nextId = useRef(1);
+  // Set synchronously, so two taps in the same frame cannot both start an answer.
+  const busy = useRef(false);
 
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const say = useCallback((texts: string[], action?: Topic["action"]) => {
+    busy.current = true;
     setTyping(true);
     let at = 0;
     texts.forEach((text, i) => {
       at += Math.min(1500, 550 + text.length * 7);
       timers.current.push(setTimeout(() => {
         setMessages((m) => [...m, { id: nextId.current++, from: "bot", text, action: i === texts.length - 1 ? action : undefined }]);
-        if (i === texts.length - 1) setTyping(false);
+        if (i === texts.length - 1) { busy.current = false; setTyping(false); }
       }, at));
     });
   }, []);
@@ -148,13 +151,13 @@ export function AssistantSheet({ visible, onClose, onAction, prices }: { visible
   useEffect(() => { const t = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60); return () => clearTimeout(t); }, [messages.length, typing]);
 
   const ask = (topic: Topic) => {
-    if (typing) return;
+    if (busy.current) return;
     tap();
     setAsked((a) => [...a, topic.id]);
     setMessages((m) => [...m, { id: nextId.current++, from: "me", text: topic.question }]);
     say(topic.answer(prices), topic.action);
   };
-  const restart = () => { clearTimers(); setTyping(false); setAsked([]); setMessages([]); say(greeting); };
+  const restart = () => { clearTimers(); busy.current = false; setTyping(false); setAsked([]); setMessages([]); say(greeting); };
   const suggestions = [...topics.filter((t) => !asked.includes(t.id)), ...topics.filter((t) => asked.includes(t.id))];
 
   if (!mounted) return null;
@@ -166,16 +169,16 @@ export function AssistantSheet({ visible, onClose, onAction, prices }: { visible
       <Animated.View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 12), transform: [{ translateY: slide.interpolate({ inputRange: [0, 1], outputRange: [700, 0] }) }] }]}>
         <View style={s.grabber} />
         <View style={s.header}>
-          <View style={s.avatar}><MaterialIcons name="auto-awesome" size={18} color="#fff" /></View>
+          <View style={s.avatar}><Feather name="cpu" size={18} color="#fff" /></View>
           <View style={{ flex: 1 }}>
-            <Text style={s.title}>Lawmedy assistant</Text>
+            <Text maxFontSizeMultiplier={1.3} style={s.title}>Lawmedy assistant</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={s.online} />
               <Text style={s.subtitle}>Quick answers from the Lawmedy team</Text>
             </View>
           </View>
-          <Pressable onPress={restart} hitSlop={10} accessibilityRole="button" accessibilityLabel="Start over" style={s.iconBtn}><MaterialIcons name="refresh" size={20} color={colors.muted} /></Pressable>
-          <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" style={s.iconBtn}><MaterialIcons name="close" size={22} color={colors.ink} /></Pressable>
+          <Pressable onPress={restart} hitSlop={10} accessibilityRole="button" accessibilityLabel="Start over" style={s.iconBtn}><Feather name="refresh-cw" size={20} color={colors.muted} /></Pressable>
+          <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" style={s.iconBtn}><Feather name="x" size={22} color={colors.ink} /></Pressable>
         </View>
 
         <ScrollView ref={scroller} style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 8 }}>
@@ -216,7 +219,7 @@ const s = StyleSheet.create({
   grabber: { alignSelf: "center", width: 36, height: 5, borderRadius: 3, backgroundColor: colors.line, marginTop: 8 },
   header: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
-  title: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
+  title: { fontFamily: fonts.displayBold, fontSize: 15, lineHeight: 20, letterSpacing: -0.2, color: colors.ink },
   subtitle: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
   online: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ok },
   iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },

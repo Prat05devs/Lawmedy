@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Platform, Text, View } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { Body, Button, Card, Message, PanelHeader } from "@/components/ui";
 import { API_URL, authHeaders, post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
@@ -39,18 +39,18 @@ export function FinalPanel({ matterId, doc, type, step, onChanged }: { matterId:
       {doc.state === "READY" ? (
         <>
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 14 }}>
-            <Ionicons name="document-attach-outline" size={34} color={colors.ok} />
+            <Feather name="paperclip" size={34} color={colors.ok} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink }}>{doc.filename || "Final PDF"}</Text>
               <Body muted small>{Math.max(1, Math.ceil(doc.sizeBytes / 1024))} KB</Body>
             </View>
           </View>
-          <Button title={Platform.OS === "ios" ? "Open / share PDF" : "Download PDF"} icon="download-outline" variant="gold" onPress={() => download(doc)} loading={busy} />
+          <Button title={Platform.OS === "ios" ? "Open / share PDF" : "Download PDF"} icon="download" variant="gold" onPress={() => download(doc)} loading={busy} />
         </>
       ) : (
         <>
           <Body muted>Your approved draft is safe. The final PDF is still being prepared.</Body>
-          <Button variant="outline" title="Prepare final PDF" icon="refresh" onPress={retry} loading={busy} style={{ marginTop: 12 }} />
+          <Button variant="outline" title="Prepare final PDF" icon="refresh-cw" onPress={retry} loading={busy} style={{ marginTop: 12 }} />
         </>
       )}
       <Message error={error} />

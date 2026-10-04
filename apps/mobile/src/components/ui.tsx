@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View, ViewStyle, StyleProp,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, fonts, radius, shadow } from "@/lib/theme";
 import { statusLabel, type MatterStatus } from "@/lib/types";
@@ -17,10 +17,10 @@ export function Screen({ children, scroll = true, padded = true, background = co
 }
 
 export const H1 = ({ children, light }: { children: React.ReactNode; light?: boolean }) => (
-  <Text style={[s.h1, light && { color: colors.card }]}>{children}</Text>
+  <Text maxFontSizeMultiplier={1.3} style={[s.h1, light && { color: colors.card }]}>{children}</Text>
 );
 export const H2 = ({ children, light }: { children: React.ReactNode; light?: boolean }) => (
-  <Text style={[s.h2, light && { color: colors.card }]}>{children}</Text>
+  <Text maxFontSizeMultiplier={1.3} style={[s.h2, light && { color: colors.card }]}>{children}</Text>
 );
 export const Body = ({ children, muted, small, style }: { children: React.ReactNode; muted?: boolean; small?: boolean; style?: StyleProp<TextStyle> }) => (
   <Text style={[s.body, muted && { color: colors.muted }, small && { fontSize: 13 }, style]}>{children}</Text>
@@ -31,7 +31,7 @@ export const Eyebrow = ({ children }: { children: React.ReactNode; gold?: boolea
 
 export function Button({ title, onPress, variant = "primary", loading, disabled, icon, iconAfter, style }: {
   title: string; onPress?: () => void; variant?: "primary" | "gold" | "outline" | "ghost" | "danger";
-  loading?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap; iconAfter?: boolean; style?: StyleProp<ViewStyle>;
+  loading?: boolean; disabled?: boolean; icon?: keyof typeof Feather.glyphMap; iconAfter?: boolean; style?: StyleProp<ViewStyle>;
 }) {
   const bg = variant === "primary" ? colors.ink : variant === "gold" ? colors.gold : variant === "danger" ? colors.danger : "transparent";
   const fg = variant === "outline" || variant === "ghost" ? colors.navy : "#fff";
@@ -42,9 +42,9 @@ export function Button({ title, onPress, variant = "primary", loading, disabled,
       onPress={onPress}
       style={({ pressed }) => [s.button, { backgroundColor: bg, borderColor: variant === "outline" ? colors.ink : bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 }, style]}
     >
-      {loading ? <ActivityIndicator color={fg} /> : icon && !iconAfter ? <Ionicons name={icon} size={18} color={fg} /> : null}
+      {loading ? <ActivityIndicator color={fg} /> : icon && !iconAfter ? <Feather name={icon} size={18} color={fg} /> : null}
       <Text style={[s.buttonText, { color: fg }]}>{title}</Text>
-      {!loading && icon && iconAfter ? <Ionicons name={icon} size={20} color={fg} /> : null}
+      {!loading && icon && iconAfter ? <Feather name={icon} size={20} color={fg} /> : null}
     </Pressable>
   );
 }
@@ -75,9 +75,9 @@ export function PanelHeader({ step, title, subtitle }: { step: string; title: st
   if (!visible) return subtitle ? <Text style={[s.body, { color: colors.muted, fontSize: 14, marginBottom: 12 }]}>{subtitle}</Text> : null;
   return (
     <View style={{ flexDirection: "row", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
-      <Text style={s.stepNum}>{step}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={s.stepNum}>{step}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={s.h2}>{title}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={s.h2}>{title}</Text>
         {subtitle ? <Text style={[s.body, { color: colors.muted, fontSize: 14 }]}>{subtitle}</Text> : null}
       </View>
     </View>
@@ -89,7 +89,7 @@ export function Message({ error, success }: { error?: string; success?: string }
   const bad = !!error;
   return (
     <View style={[s.message, { backgroundColor: bad ? colors.dangerBg : colors.okBg }]}>
-      <Ionicons name={bad ? "alert-circle" : "checkmark-circle"} size={18} color={bad ? colors.danger : colors.ok} />
+      <Feather name={bad ? "alert-circle" : "check-circle"} size={18} color={bad ? colors.danger : colors.ok} />
       <Text style={[s.body, { flex: 1, color: bad ? colors.danger : colors.ok, fontSize: 13 }]}>{error || success}</Text>
     </View>
   );
@@ -112,8 +112,8 @@ export function Loading() {
 }
 
 const s = StyleSheet.create({
-  h1: { fontFamily: fonts.display, fontSize: 30, lineHeight: 38, color: colors.ink, letterSpacing: -0.6, marginBottom: 8 },
-  h2: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.ink, letterSpacing: -0.2, marginBottom: 4 },
+  h1: { fontFamily: fonts.display, fontSize: 26, lineHeight: 30, color: colors.ink, letterSpacing: -0.8, marginBottom: 8 },
+  h2: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 23, color: colors.ink, letterSpacing: -0.3, marginBottom: 4 },
   body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.ink },
   eyebrow: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted, marginBottom: 8 },
   button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48, paddingVertical: 12, paddingHorizontal: 20, borderRadius: radius.sm, borderWidth: 1 },
@@ -122,7 +122,7 @@ const s = StyleSheet.create({
   input: { fontFamily: fonts.sans, fontSize: 16, color: colors.ink, backgroundColor: colors.card, borderWidth: 1, borderColor: "#c7c7c0", borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 13 },
   note: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted, marginTop: 5 },
   card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, padding: 18, marginBottom: 16, ...shadow },
-  stepNum: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 26, color: colors.gold, minWidth: 28 },
+  stepNum: { fontFamily: fonts.displayBold, fontSize: 21, lineHeight: 28, letterSpacing: -0.3, color: colors.gold, minWidth: 28 },
   message: { flexDirection: "row", gap: 8, padding: 12, borderRadius: radius.sm, marginTop: 10, alignItems: "flex-start" },
   badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
 });

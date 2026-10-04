@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image, type ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { AppScreen, tap } from "@/components/app-ui";
@@ -17,15 +17,15 @@ import type { AssistantAction } from "@/lib/assistant";
 import type { MatterType } from "@/lib/types";
 import { colors, fonts, radius, shadow } from "@/lib/theme";
 
-type Icon = keyof typeof MaterialIcons.glyphMap;
+type Icon = keyof typeof Feather.glyphMap;
 
 // Each category opens the same guided start, set to the right document. The notice types match
 // the categories the drafting service handles (money, employment, consumer, property).
 const remedies: { icon: Icon; title: string; text: string; tag: string; meta: string; type: MatterType }[] = [
-  { icon: "gavel", title: "Send a legal notice", text: "Money owed, a security deposit, a broken agreement, a tenant or property dispute.", tag: "Legal notice", meta: "Advocate-reviewed", type: "LEGAL_NOTICE" },
-  { icon: "payments", title: "Unpaid salary or dues", text: "Withheld salary, full and final settlement, unpaid freelance invoices.", tag: "Legal notice", meta: "Employment and money", type: "LEGAL_NOTICE" },
-  { icon: "storefront", title: "Notice to a seller or company", text: "Faulty goods, a refund that never came, a service that was not delivered.", tag: "Legal notice", meta: "Consumer dispute", type: "LEGAL_NOTICE" },
-  { icon: "account-balance", title: "File an RTI application", text: "Ask a public authority for records, file status, decisions or answer sheets.", tag: "RTI Act, 2005", meta: "Central and state", type: "RTI" },
+  { icon: "file-text", title: "Send a legal notice", text: "Money owed, a security deposit, a broken agreement, a tenant or property dispute.", tag: "Legal notice", meta: "Advocate-reviewed", type: "LEGAL_NOTICE" },
+  { icon: "credit-card", title: "Unpaid salary or dues", text: "Withheld salary, full and final settlement, unpaid freelance invoices.", tag: "Legal notice", meta: "Employment and money", type: "LEGAL_NOTICE" },
+  { icon: "shopping-bag", title: "Notice to a seller or company", text: "Faulty goods, a refund that never came, a service that was not delivered.", tag: "Legal notice", meta: "Consumer dispute", type: "LEGAL_NOTICE" },
+  { icon: "book-open", title: "File an RTI application", text: "Ask a public authority for records, file status, decisions or answer sheets.", tag: "RTI Act, 2005", meta: "Central and state", type: "RTI" },
 ];
 
 // What our AI system does, in order. Each step matches the API: intake analysis, follow-up
@@ -64,17 +64,17 @@ export default function Home() {
       right={
         <Pressable onPress={() => { tap(); router.push("/login"); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Log in" style={s.account}>
           <Text style={s.accountText}>Log in</Text>
-          <View style={s.avatar}><MaterialIcons name="person" size={18} color="#fff" /></View>
+          <View style={s.avatar}><Feather name="user" size={18} color="#fff" /></View>
         </Pressable>
       }
     >
       <View style={{ gap: 20, marginTop: 4 }}>
         <View style={[s.card, { padding: 20 }]}>
           <Text style={s.eyebrow}>For working professionals · AI-drafted, advocate-reviewed</Text>
-          <Text style={s.headline} accessibilityRole="header">No time to go to court or an advocate during office hours?</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.headline} accessibilityRole="header">No time to go to court or an advocate during office hours?</Text>
           <Text style={s.lead}>Send a legal notice or file an RTI application without taking leave. Describe the problem in your own words, from your desk or your phone. Our AI drafts it from the facts you give, and an advocate checks it before you get the PDF.</Text>
           <View style={[s.inset, { marginTop: 16 }]}>
-            <MaterialIcons name="verified" size={20} color={colors.ink} style={{ marginTop: 1 }} />
+            <Feather name="check-circle" size={20} color={colors.ink} style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
               <Text style={s.insetTitle}>{price} per document · Checked by an advocate</Text>
               <Text style={s.insetText}>Usually ready within 24 hours of verified payment. No account needed to start.</Text>
@@ -85,9 +85,9 @@ export default function Home() {
         <Feature
           photo={photos.courtChambers}
           chip="The old way"
-          chipIcon="schedule"
+          chipIcon="clock"
           title="Take leave, go to the chambers, wait your turn"
-          icon="phone-iphone"
+          icon="smartphone"
           text="That effort is why so many people let a dispute go. With Lawmedy you skip it: explain it on your phone, our AI drafts it, and an advocate reviews it. No visit needed."
           meta={["No leave needed", "Done from your phone"]}
           onPress={() => start()}
@@ -95,17 +95,17 @@ export default function Home() {
 
         <View style={[s.card, { padding: 20 }]}>
           <View style={s.cardHead}>
-            <MaterialIcons name="auto-awesome" size={18} color={colors.ink} />
+            <Feather name="cpu" size={18} color={colors.ink} />
             <Text style={[s.eyebrow, { marginBottom: 0 }]}>Built on AI, and proud of it</Text>
           </View>
-          <Text style={[s.sectionTitle, { marginTop: 10, paddingHorizontal: 0 }]}>Our own AI system, made for legal documents</Text>
+          <Text maxFontSizeMultiplier={1.3} style={[s.sectionTitle, { marginTop: 10, paddingHorizontal: 0 }]}>Our own AI system, made for legal documents</Text>
           <Text style={s.lead}>We built a system on top of leading AI models so it gets the format and the facts right. It listens, asks, checks, and never guesses.</Text>
           <View style={{ marginTop: 16 }}>
             {aiSteps.map((step, i) => (
               <View key={step.title} style={s.step}>
                 <View style={{ alignItems: "center" }}>
                   <View style={[s.stepNum, i === aiSteps.length - 1 && { backgroundColor: colors.ink }]}>
-                    {i === aiSteps.length - 1 ? <MaterialIcons name="verified-user" size={14} color="#fff" /> : <Text style={s.stepNumText}>{i + 1}</Text>}
+                    {i === aiSteps.length - 1 ? <Feather name="shield" size={14} color="#fff" /> : <Text style={s.stepNumText}>{i + 1}</Text>}
                   </View>
                   {i < aiSteps.length - 1 && <View style={s.stepLine} />}
                 </View>
@@ -116,14 +116,14 @@ export default function Home() {
               </View>
             ))}
           </View>
-          <Button title="Ask how our AI works" variant="outline" icon="chatbubble-ellipses-outline" style={{ marginTop: 16 }} onPress={() => { tap(); setChat(true); }} />
+          <Button title="Ask how our AI works" variant="outline" icon="message-circle" style={{ marginTop: 16 }} onPress={() => { tap(); setChat(true); }} />
         </View>
 
         <Feature
           photo={photos.neighbourhoodDispute}
           chip="Legal notice"
           title="From unpaid deposits to boundary disputes"
-          icon="handshake"
+          icon="users"
           text="A legal notice puts your demand on record and gives the other side a deadline to reply. It is usually the first formal step, before anyone goes to court."
           meta={["Your facts, not a template", "PDF you can send"]}
           onPress={() => start("LEGAL_NOTICE")}
@@ -131,16 +131,16 @@ export default function Home() {
 
         <View style={{ gap: 12 }}>
           <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>What we can help with</Text>
+            <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>What we can help with</Text>
             <Text style={s.sectionMeta}>4 kinds</Text>
           </View>
           {remedies.map((r) => (
             <Pressable key={r.title} onPress={() => { tap(); start(r.type); }} accessibilityRole="button" accessibilityLabel={r.title} style={({ pressed }) => [s.card, s.remedy, pressed && { backgroundColor: colors.tint }]}>
-              <View style={s.tile}><MaterialIcons name={r.icon} size={22} color={colors.ink} /></View>
+              <View style={s.tile}><Feather name={r.icon} size={22} color={colors.ink} /></View>
               <View style={{ flex: 1 }}>
                 <View style={s.remedyHead}>
                   <Text style={s.remedyTitle}>{r.title}</Text>
-                  <MaterialIcons name="arrow-forward" size={20} color={colors.muted} />
+                  <Feather name="arrow-right" size={20} color={colors.muted} />
                 </View>
                 <Text style={s.remedyText} numberOfLines={2}>{r.text}</Text>
                 <View style={s.tags}>
@@ -156,7 +156,7 @@ export default function Home() {
           photo={courts.supremeCourtWide}
           chip="Right to Information"
           title="Records from any public authority"
-          icon="schedule"
+          icon="clock"
           text="Under the RTI Act, 2005, a public information officer must reply within 30 days. We draft the application to the right office; you pay the government fee directly."
           meta={["Central and state offices", "Ready to submit"]}
           onPress={() => start("RTI")}
@@ -164,23 +164,23 @@ export default function Home() {
 
         <View style={[s.card, { padding: 16, gap: 12 }]}>
           <View style={s.cardHead}>
-            <MaterialIcons name="lightbulb-outline" size={20} color={colors.ink} />
+            <Feather name="info" size={20} color={colors.ink} />
             <Text style={s.cardTitle}>Before you start</Text>
           </View>
           <View style={{ gap: 8 }}>
-            <Shortcut icon="fact-check" title="Check your case for free" text="See what we understood and what we would need" onPress={() => start()} />
-            <Shortcut icon="description" title="See a sample notice" text="What the final, advocate-checked PDF looks like" onPress={() => router.push("/sample")} />
-            <Shortcut icon="sync-alt" title="How it works" text="From your words to a reviewed PDF, step by step" onPress={() => router.push("/how-it-works")} />
+            <Shortcut icon="check-square" title="Check your case for free" text="See what we understood and what we would need" onPress={() => start()} />
+            <Shortcut icon="file-text" title="See a sample notice" text="What the final, advocate-checked PDF looks like" onPress={() => router.push("/sample")} />
+            <Shortcut icon="repeat" title="How it works" text="From your words to a reviewed PDF, step by step" onPress={() => router.push("/how-it-works")} />
           </View>
         </View>
 
         {testimonials.length > 0 && (
           <View style={{ gap: 12 }}>
-            <View style={s.sectionHead}><Text style={s.sectionTitle}>What customers say</Text></View>
+            <View style={s.sectionHead}><Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>What customers say</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }} style={{ marginHorizontal: -20 }}>
               {testimonials.map((t) => (
                 <View key={t.id} style={[s.card, s.quote]}>
-                  <MaterialIcons name="format-quote" size={22} color={colors.faint} />
+                  <Feather name="message-square" size={22} color={colors.faint} />
                   <Text style={s.quoteText}>{t.quote}</Text>
                   <Text style={s.quoteBy}>{t.name}{t.descriptor ? ` · ${t.descriptor}` : ""}</Text>
                 </View>
@@ -193,26 +193,26 @@ export default function Home() {
           <Image source={courts.uttarakhandHighCourt} style={s.bannerPhoto} contentFit="cover" transition={150} />
           <View style={{ padding: 16, gap: 12 }}>
             <View style={s.cardHead}>
-              <MaterialIcons name="verified-user" size={20} color={colors.ink} />
+              <Feather name="shield" size={20} color={colors.ink} />
               <Text style={s.cardTitle}>Reviewed by an advocate</Text>
             </View>
             <Text style={s.lead}>Every legal notice and RTI application is checked by one of our in-house advocates before it reaches you. Our AI does the heavy lifting; a person decides what goes out.</Text>
             <View style={{ gap: 8 }}>
-              <Point icon="edit-note" title="Edited, not just approved" text="The advocate may correct the draft or ask you a question first." />
-              <Point icon="currency-rupee" title="Full refund if we decline" text="If our advocate cannot take your matter, you get your money back." />
+              <Point icon="edit-3" title="Edited, not just approved" text="The advocate may correct the draft or ask you a question first." />
+              <Point icon="rotate-ccw" title="Full refund if we decline" text="If our advocate cannot take your matter, you get your money back." />
             </View>
           </View>
         </View>
 
         <View style={[s.card, { padding: 20, gap: 12 }]}>
           <View style={s.soon}><View style={s.soonDot} /><Text style={s.soonText}>Coming soon · For advocates</Text></View>
-          <Text style={s.sectionTitle}>More clients, less paperwork</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>More clients, less paperwork</Text>
           <Text style={[s.lead, { marginTop: 0 }]}>Today our in-house advocates review every document. Our portal for independent advocates is almost ready: requests reach you on a digital desk with the facts organised and the documents attached. You review the draft, the person gets help quickly, and you build a client list without extra legwork.</Text>
           <View style={{ gap: 8 }}>
-            <Point icon="assignment" title="Requests arrive ready to review" text="The client's account, key facts and documents, with a first draft for you to correct." />
+            <Point icon="clipboard" title="Requests arrive ready to review" text="The client's account, key facts and documents, with a first draft for you to correct." />
             <Point icon="trending-up" title="Clients who may need you again" text="When a notice gets no reply or a matter has to go further, the person already knows the advocate who handled it." />
           </View>
-          <Button title="Register as an advocate" variant="outline" icon="arrow-forward" iconAfter onPress={() => { tap(); router.push("/advocate-portal"); }} />
+          <Button title="Register as an advocate" variant="outline" icon="arrow-right" iconAfter onPress={() => { tap(); router.push("/advocate-portal"); }} />
         </View>
         <View style={{ height: 56 }} />
       </View>
@@ -223,19 +223,19 @@ export default function Home() {
   );
 }
 
-function Feature({ photo, chip, chipIcon = "verified", title, icon, text, meta, onPress }: { photo: ImageSource; chip: string; chipIcon?: Icon; title: string; icon: Icon; text: string; meta: string[]; onPress: () => void }) {
+function Feature({ photo, chip, chipIcon = "check-circle", title, icon, text, meta, onPress }: { photo: ImageSource; chip: string; chipIcon?: Icon; title: string; icon: Icon; text: string; meta: string[]; onPress: () => void }) {
   return (
     <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.card, { overflow: "hidden" }, pressed && { opacity: 0.94 }]}>
       <View style={s.featurePhoto}>
         <Image source={photo} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
         <LinearGradient colors={["transparent", "rgba(28,27,26,0.25)", "rgba(28,27,26,0.85)"]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
         <View style={s.featureCaption}>
-          <View style={s.chip}><MaterialIcons name={chipIcon} size={13} color="#fff" /><Text style={s.chipText}>{chip}</Text></View>
-          <Text style={s.featureTitle}>{title}</Text>
+          <View style={s.chip}><Feather name={chipIcon} size={13} color="#fff" /><Text style={s.chipText}>{chip}</Text></View>
+          <Text maxFontSizeMultiplier={1.3} style={s.featureTitle}>{title}</Text>
         </View>
       </View>
       <View style={s.featureBody}>
-        <View style={s.round}><MaterialIcons name={icon} size={18} color={colors.ink} /></View>
+        <View style={s.round}><Feather name={icon} size={18} color={colors.ink} /></View>
         <View style={{ flex: 1 }}>
           <Text style={s.featureText}>{text}</Text>
           <View style={s.metaRow}>
@@ -250,12 +250,12 @@ function Feature({ photo, chip, chipIcon = "verified", title, icon, text, meta, 
 function Shortcut({ icon, title, text, onPress }: { icon: Icon; title: string; text: string; onPress: () => void }) {
   return (
     <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.inset, { alignItems: "center" }, pressed && { backgroundColor: colors.tint2 }]}>
-      <MaterialIcons name={icon} size={20} color={colors.ink} />
+      <Feather name={icon} size={20} color={colors.ink} />
       <View style={{ flex: 1 }}>
         <Text style={s.insetTitle}>{title}</Text>
         <Text style={s.insetText}>{text}</Text>
       </View>
-      <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
+      <Feather name="chevron-right" size={18} color={colors.muted} />
     </Pressable>
   );
 }
@@ -263,7 +263,7 @@ function Shortcut({ icon, title, text, onPress }: { icon: Icon; title: string; t
 function Point({ icon, title, text }: { icon: Icon; title: string; text: string }) {
   return (
     <View style={s.inset}>
-      <MaterialIcons name={icon} size={18} color={colors.ink} style={{ marginTop: 1 }} />
+      <Feather name={icon} size={18} color={colors.ink} style={{ marginTop: 1 }} />
       <View style={{ flex: 1 }}>
         <Text style={s.insetTitle}>{title}</Text>
         <Text style={s.insetText}>{text}</Text>
@@ -278,7 +278,7 @@ const s = StyleSheet.create({
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
   card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, ...shadow },
   eyebrow: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.9, textTransform: "uppercase", color: colors.muted, marginBottom: 12 },
-  headline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 37, letterSpacing: -0.7, color: colors.ink },
+  headline: { fontFamily: fonts.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.8, color: colors.ink },
   lead: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, color: colors.muted, marginTop: 10 },
   inset: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: radius.sm, backgroundColor: colors.tint },
   insetTitle: { fontFamily: fonts.sansBold, fontSize: 13, lineHeight: 18, color: colors.ink },
@@ -287,14 +287,14 @@ const s = StyleSheet.create({
   featureCaption: { padding: 16 },
   chip: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.22)", marginBottom: 6 },
   chipText: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.7, textTransform: "uppercase", color: "#fff" },
-  featureTitle: { fontFamily: fonts.display, fontSize: 18, lineHeight: 23, letterSpacing: -0.2, color: "#fff" },
+  featureTitle: { fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: "#fff" },
   featureBody: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 16 },
   round: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.tint2, alignItems: "center", justifyContent: "center", marginTop: 1 },
   featureText: { fontFamily: fonts.sansMedium, fontSize: 14, lineHeight: 21, color: colors.ink },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   metaText: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.3, color: colors.muted },
   sectionHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, letterSpacing: -0.2, color: colors.ink },
+  sectionTitle: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 23, letterSpacing: -0.3, color: colors.ink },
   sectionMeta: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted },
   remedy: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 16 },
   tile: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.tint2, alignItems: "center", justifyContent: "center" },
@@ -307,7 +307,7 @@ const s = StyleSheet.create({
   cardHead: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontFamily: fonts.sansBold, fontSize: 16, lineHeight: 22, color: colors.ink },
   quote: { width: 280, padding: 16 },
-  quoteText: { fontFamily: fonts.sansMedium, fontSize: 15, lineHeight: 22, color: colors.ink, marginVertical: 8 },
+  quoteText: { fontFamily: fonts.displayRegular, fontSize: 15, lineHeight: 22, color: colors.ink, marginVertical: 8 },
   quoteBy: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
   soon: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.tint2 },
   soonDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ok },

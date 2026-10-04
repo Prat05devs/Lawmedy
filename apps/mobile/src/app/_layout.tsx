@@ -3,8 +3,8 @@ import { ActivityIndicator, View } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useFonts, SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
+import { useFonts, ZalandoSansExpanded_400Regular, ZalandoSansExpanded_700Bold, ZalandoSansExpanded_800ExtraBold } from "@expo-google-fonts/zalando-sans-expanded";
+import { ZalandoSans_400Regular, ZalandoSans_500Medium, ZalandoSans_600SemiBold } from "@expo-google-fonts/zalando-sans";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { colors } from "@/lib/theme";
 
@@ -29,7 +29,7 @@ function Routes() {
 }
 
 export default function Root() {
-  const [loaded] = useFonts({ SpaceGrotesk_700Bold, Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
+  const [loaded] = useFonts({ ZalandoSansExpanded_400Regular, ZalandoSansExpanded_700Bold, ZalandoSansExpanded_800ExtraBold, ZalandoSans_400Regular, ZalandoSans_500Medium, ZalandoSans_600SemiBold });
   if (!loaded) return null;
   return (
     <SafeAreaProvider>

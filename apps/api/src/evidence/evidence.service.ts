@@ -91,7 +91,8 @@ export class EvidenceService {
     if (!file) throw new BadRequestException("Choose a file to upload.");
     if (!allowedMimeTypes.has(file.mimetype))
       throw new BadRequestException("Upload a PDF, JPG, PNG, or WebP file.");
-    if (!file.size || file.size > this.maxBytes)
+    if (!file.size) throw new BadRequestException("This file is empty. Choose another file.");
+    if (file.size > this.maxBytes)
       throw new BadRequestException(
         `The file must be smaller than ${Math.floor(this.maxBytes / 1024 / 1024)} MB.`,
       );

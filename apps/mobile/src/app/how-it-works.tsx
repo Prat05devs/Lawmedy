@@ -18,7 +18,7 @@ const steps = [
 export default function HowItWorks() {
   const router = useRouter();
   return (
-    <AppScreen title="How it works" left={<BarButton icon="chevron-back" label="Back" onPress={() => router.back()} />}>
+    <AppScreen title="How it works" left={<BarButton icon="chevron-left" label="Back" onPress={() => router.back()} />}>
       <Image source={courts.calcuttaHighCourt} style={{ width: "100%", aspectRatio: 16 / 9, borderRadius: radius.md, marginBottom: 18 }} contentFit="cover" />
       <Steps items={steps} />
       <Body muted small style={{ marginTop: 16 }}>Lawmedy prepares documents. It is not a substitute for legal advice on complex disputes.</Body>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { AppScreen, BarButton, PhotoCard, Progress, success, tap } from "@/components/app-ui";
 import { Body, Button, Message } from "@/components/ui";
 import { publicApi } from "@/lib/api";
@@ -99,12 +99,12 @@ export default function Start() {
     ) : undefined;
 
   return (
-    <AppScreen left={step === "type" ? undefined : <BarButton icon="chevron-back" label="Back" onPress={back} />} footer={footer}>
+    <AppScreen left={step === "type" ? undefined : <BarButton icon="chevron-left" label="Back" onPress={back} />} footer={footer}>
       {step !== "type" && <Progress step={index + 1} total={order.length} label={type === "RTI" ? "RTI application" : "Legal notice"} />}
 
       {step === "type" && (
         <>
-          <Text style={s.title}>What would you like to prepare?</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>What would you like to prepare?</Text>
           <Body muted style={{ marginBottom: 18 }}>No account needed. We ask you to sign up only when you want to save and continue.</Body>
           <View style={{ gap: 14 }}>
             <PhotoCard photo={courts.bombayHighCourt} title="A legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => { setType("LEGAL_NOTICE"); setStep("describe"); }} />
@@ -115,7 +115,7 @@ export default function Start() {
 
       {step === "describe" && type && (
         <>
-          <Text style={s.title}>What happened?</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>What happened?</Text>
           <Body muted style={{ marginBottom: 14 }}>Write it the way you would tell a friend, in Hindi, English or a mix.</Body>
           <TextInput
             value={statement}
@@ -134,13 +134,13 @@ export default function Start() {
 
       {step === "authority" && (
         <>
-          <Text style={s.title}>Which office holds the records?</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>Which office holds the records?</Text>
           <View style={{ gap: 10, marginBottom: 18 }}>
             {authorities.map((a) => {
               const on = a.id === authorityId;
               return (
                 <Pressable key={a.id} onPress={() => { tap(); setAuthorityId(a.id); }} style={[s.option, on && s.optionOn]} accessibilityRole="radio" accessibilityState={{ checked: on }}>
-                  <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={22} color={colors.ink} />
+                  <Feather name={on ? "check-circle" : "circle"} size={22} color={colors.ink} />
                   <View style={{ flex: 1 }}>
                     <Text style={s.optionTitle}>{a.name}</Text>
                     <Body muted small>{a.governmentLevel.toLowerCase()}{a.state ? ` · ${a.state}` : ""}</Body>
@@ -156,7 +156,7 @@ export default function Start() {
 
       {step === "result" && result && (
         <>
-          <Text style={s.title}>Here is what we understood</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>Here is what we understood</Text>
           <View style={s.box}><Body>{result.summary}</Body></View>
           {result.facts.length > 0 && (
             <>
@@ -189,7 +189,7 @@ export default function Start() {
 }
 
 const s = StyleSheet.create({
-  title: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 36, color: colors.ink, marginBottom: 10 },
+  title: { fontFamily: fonts.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.8, color: colors.ink, marginBottom: 10 },
   editor: { minHeight: 260, fontFamily: fonts.sans, fontSize: 17, lineHeight: 25, color: colors.ink, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 16 },
   count: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginTop: 8 },
   label: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.muted, marginTop: 20, marginBottom: 8 },

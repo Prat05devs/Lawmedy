@@ -21,18 +21,18 @@ export default function Help() {
   return (
     <AppScreen title="Help" right={<BarButton label="Log in" onPress={() => router.push("/login")} />}>
       <Group>
-        <ListRow icon="list-outline" title="How it works" onPress={() => router.push("/how-it-works")} />
-        <ListRow icon="document-text-outline" title="See a sample notice" onPress={() => router.push("/sample")} last />
+        <ListRow icon="list" title="How it works" onPress={() => router.push("/how-it-works")} />
+        <ListRow icon="file-text" title="See a sample notice" onPress={() => router.push("/sample")} last />
       </Group>
       <GroupLabel>Questions</GroupLabel>
       <Faq items={faqs} />
       <GroupLabel>Contact and policies</GroupLabel>
       <Group>
-        <ListRow icon="chatbubble-ellipses-outline" title="Contact and support" onPress={() => open("/contact")} />
-        <ListRow icon="shield-checkmark-outline" title="Privacy policy" onPress={() => open("/privacy")} />
-        <ListRow icon="reader-outline" title="Terms of use" onPress={() => open("/terms")} />
-        <ListRow icon="cash-outline" title="Refund policy" onPress={() => open("/refunds")} />
-        <ListRow icon="image-outline" title="Photo credits" onPress={() => router.push("/credits")} last />
+        <ListRow icon="message-circle" title="Contact and support" onPress={() => open("/contact")} />
+        <ListRow icon="shield" title="Privacy policy" onPress={() => open("/privacy")} />
+        <ListRow icon="book-open" title="Terms of use" onPress={() => open("/terms")} />
+        <ListRow icon="credit-card" title="Refund policy" onPress={() => open("/refunds")} />
+        <ListRow icon="image" title="Photo credits" onPress={() => router.push("/credits")} last />
       </Group>
       <GroupLabel>Are you an advocate?</GroupLabel>
       <Body muted>Today our in-house advocate reviews every document. We are working on a way for more advocates to join. Write to us to hear when it opens.</Body>

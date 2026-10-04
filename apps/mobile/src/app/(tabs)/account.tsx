@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { Body, Button, Card, H1, Field, Message, Screen } from "@/components/ui";
 import { Group, GroupLabel, ListRow } from "@/components/app-ui";
@@ -47,19 +47,19 @@ export default function Account() {
         {!deleting ? (
           <>
             <Body muted small style={{ marginVertical: 6 }}>Permanently erase your matters, statements, uploaded documents and drafts, and close your account. This cannot be undone.</Body>
-            <Button variant="outline" title="Delete my account" icon="trash-outline" onPress={() => setDeleting(true)} />
+            <Button variant="outline" title="Delete my account" icon="trash-2" onPress={() => setDeleting(true)} />
           </>
         ) : (
           <>
             <Body small style={{ marginVertical: 6 }}>This permanently erases everything you added to Lawmedy and closes your account. Download any final PDF you still need first. Payment records we are required to keep are retained without your personal details.</Body>
             <Field label="Type DELETE to confirm" value={word} onChangeText={setWord} autoCapitalize="characters" autoCorrect={false} placeholder="DELETE" />
             <Message error={error} />
-            <Button variant="danger" title="Permanently delete my account" icon="trash" onPress={deleteAccount} loading={busy} disabled={word !== "DELETE"} />
+            <Button variant="danger" title="Permanently delete my account" icon="trash-2" onPress={deleteAccount} loading={busy} disabled={word !== "DELETE"} />
             <Button variant="ghost" title="Cancel" onPress={() => { setDeleting(false); setWord(""); setError(""); }} style={{ marginTop: 8 }} />
           </>
         )}
       </Card>
-      <Button variant="outline" title="Log out" icon="log-out-outline" onPress={() => Alert.alert("Log out?", "You can log back in any time.", [{ text: "Cancel", style: "cancel" }, { text: "Log out", style: "destructive", onPress: () => void logout() }])} />
+      <Button variant="outline" title="Log out" icon="log-out" onPress={() => Alert.alert("Log out?", "You can log back in any time.", [{ text: "Cancel", style: "cancel" }, { text: "Log out", style: "destructive", onPress: () => void logout() }])} />
       <Text style={s.foot}>Lawmedy helps you prepare documents. It is not a substitute for legal advice on complex disputes.</Text>
     </Screen>
   );

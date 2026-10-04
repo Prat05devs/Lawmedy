@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { Tabs, useRouter } from "expo-router";
 import { loadDraft } from "@/lib/guest-draft";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { colors, fonts } from "@/lib/theme";
 
-const icon = (name: keyof typeof Ionicons.glyphMap) => ({ color, size }: { color: string | import("react-native").OpaqueColorValue; size: number }) => <Ionicons name={name} color={color as string} size={size} />;
+const icon = (name: keyof typeof Feather.glyphMap) => ({ color, size }: { color: string | import("react-native").OpaqueColorValue; size: number }) => <Feather name={name} color={color as string} size={size} />;
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -12,9 +12,9 @@ export default function TabsLayout() {
   useEffect(() => { void loadDraft().then((draft) => { if (draft) router.replace("/resume"); }); }, [router]);
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: colors.faint, tabBarLabelStyle: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: -0.1 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
-      <Tabs.Screen name="index" options={{ title: "Matters", tabBarIcon: icon("folder-open-outline") }} />
-      <Tabs.Screen name="new" options={{ title: "New", tabBarIcon: icon("add-circle-outline") }} />
-      <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("person-circle-outline") }} />
+      <Tabs.Screen name="index" options={{ title: "Matters", tabBarIcon: icon("folder") }} />
+      <Tabs.Screen name="new" options={{ title: "New", tabBarIcon: icon("plus-circle") }} />
+      <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("user") }} />
     </Tabs>
   );
 }

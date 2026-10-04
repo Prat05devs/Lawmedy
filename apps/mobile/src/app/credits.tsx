@@ -9,7 +9,7 @@ import { colors, fonts } from "@/lib/theme";
 export default function Credits() {
   const router = useRouter();
   return (
-    <AppScreen title="Photo credits" left={<BarButton icon="chevron-back" label="Back" onPress={() => router.back()} />}>
+    <AppScreen title="Photo credits" left={<BarButton icon="chevron-left" label="Back" onPress={() => router.back()} />}>
       <Body muted style={{ marginBottom: 12 }}>Photographs of Indian courts from Wikimedia Commons, used under their licences. They were resized and cropped for display.</Body>
       {photoCredits.map((c) => (
         <View key={c.file} style={{ paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.line }}>

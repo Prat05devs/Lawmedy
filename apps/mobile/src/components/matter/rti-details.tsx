@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { Body, Button, Card, Field, Message, PanelHeader } from "@/components/ui";
 import { post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
@@ -44,7 +44,7 @@ export function RtiDetailsPanel({ matterId, authorities, details, editable, onCh
       <View style={{ gap: 8, marginBottom: 16 }}>
         {authorities.map((a) => (
           <Pressable key={a.id} disabled={!editable} onPress={() => pick(a)} style={{ flexDirection: "row", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: a.id === authorityId ? colors.navy : colors.line, backgroundColor: a.id === authorityId ? colors.tint : colors.card }}>
-            <Ionicons name={a.id === authorityId ? "radio-button-on" : "radio-button-off"} size={20} color={colors.navy} />
+            <Feather name={a.id === authorityId ? "check-circle" : "circle"} size={20} color={colors.navy} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink }}>{a.name}</Text>
               <Body muted small>{a.governmentLevel.toLowerCase()}{a.state ? ` · ${a.state}` : ""}</Body>

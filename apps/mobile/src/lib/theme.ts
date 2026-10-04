@@ -1,20 +1,22 @@
-// Lawmedy design system: near-white surfaces, near-black ink, no colour accent. Headings in
-// Space Grotesk, everything else in Inter. Key names are kept from the earlier theme so existing
-// screens pick the new look up automatically.
+// Lawmedy brand kit: Zalando Sans Expanded for headings, Zalando Sans for everything else, on a
+// near-white background with a warm grey palette and Feather icons. Key names are kept from the
+// earlier theme so existing screens pick the look up automatically.
 export const colors = {
-  navy: "#1c1b1a", // ink, used for primary surfaces and buttons
-  navy2: "#464742",
-  gold: "#1c1b1a", // former accent; the system is monochrome, so emphasis is ink
-  gold2: "#32302f",
+  navy: "#171615", // ink, used for primary surfaces and buttons
+  navy2: "#413f3e",
+  gold: "#171615", // former accent; the system is monochrome, so emphasis is ink
+  gold2: "#413f3e",
   ivory: "#fafafa",
-  paper: "#fafafa", // surface, a neutral near-white
-  card: "#ffffff", // surface-container-lowest
-  ink: "#1c1b1a", // on-surface
-  muted: "#5f5e5d", // on-surface-variant, for secondary text
-  faint: "#777871", // outline, for tertiary text and inactive icons
-  line: "#e5e5e3", // hairlines and card borders
+  paper: "#fafafa", // background
+  card: "#ffffff", // surface
+  ink: "#171615", // text
+  primary: "#d6d3d1", // brand primary: chips, tiles, selected states
+  accent: "#413f3e", // brand accent: secondary dark surfaces
+  muted: "#5f5d5b", // secondary text
+  faint: "#8a8785", // tertiary text and inactive icons
+  line: "#dadada", // border
   tint: "#f4f4f3", // inset boxes and pressed rows
-  tint2: "#ededeb", // icon tiles and chips
+  tint2: "#ebe9e8", // icon tiles and chips (a light step of primary)
   danger: "#ba1a1a",
   dangerBg: "#ffdad6",
   ok: "#2f6a47",
@@ -23,11 +25,13 @@ export const colors = {
   warnText: "#6b4d10",
 };
 export const fonts = {
-  serif: "SpaceGrotesk_700Bold", // display and headings (name kept for existing screens)
-  display: "SpaceGrotesk_700Bold",
-  sans: "Inter_400Regular",
-  sansMedium: "Inter_500Medium",
-  sansBold: "Inter_600SemiBold",
+  serif: "ZalandoSansExpanded_800ExtraBold", // headings (name kept for existing screens)
+  display: "ZalandoSansExpanded_800ExtraBold", // display, H1, H2
+  displayBold: "ZalandoSansExpanded_700Bold", // small headings, where 800 gets too dense
+  displayRegular: "ZalandoSansExpanded_400Regular", // H3, quotes
+  sans: "ZalandoSans_400Regular",
+  sansMedium: "ZalandoSans_500Medium",
+  sansBold: "ZalandoSans_600SemiBold",
 };
 // md is the card radius (12), sm is for inset boxes, chips and buttons (8).
 export const radius = { sm: 8, md: 12, lg: 12 };

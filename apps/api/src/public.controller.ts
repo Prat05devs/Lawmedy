@@ -40,10 +40,11 @@ export class PublicController {
     return this.quickCheck.run(dto.statement, dto.type);
   }
 
-  // Advocates registering for the upcoming portal. No account needed, so limited per IP.
+  // Advocates registering for the upcoming portal. No account needed, so limited per email and
+  // per IP; failed validation counts too, so leave room for a few typos.
   @Post("advocate-interest")
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 3600000 }, ip: { limit: 10, ttl: 3600000 } })
+  @Throttle({ default: { limit: 10, ttl: 3600000 }, ip: { limit: 20, ttl: 3600000 } })
   registerAdvocate(@Body() dto: AdvocateInterestDto) {
     return this.advocateInterest.register(dto);
   }

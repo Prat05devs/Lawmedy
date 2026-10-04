@@ -9,7 +9,7 @@ export default function Sample() {
   return (
     <AppScreen
       title="A sample notice"
-      left={<BarButton icon="chevron-back" label="Back" onPress={() => router.back()} />}
+      left={<BarButton icon="chevron-left" label="Back" onPress={() => router.back()} />}
       footer={<Button title="Start a legal notice" onPress={() => router.push({ pathname: "/start", params: { type: "LEGAL_NOTICE" } })} />}
     >
       <SampleNotice />

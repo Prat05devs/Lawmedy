@@ -32,12 +32,12 @@ export default function Privacy() {
       </ul>
 
       <h2>4. AI processing</h2>
-      <p>To read your statement and documents and prepare a draft, we send them to Google’s Gemini API from our servers. The AI works only from the facts you provide and confirm; every AI request is logged. We use a paid Gemini configuration, under which Google states that submitted content is not used to train its models. The draft is not delivered to you until it has been reviewed by an advocate.</p>
+      <p>To read your statement and documents and prepare a draft, we send them from our servers to Google’s Gemini API, or, if Gemini is unavailable, to Groq’s API. These providers process the content only to return a response to us. The AI works only from the facts you provide and confirm, and every AI request is logged. The draft is not delivered to you until it has been reviewed by an advocate.</p>
 
       <h2>5. Who we share information with</h2>
       <ul>
         <li><strong>Our advocate:</strong> the advocate reviewing your matter can see your statement, facts, documents and draft.</li>
-        <li><strong>Service providers</strong> acting for us: Google (AI processing and, if you choose it, Google sign-in), Razorpay (payments), our email provider (notifications), and our hosting and database providers.</li>
+        <li><strong>Service providers</strong> acting for us: Google (AI processing and, if you choose it, Google sign-in), Groq (backup AI processing), Razorpay (payments), our email provider (notifications), and our hosting and database providers.</li>
         <li><strong>Authorities and courts,</strong> only where the law requires us to disclose information.</li>
       </ul>
       <p>We do not send your document to the other party or to any authority on your behalf. You decide what happens to your final document.</p>

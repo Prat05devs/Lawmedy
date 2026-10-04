@@ -52,7 +52,7 @@ export function DraftPanel({
           <h3>AI setup is pending</h3>
           <p>
             Your payment and confirmed information are safe. Draft generation
-            can begin after the server-side Gemini key is added.
+            will start again shortly. Please check back in a few minutes.
           </p>
         </div>
       ) : draft.state === "MISSING_INFORMATION" ? (

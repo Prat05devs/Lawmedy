@@ -55,6 +55,22 @@ const rtiFacts: Fact[] = [
   { figure: "18 of 29", text: "information commissions would take more than a year to decide a new appeal. A clear, specific first application is the best way to stay out of that queue.", source: "Satark Nagrik Sangathan, Report Card on Information Commissions 2024-25", href: "https://www.snsindia.org/wp-content/uploads/2025/10/Press-Release-2025.pdf" },
 ];
 
+// Photos for the facts section. Wikimedia Commons images are CC BY-SA 4.0 and must be credited.
+const courtStrip = [
+  { src: "/images/courts/bombay-high-court.jpg", alt: "Bombay High Court, Mumbai", by: "Gnoeee", href: "https://commons.wikimedia.org/wiki/File:Bombay_High_Court_building.jpg", w: 1600, h: 1200 },
+  { src: "/images/courts/madras-high-court.jpg", alt: "Madras High Court, Chennai", by: "Kalyan07kumar", href: "https://commons.wikimedia.org/wiki/File:Madras_High_Court,Chennai.jpg", w: 1600, h: 1067 },
+  { src: "/images/courts/calcutta-high-court.jpg", alt: "Calcutta High Court, Kolkata", by: "Pinakpani", href: "https://commons.wikimedia.org/wiki/File:Building_of_Calcutta_High_Court_01.jpg", w: 1600, h: 1200 },
+];
+
+function FactBanner({ src, alt, caption, credit }: { src: string; alt: string; caption: string; credit: React.ReactNode }) {
+  return (
+    <figure className="lp-facts-banner">
+      <Image src={src} alt={alt} width={1600} height={1067} sizes="(max-width: 1120px) 100vw, 1072px" />
+      <figcaption><span>{caption}</span><small>{credit}</small></figcaption>
+    </figure>
+  );
+}
+
 function FactGrid({ items }: { items: Fact[] }) {
   return (
     <div className="lp-facts">
@@ -150,10 +166,20 @@ export default async function Home() {
       <section className="lp-block" id="facts">
         <h2>Why we built Lawmedy</h2>
         <p className="lp-lead">In many countries, people put a dispute in writing as a matter of habit, and the other side knows it. In India, most people let it go: the courts are slow, and getting a notice drafted means taking leave and visiting an advocate&apos;s chamber. These numbers are why a clear legal notice, sent early, matters.</p>
+        <div className="lp-court-strip">
+          {courtStrip.map((c) => (
+            <figure key={c.src}>
+              <Image src={c.src} alt={c.alt} width={c.w} height={c.h} sizes="(max-width: 700px) 100vw, 360px" />
+              <figcaption>{c.alt} · Photo: <a href={c.href} target="_blank" rel="noopener noreferrer">{c.by}</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></figcaption>
+            </figure>
+          ))}
+        </div>
         <h3 className="lp-facts-h">Disputes and courts</h3>
         <FactGrid items={disputeFacts} />
+        <FactBanner src="/images/photos/law-library.jpg" alt="Shelves of law reports in a library" caption="Some disputes cannot even reach a court without a written notice first." credit={<>Photo: Iñaki del Olmo, <a href="https://unsplash.com/photos/NIJuEQw0RKg" target="_blank" rel="noopener noreferrer">Unsplash</a></>} />
         <h3 className="lp-facts-h">What the law already expects</h3>
         <FactGrid items={lawFacts} />
+        <FactBanner src="/images/photos/rashtrapati.jpg" alt="Rashtrapati Bhavan, New Delhi" caption="Every public authority in India must answer an RTI application within 30 days." credit={<>Photo: Laurentiu Morariu, <a href="https://unsplash.com/photos/8XZTZIfuNrM" target="_blank" rel="noopener noreferrer">Unsplash</a></>} />
         <h3 className="lp-facts-h">Right to Information</h3>
         <FactGrid items={rtiFacts} />
         <p className="lp-note">Figures are from the sources linked, checked in October 2026. Live court pendency is published on the <a href="https://njdg.ecourts.gov.in/" target="_blank" rel="noopener noreferrer">National Judicial Data Grid</a>.</p>

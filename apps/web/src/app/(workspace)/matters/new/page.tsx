@@ -39,7 +39,7 @@ export default function NewMatter() {
           </p>
         </section>
         <p className="small muted">
-          Gemini reads your statement and any documents you upload, then asks
+          Our AI reads your statement and any documents you upload, then asks
           follow-up questions. Nothing is drafted until you confirm the facts.
           Need public records instead? <Link href="/matters/new/rti" className="text-link">File an RTI</Link>.
         </p>

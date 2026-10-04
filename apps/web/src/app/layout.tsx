@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Newsreader, Public_Sans } from "next/font/google";
+import { Zalando_Sans, Zalando_Sans_Expanded } from "next/font/google";
 import "./globals.css";
 import "./design.css";
 import "./refine.css";
 
-const serif = Newsreader({ subsets: ["latin"], variable: "--font-serif", display: "swap", style: ["normal", "italic"] });
-const sans = Public_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+// Brand kit: Zalando Sans Expanded for headings (kept on the --font-serif variable the CSS already uses),
+// Zalando Sans for everything else.
+const serif = Zalando_Sans_Expanded({ subsets: ["latin"], variable: "--font-serif", display: "swap", weight: ["400", "700", "800"] });
+const sans = Zalando_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap", weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
   title: {

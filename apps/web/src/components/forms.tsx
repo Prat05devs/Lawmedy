@@ -143,7 +143,7 @@ export function StatementForm({
       />
       <div className="form-bottom">
         <span className="field-note">
-          Saving sends your statement to Google Gemini for an AI summary and
+          Saving sends your statement to our AI for a summary and
           follow-up questions.
         </span>
         <button className="button primary" disabled={pending}>

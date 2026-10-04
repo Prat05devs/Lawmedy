@@ -7,5 +7,5 @@ export const site = {
   privacyEmail: process.env.NEXT_PUBLIC_PRIVACY_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "admin@wtsolutions.cc",
   address: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || "",
   priceLabel: process.env.NEXT_PUBLIC_PRICE_LABEL || "₹299",
-  updated: "2 October 2026",
+  updated: "4 October 2026",
 };

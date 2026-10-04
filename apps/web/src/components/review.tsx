@@ -144,8 +144,8 @@ function FactReview({
           ) : (
             <div className="message error">
               <AlertTriangle size={18} /> No structured facts are available yet.
-              Your saved work is safe; retry AI analysis after Gemini is
-              configured before confirming the case.
+              Your saved work is safe. Retry the AI analysis in a few minutes,
+              before confirming the case.
             </div>
           )}
           <ApplicantFields applicant={review.applicant} matterType={review.matterType} />

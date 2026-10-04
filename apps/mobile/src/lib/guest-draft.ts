@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { File, Paths } from "expo-file-system";
 import type { MatterType } from "./types";
 
@@ -13,8 +14,12 @@ export type GuestDraft = {
 
 const file = () => new File(Paths.document, "guest-draft.json");
 
+const KEY = "guest-draft";
+const web = Platform.OS === "web";
+
 export async function loadDraft(): Promise<GuestDraft | null> {
   try {
+    if (web) { const raw = globalThis.localStorage?.getItem(KEY); const d = raw ? (JSON.parse(raw) as GuestDraft) : null; return d?.statement?.trim() ? d : null; }
     const f = file();
     if (!f.exists) return null;
     const draft = JSON.parse(await f.text()) as GuestDraft;
@@ -26,6 +31,7 @@ export async function loadDraft(): Promise<GuestDraft | null> {
 
 export function saveDraft(draft: Omit<GuestDraft, "savedAt">) {
   try {
+    if (web) return void globalThis.localStorage?.setItem(KEY, JSON.stringify({ ...draft, savedAt: new Date().toISOString() }));
     const f = file();
     if (!f.exists) f.create();
     f.write(JSON.stringify({ ...draft, savedAt: new Date().toISOString() }));
@@ -36,6 +42,7 @@ export function saveDraft(draft: Omit<GuestDraft, "savedAt">) {
 
 export function clearDraft() {
   try {
+    if (web) return void globalThis.localStorage?.removeItem(KEY);
     const f = file();
     if (f.exists) f.delete();
   } catch {

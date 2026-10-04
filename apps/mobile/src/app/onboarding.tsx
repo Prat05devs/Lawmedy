@@ -18,7 +18,7 @@ const pages = [
 export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const width = Dimensions.get("window").width;
+  const { width, height } = Dimensions.get("window");
   const [page, setPage] = useState(0);
   const scroller = useRef<ScrollView>(null);
 
@@ -26,16 +26,18 @@ export default function Onboarding() {
   const next = () => {
     tap();
     if (page === pages.length - 1) return finish();
+    // Update the counter ourselves: programmatic scrolls do not fire momentum events everywhere.
+    setPage(page + 1);
     scroller.current?.scrollTo({ x: width * (page + 1), animated: true });
   };
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPage(Math.round(e.nativeEvent.contentOffset.x / width));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
-      <ScrollView ref={scroller} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll}>
+      <ScrollView ref={scroller} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll} onScrollEndDrag={onScroll}>
         {pages.map((p) => (
           <View key={p.title} style={{ width }}>
-            <Image source={p.photo} style={s.photo} contentFit="cover" />
+            <Image source={p.photo} style={[s.photo, { height: Math.round(height * 0.55) }]} contentFit="cover" />
             <View style={s.copy}>
               <Text style={s.title}>{p.title}</Text>
               <Text style={s.text}>{p.text}</Text>
@@ -55,7 +57,7 @@ export default function Onboarding() {
 }
 
 const s = StyleSheet.create({
-  photo: { width: "100%", height: "58%", backgroundColor: colors.tint },
+  photo: { width: "100%", backgroundColor: colors.tint },
   copy: { paddingHorizontal: 24, paddingTop: 28 },
   title: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 38, color: colors.ink, marginBottom: 12 },
   text: { fontFamily: fonts.sans, fontSize: 17, lineHeight: 25, color: colors.muted },

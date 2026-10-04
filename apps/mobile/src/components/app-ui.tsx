@@ -27,6 +27,7 @@ export function AppScreen({ title, left, right, footer, children, scroll = true 
         {scroll ? (
           <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             {title ? <Text style={s.title} accessibilityRole="header">{title}</Text> : null}
+            {!(title || left || right) ? <View style={{ height: 16 }} /> : null}
             {children}
           </ScrollView>
         ) : (

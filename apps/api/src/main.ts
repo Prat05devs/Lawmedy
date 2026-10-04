@@ -13,7 +13,9 @@ async function bootstrap() {
   app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.use(helmet());
   app.use(compression());
-  app.enableCors({ origin: config.get("WEB_ORIGIN", "http://localhost:3000") });
+  // WEB_ORIGIN may list several origins, comma-separated (for example the site plus a local preview).
+  const origins = config.get<string>("WEB_ORIGIN", "http://localhost:3000").split(",").map((o) => o.trim()).filter(Boolean);
+  app.enableCors({ origin: origins.length === 1 ? origins[0] : origins });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

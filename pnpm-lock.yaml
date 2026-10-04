@@ -108,21 +108,6 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@expo-google-fonts/fraunces':
-        specifier: ^0.4.1
-        version: 0.4.1
-      '@expo-google-fonts/inter':
-        specifier: ^0.4.2
-        version: 0.4.2
-      '@expo-google-fonts/newsreader':
-        specifier: ^0.4.1
-        version: 0.4.1
-      '@expo-google-fonts/public-sans':
-        specifier: ^0.4.2
-        version: 0.4.2
-      '@expo-google-fonts/space-grotesk':
-        specifier: ^0.4.1
-        version: 0.4.1
       '@expo-google-fonts/zalando-sans':
         specifier: ^0.4.1
         version: 0.4.1
@@ -201,9 +186,6 @@ importers:
       react-native-web:
         specifier: ^0.21.3
         version: 0.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      react-native-webview:
-        specifier: 13.16.1
-        version: 13.16.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
     devDependencies:
       '@types/react':
         specifier: ~19.2.2
@@ -851,23 +833,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@expo-google-fonts/fraunces@0.4.1':
-    resolution: {integrity: sha512-gYc9P92ObyWvz1rWPOeWSvVKyBFIuA8hgOdhvo4DSiPBaWLbFA6v8uLIEIBwW+0oWTlXbBzjeBReHQI2H7UNjQ==}
-
-  '@expo-google-fonts/inter@0.4.2':
-    resolution: {integrity: sha512-syfiImMaDmq7cFi0of+waE2M4uSCyd16zgyWxdPOY7fN2VBmSLKEzkfbZgeOjJq61kSqPBNNtXjggiQiSD6gMQ==}
-
   '@expo-google-fonts/material-symbols@0.4.48':
     resolution: {integrity: sha512-aZztj44PyA/sj3TXSwwpLJwqMlTUJ49okbZJYURzEcuERxMQB0KbX7RrLBi8WJnuWz5HFOLlTRxORrJfNnUPNQ==}
-
-  '@expo-google-fonts/newsreader@0.4.1':
-    resolution: {integrity: sha512-j96W112+mj/VYP06DCq00w+twyw42w0MY7eHB/XXioNK80BcG0cIk/zogjOENZSY7qejzIFbHE/PZYqlh/6VKQ==}
-
-  '@expo-google-fonts/public-sans@0.4.2':
-    resolution: {integrity: sha512-sIUyE7yXUHw6asSN6lXfcxNHl/EIyKl3EMKTgwDaY/1lTTP/9ZHYMYGwGS5XfEGQ/zgMUOjnzA7qlN9DJkctAw==}
-
-  '@expo-google-fonts/space-grotesk@0.4.1':
-    resolution: {integrity: sha512-ZVQYw4Ok/pgcSJiufP8oRZE3AVxS9xtmKEUfsurbHkHNdMc/GA1gDXP9G4Cr7KL4KqSc0haexR2TuMigotCn4Q==}
 
   '@expo-google-fonts/zalando-sans-expanded@0.4.1':
     resolution: {integrity: sha512-o0jciQ7DLdWynWUiVGIAS0jS5K73tqRv1WaRVRa3V85UseZS0YGzzSddGuawqJOhUEQJJkPCFw9QVfJTFa7hHQ==}
@@ -7354,17 +7321,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@expo-google-fonts/fraunces@0.4.1': {}
-
-  '@expo-google-fonts/inter@0.4.2': {}
-
   '@expo-google-fonts/material-symbols@0.4.48': {}
-
-  '@expo-google-fonts/newsreader@0.4.1': {}
-
-  '@expo-google-fonts/public-sans@0.4.2': {}
-
-  '@expo-google-fonts/space-grotesk@0.4.1': {}
 
   '@expo-google-fonts/zalando-sans-expanded@0.4.1': {}
 
@@ -13225,6 +13182,7 @@ snapshots:
       invariant: 2.2.4
       react: 19.2.3
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
+    optional: true
 
   react-native-worklets@0.13.0(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3):
     dependencies:

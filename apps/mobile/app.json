@@ -27,7 +27,14 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 1
+      "versionCode": 1,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -42,6 +49,14 @@
           "image": "./assets/splash-icon.png",
           "backgroundColor": "#fafafa",
           "imageWidth": 200
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lawmedy lets you choose photos of documents to attach to your matter.",
+          "cameraPermission": "Lawmedy uses the camera so you can photograph documents to attach to your matter.",
+          "microphonePermission": false
         }
       ]
     ],

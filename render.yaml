@@ -16,6 +16,9 @@ services:
         value: gemini
       - key: GEMINI_MODEL
         value: gemini-3.8-flash
+      # Tried in order if the main model is overloaded or over quota.
+      - key: GEMINI_FALLBACK_MODELS
+        value: gemini-3.6-flash,gemini-3.5-flash
       - key: LEGAL_NOTICE_PRICE_PAISE
         value: "29900"
       - key: RTI_PRICE_PAISE

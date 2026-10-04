@@ -1,0 +1,14 @@
+# Render's free plan sleeps after 15 idle minutes and the first request then takes up to a
+# minute, long enough for the app to time out. This pings the health check every 10 minutes.
+# Remove it once the API is on a paid Render plan.
+name: Keep API awake
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -fsS --max-time 90 https://lawmedy-api.onrender.com/health

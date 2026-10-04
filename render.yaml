@@ -11,7 +11,7 @@ services:
       - key: PORT
         value: "4000"
       - key: WEB_ORIGIN
-        value: https://lawmedy.vercel.app
+        value: https://www.lawmedy.in,https://lawmedy.vercel.app
       - key: AI_PROVIDER
         value: gemini
       - key: GEMINI_MODEL

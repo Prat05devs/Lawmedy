@@ -39,8 +39,11 @@ export class FinalDocumentService {
         : config.get<string>("JWT_SECRET", "");
     if (this.signingSecret.length < 32)
       throw new Error("Set FILE_SIGNING_SECRET or a valid JWT_SECRET.");
+    // WEB_ORIGIN may list several origins; links in emails use the first (the main site).
     this.webOrigin = config
       .get<string>("WEB_ORIGIN", "http://localhost:3000")
+      .split(",")[0]
+      .trim()
       .replace(/\/$/, "");
   }
 

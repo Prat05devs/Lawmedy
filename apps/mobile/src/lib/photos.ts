@@ -9,4 +9,6 @@ export const photos = {
   writing: require("../../assets/photos/writing.jpg"),
   gavelBook: require("../../assets/photos/gavel-book.jpg"),
   lawLibrary: require("../../assets/photos/law-library.jpg"),
+  neighbourhoodDispute: require("../../assets/photos/neighbourhood-dispute.jpg"),
+  courtChambers: require("../../assets/photos/court-chambers.jpg"),
 };

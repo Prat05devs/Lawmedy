@@ -4,7 +4,7 @@ import { Image, type ImageSource } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, fonts, radius } from "@/lib/theme";
+import { colors, fonts, radius, shadow } from "@/lib/theme";
 
 export const tap = () => { void Haptics.selectionAsync().catch(() => undefined); };
 export const success = () => { void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined); };
@@ -91,20 +91,20 @@ export const GroupLabel = ({ children }: { children: string }) => <Text style={s
 
 const s = StyleSheet.create({
   bar: { height: 48, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  barText: { fontFamily: fonts.sansMedium, fontSize: 17, color: colors.ink },
-  title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 40, color: colors.ink, marginBottom: 16, marginTop: 4 },
+  barText: { fontFamily: fonts.sansBold, fontSize: 16, color: colors.ink },
+  title: { fontFamily: fonts.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.6, color: colors.ink, marginBottom: 16, marginTop: 4 },
   footer: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: colors.paper, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, gap: 10 },
   track: { height: 4, backgroundColor: colors.line, borderRadius: 2, overflow: "hidden" },
   fill: { height: 4, backgroundColor: colors.ink },
   progressText: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginTop: 8 },
-  card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, overflow: "hidden" },
+  card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, overflow: "hidden", ...shadow },
   cardPhoto: { width: "100%", aspectRatio: 16 / 9, backgroundColor: colors.tint },
   cardBody: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
-  cardTitle: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 27, color: colors.ink },
+  cardTitle: { fontFamily: fonts.display, fontSize: 19, lineHeight: 25, letterSpacing: -0.2, color: colors.ink },
   cardText: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 20, color: colors.muted, marginTop: 3 },
-  group: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, overflow: "hidden" },
-  groupLabel: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.muted, marginBottom: 8, marginTop: 24 },
+  group: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, overflow: "hidden", ...shadow },
+  groupLabel: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted, marginBottom: 10, marginTop: 28, marginLeft: 4 },
   row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, minHeight: 56, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  rowTitle: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.ink },
+  rowTitle: { fontFamily: fonts.sansBold, fontSize: 15, color: colors.ink },
   rowText: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.muted, marginTop: 2 },
 });

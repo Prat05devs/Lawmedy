@@ -3,7 +3,7 @@ import { PublicController } from "./public.controller";
 describe("PublicController", () => {
   const db = { testimonial: { findMany: jest.fn().mockResolvedValue([]) } };
   const config = { get: (key: string, fallback?: unknown) => ({ LEGAL_NOTICE_PRICE_PAISE: "29900", RTI_PRICE_PAISE: "19900" } as Record<string, unknown>)[key] ?? fallback };
-  const controller = new PublicController(db as never, config as never, { authorities: jest.fn() } as never, { run: jest.fn() } as never);
+  const controller = new PublicController(db as never, config as never, { authorities: jest.fn() } as never, { run: jest.fn() } as never, { register: jest.fn() } as never);
 
   it("reports prices from configuration, not constants", () => {
     expect(controller.pricing()).toEqual({ currency: "INR", legalNotice: 29900, rti: 19900 });

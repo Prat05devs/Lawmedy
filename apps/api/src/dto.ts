@@ -18,7 +18,7 @@ import {
   Min,
   IsDateString,
 } from "class-validator";
-import { GovernmentLevel, MatterType } from "@prisma/client";
+import { AdvocateInterestStatus, GovernmentLevel, MatterType } from "@prisma/client";
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === "string" ? value.trim() : value;
@@ -196,4 +196,16 @@ export class TestimonialDto {
 export class QuickCheckDto {
   @Transform(trim) @IsString() @Length(30, 3000) statement!: string;
   @IsEnum(MatterType) type!: MatterType;
+}
+
+export class AdvocateInterestDto {
+  @Transform(trim) @IsString() @Length(2, 120) fullName!: string;
+  @Transform(trim) @IsEmail() @MaxLength(200) email!: string;
+  @IsOptional() @Transform(trim) @IsString() @MaxLength(20) phone?: string;
+  @Transform(trim) @IsString() @Length(2, 160) practicePlace!: string;
+  @IsOptional() @IsString() @MaxLength(10) source?: string;
+}
+
+export class AdvocateInterestStatusDto {
+  @IsEnum(AdvocateInterestStatus) status!: AdvocateInterestStatus;
 }

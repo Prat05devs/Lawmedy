@@ -62,7 +62,7 @@ const s = StyleSheet.create({
   title: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 38, color: colors.ink, marginBottom: 12 },
   text: { fontFamily: fonts.sans, fontSize: 17, lineHeight: 25, color: colors.muted },
   skipWrap: { position: "absolute", top: 0, right: 0, left: 0, alignItems: "flex-end" },
-  skip: { margin: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: "rgba(246,242,234,0.92)" },
+  skip: { margin: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: "rgba(250,250,250,0.92)" },
   skipText: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink },
   footer: { paddingHorizontal: 24, paddingTop: 12, gap: 16 },
   dots: { flexDirection: "row", gap: 8, justifyContent: "center" },

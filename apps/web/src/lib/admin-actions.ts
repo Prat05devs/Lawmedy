@@ -76,3 +76,10 @@ export async function deleteTestimonialAction(id: string, _: FormState): Promise
   revalidatePath("/admin/testimonials"); revalidatePath("/");
   return { success: "Deleted." };
 }
+
+export async function setAdvocateInterestStatusAction(id: string, _: FormState, data: FormData): Promise<FormState> {
+  try { await api(`/admin/advocate-interest/${enc(id)}/status`, { method: "POST", body: JSON.stringify({ status: data.get("status") }) }); }
+  catch (e) { return fail(e); }
+  revalidatePath("/admin/advocate-signups"); revalidatePath("/admin");
+  return { success: "Status saved." };
+}

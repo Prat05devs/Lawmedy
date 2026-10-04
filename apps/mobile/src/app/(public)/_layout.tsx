@@ -11,7 +11,7 @@ export default function PublicTabs() {
   // First launch: a short, skippable introduction before anything else.
   useEffect(() => { if (!hasFlag("intro-seen")) router.replace("/onboarding"); }, [router]);
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: "#9b9484", tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: colors.faint, tabBarLabelStyle: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: -0.1 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
       <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: icon("home-outline") }} />
       <Tabs.Screen name="start" options={{ title: "Start", tabBarIcon: icon("create-outline") }} />
       <Tabs.Screen name="help" options={{ title: "Help", tabBarIcon: icon("help-circle-outline") }} />

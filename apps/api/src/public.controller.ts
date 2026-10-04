@@ -4,7 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "./prisma.service";
 import { RtiService } from "./rti/rti.service";
 import { QuickCheckService } from "./quick-check.service";
-import { QuickCheckDto } from "./dto";
+import { AdvocateInterestDto, QuickCheckDto } from "./dto";
+import { AdvocateInterestService } from "./advocate-interest.service";
 
 // Read-only content the app and website show before anyone signs in. Nothing here is personal.
 // Responses are cacheable so a busy landing page does not turn into database traffic.
@@ -15,6 +16,7 @@ export class PublicController {
     private readonly config: ConfigService,
     private readonly rti: RtiService,
     private readonly quickCheck: QuickCheckService,
+    private readonly advocateInterest: AdvocateInterestService,
   ) {}
 
   @Get("pricing")
@@ -36,6 +38,14 @@ export class PublicController {
   @Throttle({ default: { limit: 6, ttl: 3600000 }, ip: { limit: 20, ttl: 3600000 } })
   check(@Body() dto: QuickCheckDto) {
     return this.quickCheck.run(dto.statement, dto.type);
+  }
+
+  // Advocates registering for the upcoming portal. No account needed, so limited per IP.
+  @Post("advocate-interest")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 3600000 }, ip: { limit: 10, ttl: 3600000 } })
+  registerAdvocate(@Body() dto: AdvocateInterestDto) {
+    return this.advocateInterest.register(dto);
   }
 
   @Get("testimonials")

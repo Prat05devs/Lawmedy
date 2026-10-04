@@ -24,6 +24,7 @@ import { AdminService } from "./admin/admin.service";
 import { RecoveryService } from "./recovery.service";
 import { PublicController } from "./public.controller";
 import { QuickCheckService } from "./quick-check.service";
+import { AdvocateInterestService } from "./advocate-interest.service";
 import { AccountService } from "./account.service";
 import { AdminController } from "./admin/admin.controller";
 import { PaymentWebhookController } from "./payment/payment.controller";
@@ -101,6 +102,7 @@ import {
     AdminService,
     RecoveryService,
     QuickCheckService,
+    AdvocateInterestService,
     AccountService,
     DocumentsService,
     AdvocateService,

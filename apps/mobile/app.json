@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#f6f2ea",
+    "backgroundColor": "#fafafa",
     "ios": {
       "bundleIdentifier": "com.lawmedy.app",
       "supportsTablet": false,
@@ -40,7 +40,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "backgroundColor": "#f6f2ea",
+          "backgroundColor": "#fafafa",
           "imageWidth": 200
         }
       ]

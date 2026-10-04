@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CreditCard, FolderOpen, UserCheck, Users } from "lucide-react";
 import { api, statusLabel, type Matter } from "@/lib/api";
 
-type Dash = { pendingPayments: number; activeAdvocates: number; awaitingAssignment: number; total: number; matters: Record<string, number> };
+type Dash = { pendingPayments: number; activeAdvocates: number; awaitingAssignment: number; newAdvocateSignups: number; total: number; matters: Record<string, number> };
 
 export default async function AdminDashboard() {
   const d = await api<Dash>("/admin/dashboard");
@@ -11,6 +11,7 @@ export default async function AdminDashboard() {
     { href: "/admin/matters?status=DRAFT_GENERATED", label: "Awaiting assignment", value: d.awaitingAssignment, Icon: UserCheck, hot: d.awaitingAssignment > 0 },
     { href: "/admin/matters", label: "All matters", value: d.total, Icon: FolderOpen, hot: false },
     { href: "/admin/advocates", label: "Active advocates", value: d.activeAdvocates, Icon: Users, hot: false },
+    { href: "/admin/advocate-signups", label: "New advocate sign-ups", value: d.newAdvocateSignups ?? 0, Icon: Users, hot: (d.newAdvocateSignups ?? 0) > 0 },
   ];
   return (
     <>

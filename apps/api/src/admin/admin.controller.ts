@@ -3,15 +3,16 @@ import type { Response } from "express";
 import { UserRole } from "@prisma/client";
 import { AuthGuard, UserId } from "../auth.guard";
 import { Roles, RolesGuard } from "../roles.guard";
-import { TestimonialDto, AdvocateActiveDto, AdvocatePasswordDto, AssignAdvocateDto, CreateAdvocateDto, RejectPaymentDto } from "../dto";
+import { AdvocateInterestStatusDto, TestimonialDto, AdvocateActiveDto, AdvocatePasswordDto, AssignAdvocateDto, CreateAdvocateDto, RejectPaymentDto } from "../dto";
 import { AdminService } from "./admin.service";
 import { RecoveryService } from "../recovery.service";
+import { AdvocateInterestService } from "../advocate-interest.service";
 
 @Controller("admin")
 @UseGuards(AuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService) {}
+  constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService, private readonly advocateInterest: AdvocateInterestService) {}
 
   // Re-trigger interrupted background work now instead of waiting for the next sweep.
   @Post("recover") @HttpCode(202) recover() { void this.recovery.sweep(true); return { started: true }; }
@@ -61,6 +62,10 @@ export class AdminController {
   updateTestimonial(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string, @Body() dto: TestimonialDto) { return this.admin.saveTestimonial(adminId, id, dto); }
   @Post("testimonials/:id/delete") @HttpCode(200)
   deleteTestimonial(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string) { return this.admin.deleteTestimonial(adminId, id); }
+
+  @Get("advocate-interest") advocateInterestList() { return this.advocateInterest.list(); }
+  @Post("advocate-interest/:id/status") @HttpCode(200)
+  advocateInterestStatus(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string, @Body() dto: AdvocateInterestStatusDto) { return this.advocateInterest.setStatus(adminId, id, dto.status); }
 
   @Get("advocates") advocates() { return this.admin.advocates(); }
   @Post("advocates")

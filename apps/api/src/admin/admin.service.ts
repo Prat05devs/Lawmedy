@@ -17,16 +17,18 @@ export class AdminService {
   ) {}
 
   async dashboard() {
-    const [byStatus, pendingPayments, advocates, unassigned] = await Promise.all([
+    const [byStatus, pendingPayments, advocates, unassigned, advocateSignups] = await Promise.all([
       this.db.matter.groupBy({ by: ["status"], _count: { _all: true } }),
       this.db.payment.count({ where: { status: "SUBMITTED" } }),
       this.db.user.count({ where: { role: "ADVOCATE", active: true } }),
       this.db.matter.count({ where: { status: "DRAFT_GENERATED", assignment: null } }),
+      this.db.advocateInterest.count({ where: { status: "NEW" } }),
     ]);
     return {
       pendingPayments,
       activeAdvocates: advocates,
       awaitingAssignment: unassigned,
+      newAdvocateSignups: advocateSignups,
       matters: Object.fromEntries(byStatus.map((row) => [row.status, row._count._all])),
       total: byStatus.reduce((sum, row) => sum + row._count._all, 0),
     };

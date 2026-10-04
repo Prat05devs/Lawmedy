@@ -123,7 +123,7 @@ export default function Start() {
             multiline
             autoFocus={!statement}
             placeholder={prompts[type]}
-            placeholderTextColor="#9b9484"
+            placeholderTextColor={colors.faint}
             style={s.editor}
             textAlignVertical="top"
             accessibilityLabel="What happened"
@@ -150,7 +150,7 @@ export default function Start() {
             })}
           </View>
           <Text style={s.label}>Subject, in a few words (optional)</Text>
-          <TextInput value={subject} onChangeText={setSubject} placeholder="What information do you want?" placeholderTextColor="#9b9484" style={s.input} />
+          <TextInput value={subject} onChangeText={setSubject} placeholder="What information do you want?" placeholderTextColor={colors.faint} style={s.input} />
         </>
       )}
 

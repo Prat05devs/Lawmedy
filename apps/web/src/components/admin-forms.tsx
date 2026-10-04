@@ -2,7 +2,7 @@
 import { useActionState, useState } from "react";
 import { BadgeCheck, LoaderCircle, UserPlus, XCircle } from "lucide-react";
 import type { FormState } from "@/lib/actions";
-import { deleteTestimonialAction, saveTestimonialAction, assignAdvocateAction, createAdvocateAction, rejectPaymentAction, resetAdvocatePasswordAction, setAdvocateActiveAction, verifyPaymentAction } from "@/lib/admin-actions";
+import { setAdvocateInterestStatusAction, deleteTestimonialAction, saveTestimonialAction, assignAdvocateAction, createAdvocateAction, rejectPaymentAction, resetAdvocatePasswordAction, setAdvocateActiveAction, verifyPaymentAction } from "@/lib/admin-actions";
 
 const Msg = ({ state }: { state: FormState }) =>
   state.error ? <p className="message error" role="alert">{state.error}</p> : state.success ? <p className="message success" role="status">{state.success}</p> : null;
@@ -105,4 +105,44 @@ export function TestimonialForm({ item }: { item?: TestimonialRow }) {
       {item && <form action={remove}><button className="text-button" disabled={deleting} onClick={(e) => { if (!confirm("Delete this testimonial?")) e.preventDefault(); }}>Delete</button><Msg state={del} /></form>}
     </div>
   );
+}
+
+export type AdvocateSignup = { id: string; fullName: string; email: string; phone: string | null; practicePlace: string; source: string; status: "NEW" | "CONTACTED" | "ONBOARDED" | "NOT_SUITABLE"; createdAt: string; contactedAt: string | null };
+const signupStatus: Record<AdvocateSignup["status"], string> = { NEW: "New", CONTACTED: "Contacted", ONBOARDED: "Onboarded", NOT_SUITABLE: "Not suitable" };
+
+export function AdvocateSignupRow({ item }: { item: AdvocateSignup }) {
+  const [state, action, pending] = useActionState(setAdvocateInterestStatusAction.bind(null, item.id), {});
+  const digits = item.phone?.replace(/\D/g, "");
+  return (
+    <div className={`admin-row ${item.status === "NOT_SUITABLE" ? "inactive" : ""}`}>
+      <div><strong>{item.fullName}</strong><small>{item.practicePlace}</small></div>
+      <div>
+        {item.phone ? <a href={`tel:${item.phone}`}><strong>{item.phone}</strong></a> : <small>No phone given</small>}
+        <small>{digits && <><a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer">WhatsApp</a> · </>}<a href={`mailto:${item.email}`}>{item.email}</a></small>
+      </div>
+      <div className="admin-stats">
+        <span>{new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+        <span>via {item.source}</span>
+        <span className={`pill ${item.status === "NEW" ? "warn" : item.status === "ONBOARDED" ? "ok" : "off"}`}>{signupStatus[item.status]}</span>
+      </div>
+      <form action={action} className="admin-row-actions">
+        <select name="status" defaultValue={item.status} aria-label={`Status for ${item.fullName}`}>
+          {Object.entries(signupStatus).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        <button className="button outline" disabled={pending}>Save</button>
+      </form>
+      <Msg state={state} />
+    </div>
+  );
+}
+
+export function SignupsCsvButton({ items }: { items: AdvocateSignup[] }) {
+  const download = () => {
+    const cell = (v: string | null) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [["Name", "Phone", "Email", "Where they practise", "Status", "Registered", "Source"], ...items.map((i) => [i.fullName, i.phone, i.email, i.practicePlace, signupStatus[i.status], i.createdAt.slice(0, 10), i.source])];
+    const url = URL.createObjectURL(new Blob([rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: "lawmedy-advocate-signups.csv" });
+    a.click(); URL.revokeObjectURL(url);
+  };
+  return <button type="button" className="button outline" onClick={download} disabled={!items.length}>Download CSV</button>;
 }

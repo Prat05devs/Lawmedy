@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, fonts, radius } from "@/lib/theme";
+import { colors, fonts, radius, shadow } from "@/lib/theme";
 import { statusLabel, type MatterStatus } from "@/lib/types";
 
 export function Screen({ children, scroll = true, padded = true, background = colors.paper }: { children: React.ReactNode; scroll?: boolean; padded?: boolean; background?: string }) {
@@ -29,9 +29,9 @@ export const Eyebrow = ({ children }: { children: React.ReactNode; gold?: boolea
   <Text style={s.eyebrow}>{children}</Text>
 );
 
-export function Button({ title, onPress, variant = "primary", loading, disabled, icon, style }: {
+export function Button({ title, onPress, variant = "primary", loading, disabled, icon, iconAfter, style }: {
   title: string; onPress?: () => void; variant?: "primary" | "gold" | "outline" | "ghost" | "danger";
-  loading?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap; style?: StyleProp<ViewStyle>;
+  loading?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap; iconAfter?: boolean; style?: StyleProp<ViewStyle>;
 }) {
   const bg = variant === "primary" ? colors.ink : variant === "gold" ? colors.gold : variant === "danger" ? colors.danger : "transparent";
   const fg = variant === "outline" || variant === "ghost" ? colors.navy : "#fff";
@@ -42,8 +42,9 @@ export function Button({ title, onPress, variant = "primary", loading, disabled,
       onPress={onPress}
       style={({ pressed }) => [s.button, { backgroundColor: bg, borderColor: variant === "outline" ? colors.ink : bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 }, style]}
     >
-      {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+      {loading ? <ActivityIndicator color={fg} /> : icon && !iconAfter ? <Ionicons name={icon} size={18} color={fg} /> : null}
       <Text style={[s.buttonText, { color: fg }]}>{title}</Text>
+      {!loading && icon && iconAfter ? <Ionicons name={icon} size={20} color={fg} /> : null}
     </Pressable>
   );
 }
@@ -53,7 +54,7 @@ export function Field({ label, note, ...props }: TextInputProps & { label: strin
     <View style={{ marginBottom: 16 }}>
       <Text style={s.label}>{label}</Text>
       <TextInput
-        placeholderTextColor="#9aa3b5"
+        placeholderTextColor={colors.faint}
         {...props}
         style={[s.input, props.multiline && { minHeight: 110, textAlignVertical: "top" }, props.style]}
       />
@@ -111,17 +112,17 @@ export function Loading() {
 }
 
 const s = StyleSheet.create({
-  h1: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 37, color: colors.ink, letterSpacing: -0.4, marginBottom: 8 },
-  h2: { fontFamily: fonts.serif, fontSize: 20, lineHeight: 26, color: colors.ink, marginBottom: 4 },
+  h1: { fontFamily: fonts.display, fontSize: 30, lineHeight: 38, color: colors.ink, letterSpacing: -0.6, marginBottom: 8 },
+  h2: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.ink, letterSpacing: -0.2, marginBottom: 4 },
   body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.ink },
-  eyebrow: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginBottom: 6 },
-  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.md, borderWidth: 1 },
-  buttonText: { fontFamily: fonts.sansMedium, fontSize: 15 },
-  label: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.ink, marginBottom: 6 },
-  input: { fontFamily: fonts.sans, fontSize: 16, color: colors.ink, backgroundColor: "#fffefb", borderWidth: 1, borderColor: "#cfc6b4", borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13 },
+  eyebrow: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted, marginBottom: 8 },
+  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48, paddingVertical: 12, paddingHorizontal: 20, borderRadius: radius.sm, borderWidth: 1 },
+  buttonText: { fontFamily: fonts.sansBold, fontSize: 16, letterSpacing: -0.1 },
+  label: { fontFamily: fonts.sansBold, fontSize: 13, color: colors.ink, marginBottom: 6 },
+  input: { fontFamily: fonts.sans, fontSize: 16, color: colors.ink, backgroundColor: colors.card, borderWidth: 1, borderColor: "#c7c7c0", borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 13 },
   note: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted, marginTop: 5 },
-  card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, padding: 18, marginBottom: 16 },
+  card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, padding: 18, marginBottom: 16, ...shadow },
   stepNum: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 26, color: colors.gold, minWidth: 28 },
-  message: { flexDirection: "row", gap: 8, padding: 12, borderRadius: radius.md, marginTop: 10, alignItems: "flex-start" },
-  badge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 3, borderWidth: 1 },
+  message: { flexDirection: "row", gap: 8, padding: 12, borderRadius: radius.sm, marginTop: 10, alignItems: "flex-start" },
+  badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
 });

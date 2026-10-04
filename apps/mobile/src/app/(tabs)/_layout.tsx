@@ -11,7 +11,7 @@ export default function TabsLayout() {
   // Someone who began as a guest and has just signed up: turn their draft into a matter.
   useEffect(() => { void loadDraft().then((draft) => { if (draft) router.replace("/resume"); }); }, [router]);
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: "#9b9484", tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.ink, tabBarInactiveTintColor: colors.faint, tabBarLabelStyle: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: -0.1 }, tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line } }}>
       <Tabs.Screen name="index" options={{ title: "Matters", tabBarIcon: icon("folder-open-outline") }} />
       <Tabs.Screen name="new" options={{ title: "New", tabBarIcon: icon("add-circle-outline") }} />
       <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("person-circle-outline") }} />

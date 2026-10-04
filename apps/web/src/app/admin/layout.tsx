@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="workspace advocate-workspace">
       <aside className="sidebar">
-        <Brand href="/admin" />
+        <Brand href="/" />
         <nav>
           <Link className="nav-item" href="/admin"><LayoutDashboard size={18} /> Dashboard</Link>
           <Link className="nav-item" href="/admin/matters"><FolderOpen size={18} /> Matters</Link>

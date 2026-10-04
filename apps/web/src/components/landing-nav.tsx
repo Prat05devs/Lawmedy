@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Brand } from "@/components/brand";
+import { AccountMenu, deskFor, type MenuUser } from "@/components/account-menu";
 
 const links = [
   { href: "#how", label: "How it works" },
@@ -10,7 +11,7 @@ const links = [
   { href: "#questions", label: "Questions" },
 ];
 
-export function LandingNav() {
+export function LandingNav({ user }: { user?: MenuUser | null }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="lp-header">
@@ -19,17 +20,27 @@ export function LandingNav() {
         <nav className="lp-links" aria-label="Primary">
           {links.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}
         </nav>
-        <div className="lp-header-cta">
-          <Link href="/login">Log in</Link>
-          <Link href="/signup" className="button primary">Get started</Link>
-        </div>
+        {user ? (
+          <div className="lp-header-cta lp-header-user"><AccountMenu user={user} /></div>
+        ) : (
+          <div className="lp-header-cta">
+            <Link href="/login">Log in</Link>
+            <Link href="/signup" className="button primary">Get started</Link>
+          </div>
+        )}
         <button className="lp-menu-btn" aria-expanded={open} aria-label="Menu" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "Menu"}</button>
       </div>
       {open && (
         <div className="lp-menu">
           {links.map((l) => <a key={l.href} href={l.href} onClick={() => setOpen(false)}>{l.label}</a>)}
-          <Link href="/login">Log in</Link>
-          <Link href="/signup" className="button primary">Get started</Link>
+          {user ? (
+            <Link href={deskFor(user.role)} className="button primary">Go to dashboard</Link>
+          ) : (
+            <>
+              <Link href="/login">Log in</Link>
+              <Link href="/signup" className="button primary">Get started</Link>
+            </>
+          )}
         </div>
       )}
     </header>

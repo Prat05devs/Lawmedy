@@ -1,0 +1,70 @@
+/* Website assistant: floating button, chat panel (bottom sheet on phones), bubble animations. */
+.lc-fab-wrap { position: fixed; right: 20px; bottom: 20px; z-index: 60; display: flex; align-items: center; gap: 10px; }
+.lc-fab { position: relative; width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .22); animation: lc-bob 2.8s ease-in-out infinite; transition: transform .15s; }
+.lc-fab:hover { transform: scale(1.05); }
+.lc-fab:active { transform: scale(.94); }
+.lc-fab:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.lc-fab svg { position: relative; z-index: 1; }
+.lc-ring { position: absolute; inset: 0; border-radius: 50%; background: var(--ink); animation: lc-pulse 3.4s ease-out infinite; }
+.lc-tag { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0, 0, 0, .08); white-space: nowrap; animation: lc-tag-in .45s cubic-bezier(.2, .9, .3, 1.3) .9s both; }
+
+.lc-backdrop { position: fixed; inset: 0; z-index: 70; background: rgba(28, 27, 26, .32); animation: lc-fade .2s ease both; }
+.lc-panel { position: fixed; right: 20px; bottom: 20px; z-index: 71; width: min(390px, calc(100vw - 40px)); height: min(640px, calc(100vh - 40px)); display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 18px 50px rgba(0, 0, 0, .2); animation: lc-panel-in .32s cubic-bezier(.2, .9, .3, 1.15) both; transform-origin: bottom right; }
+.lc-panel.out, .lc-backdrop.out { animation: lc-panel-out .2s ease both; }
+.lc-backdrop.out { animation-name: lc-fade-out; }
+
+.lc-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--line); background: #fff; }
+.lc-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-family: var(--font-serif), Georgia, serif; font-size: 18px; }
+.lc-head-text { flex: 1; min-width: 0; display: grid; }
+.lc-head-text strong { font-size: 15px; }
+.lc-head-text span { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.lc-online { width: 7px; height: 7px; border-radius: 50%; background: #2f6a47; display: inline-block; }
+.lc-icon { width: 36px; height: 36px; border: 0; background: none; color: var(--ink); border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+.lc-icon:hover { background: rgba(0, 0, 0, .06); }
+
+.lc-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; overscroll-behavior: contain; }
+.lc-msg { max-width: 86%; display: grid; justify-items: start; animation: lc-pop .32s cubic-bezier(.2, .9, .3, 1.3) both; }
+.lc-msg.me { align-self: flex-end; justify-items: end; }
+.lc-bubble { margin: 0; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.45; }
+.lc-msg.bot .lc-bubble { background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.lc-msg.me .lc-bubble { background: var(--ink); color: #fff; border-bottom-right-radius: 6px; }
+.lc-typing { display: flex; gap: 5px; padding: 15px 16px !important; }
+.lc-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: lc-dot 1.1s ease-in-out infinite; }
+.lc-typing i:nth-child(2) { animation-delay: .14s; }
+.lc-typing i:nth-child(3) { animation-delay: .28s; }
+.lc-action { margin-top: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--ink); background: #fff; color: var(--ink); font: 600 13.5px var(--font-sans), sans-serif; cursor: pointer; }
+.lc-action:hover { background: var(--ink); color: #fff; }
+
+.lc-suggest { border-top: 1px solid var(--line); background: #fff; padding: 10px 0 12px; display: grid; gap: 8px; }
+.lc-suggest-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 16px; }
+.lc-chips { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 2px; scrollbar-width: none; }
+.lc-chips::-webkit-scrollbar { display: none; }
+.lc-chip { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: 500 13.5px var(--font-sans), sans-serif; cursor: pointer; white-space: nowrap; }
+.lc-chip:hover:not(:disabled) { border-color: var(--ink); }
+.lc-chip:disabled { opacity: .5; cursor: default; }
+.lc-chip.done { background: rgba(0, 0, 0, .04); border-color: transparent; color: var(--muted); }
+.lc-chip:focus-visible, .lc-action:focus-visible, .lc-icon:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (min-width: 641px) { .lc-backdrop { background: transparent; } }
+@media (max-width: 640px) {
+  .lc-fab-wrap { right: 16px; bottom: 16px; }
+  .lc-panel { left: 0; right: 0; bottom: 0; width: 100%; height: 84vh; height: 84dvh; border-radius: 20px 20px 0 0; border-bottom: 0; transform-origin: bottom center; animation-name: lc-sheet-in; padding-bottom: env(safe-area-inset-bottom); }
+  .lc-panel.out { animation-name: lc-sheet-out; }
+}
+
+@keyframes lc-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes lc-pulse { 0% { transform: scale(1); opacity: .35; } 53%, 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes lc-tag-in { from { opacity: 0; transform: translateX(12px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes lc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lc-fade-out { to { opacity: 0; } }
+@keyframes lc-panel-in { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes lc-panel-out { to { opacity: 0; transform: translateY(12px) scale(.98); } }
+@keyframes lc-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes lc-sheet-out { to { transform: translateY(100%); } }
+@keyframes lc-pop { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes lc-dot { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-fab, .lc-ring, .lc-tag, .lc-panel, .lc-backdrop, .lc-msg, .lc-typing i { animation: none !important; }
+  .lc-ring { display: none; }
+}

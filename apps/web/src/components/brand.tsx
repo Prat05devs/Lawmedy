@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // "light" is the white logo for dark (navy/photo) backgrounds; "dark" is the black logo for light backgrounds.
-export function Brand({ href = "/dashboard", tone = "light" }: { href?: string; tone?: "light" | "dark" }) {
+export function Brand({ href = "/", tone = "light" }: { href?: string; tone?: "light" | "dark" }) {
   return (
     <Link href={href} className="brand-logo" aria-label="Lawmedy home">
       <Image

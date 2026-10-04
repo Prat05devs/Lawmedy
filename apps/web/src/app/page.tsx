@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { LandingNav } from "@/components/landing-nav";
 import { SampleNotice } from "@/components/sample-notice";
+import { AssistantChat } from "@/components/assistant-chat";
+import { AdvocateInterestForm } from "@/components/advocate-interest-form";
 import { site } from "@/lib/site";
+import { getOptionalUser } from "@/lib/api";
 import "./landing.css";
 
 const steps = [
@@ -35,6 +36,39 @@ const faqs = [
   { q: "Can I delete my data?", a: "Yes. In the app, open Account and choose Delete my account. Your matters, uploads and drafts are erased." },
 ];
 
+// Figures shown on the landing page, each with the original source. Checked October 2026.
+type Fact = { figure: string; text: string; source: string; href: string };
+const disputeFacts: Fact[] = [
+  { figure: "5.64 crore", text: "cases pending across Indian courts, from the Supreme Court to district courts. Over 80,000 cases in high courts have waited more than 30 years.", source: "Law Minister's written reply in the Rajya Sabha, 23 July 2026, citing the National Judicial Data Grid", href: "https://telanganatoday.com/more-than-5-64-crore-cases-pending-across-indian-courts-rs" },
+  { figure: "15", text: "judges for every 10 lakh people in India, against the 50 the Law Commission recommended in 1987.", source: "India Justice Report 2025", href: "https://indiajusticereport.org/" },
+  { figure: "₹50,000 crore", text: "lost every year in wages and business by people attending court hearings. With legal fees, the cost passes ₹80,000 crore.", source: "DAKSH, Access to Justice Survey", href: "https://www.dakshindia.org/2016/04/21/" },
+  { figure: "2.10 crore", text: "disputes settled before ever reaching a court, at a single National Lok Adalat on 13 September 2025. Most disputes can end with a clear demand and a conversation.", source: "NALSA, 3rd National Lok Adalat 2025, reported by LiveLaw", href: "https://www.livelaw.in/news-updates/nalsa-3rd-national-lok-adalat-2025-303850" },
+  { figure: "66%", text: "of Americans faced at least one legal problem in four years. Legal trouble is part of everyday life everywhere; what changes the outcome is acting on it, in writing.", source: "IAALS and HiiL, Justice Needs and Satisfaction in the United States, 2021", href: "https://iaals.du.edu/publications/justice-needs-and-satisfaction-united-states-america" },
+];
+const lawFacts: Fact[] = [
+  { figure: "2 months", text: "of written notice the law requires before anyone can sue the government or a public officer.", source: "Section 80, Code of Civil Procedure, 1908", href: "https://indiankanoon.org/doc/55198661/" },
+  { figure: "30 days", text: "to send a written demand after a cheque bounces. The other side then has 15 days to pay before a complaint can be filed.", source: "Section 138, Negotiable Instruments Act, 1881", href: "https://indiankanoon.org/doc/1823824/" },
+];
+const rtiFacts: Fact[] = [
+  { figure: "30 days", text: "for a public information officer to reply to an RTI application, or 48 hours where a person's life or liberty is at stake.", source: "Section 7(1), Right to Information Act, 2005", href: "https://indiankanoon.org/doc/1831074/" },
+  { figure: "4,13,972", text: "appeals and complaints waiting at India's information commissions on 30 June 2025.", source: "Satark Nagrik Sangathan, Report Card on Information Commissions 2024-25", href: "https://www.snsindia.org/wp-content/uploads/2025/10/Press-Release-2025.pdf" },
+  { figure: "18 of 29", text: "information commissions would take more than a year to decide a new appeal. A clear, specific first application is the best way to stay out of that queue.", source: "Satark Nagrik Sangathan, Report Card on Information Commissions 2024-25", href: "https://www.snsindia.org/wp-content/uploads/2025/10/Press-Release-2025.pdf" },
+];
+
+function FactGrid({ items }: { items: Fact[] }) {
+  return (
+    <div className="lp-facts">
+      {items.map((f) => (
+        <figure key={f.figure + f.source} className="lp-fact">
+          <strong>{f.figure}</strong>
+          <p>{f.text}</p>
+          <figcaption>Source: <a href={f.href} target="_blank" rel="noopener noreferrer">{f.source}</a></figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 type Testimonial = { id: string; name: string; descriptor: string | null; quote: string };
 async function testimonials(): Promise<Testimonial[]> {
   try {
@@ -45,14 +79,26 @@ async function testimonials(): Promise<Testimonial[]> {
   }
 }
 
+async function pricing() {
+  const fallback = { notice: site.priceLabel, rti: site.priceLabel };
+  try {
+    const response = await fetch(`${process.env.API_URL || "http://127.0.0.1:4000"}/public/pricing`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return fallback;
+    const p = (await response.json()) as { currency: string; legalNotice: number; rti: number };
+    const fmt = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: p.currency, maximumFractionDigits: 0 }).format(paise / 100);
+    return { notice: fmt(p.legalNotice), rti: fmt(p.rti) };
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function Home() {
-  if ((await cookies()).get("lawmedy_session")) redirect("/dashboard");
-  const quotes = await testimonials();
+  const [quotes, prices, user] = await Promise.all([testimonials(), pricing(), getOptionalUser()]);
   return (
     <div className="lp">
-      <LandingNav />
+      <LandingNav user={user} />
 
-      <section className="lp-hero">
+      <section className="lp-hero" id="top">
         <div className="lp-hero-copy">
           <h1>Legal notices and RTI applications, written from your facts and reviewed by an advocate.</h1>
           <p>
@@ -101,6 +147,18 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="lp-block" id="facts">
+        <h2>Why we built Lawmedy</h2>
+        <p className="lp-lead">In many countries, people put a dispute in writing as a matter of habit, and the other side knows it. In India, most people let it go: the courts are slow, and getting a notice drafted means taking leave and visiting an advocate&apos;s chamber. These numbers are why a clear legal notice, sent early, matters.</p>
+        <h3 className="lp-facts-h">Disputes and courts</h3>
+        <FactGrid items={disputeFacts} />
+        <h3 className="lp-facts-h">What the law already expects</h3>
+        <FactGrid items={lawFacts} />
+        <h3 className="lp-facts-h">Right to Information</h3>
+        <FactGrid items={rtiFacts} />
+        <p className="lp-note">Figures are from the sources linked, checked in October 2026. Live court pendency is published on the <a href="https://njdg.ecourts.gov.in/" target="_blank" rel="noopener noreferrer">National Judicial Data Grid</a>.</p>
+      </section>
+
       <section className="lp-block" id="ai">
         <h2>Where AI is used, and where it is not</h2>
         <p className="lp-lead">AI saves time on the slow parts. It never supplies facts, and it does not decide what the document says about the law.</p>
@@ -147,7 +205,9 @@ export default async function Home() {
 
       <section className="lp-block lp-narrow" id="advocates">
         <h2>For advocates</h2>
-        <p>Today our in-house advocate reviews every document. We are working on a way for more advocates to join, take on reviews, and carry a matter forward as their own case once the notice has gone out. It is not open yet. If you are an advocate and want to hear when it is, write to <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.</p>
+        <p className="lp-soon">Coming soon · Advocate portal</p>
+        <p>Today our in-house advocates review every document. Our portal for independent advocates is almost ready: requests arrive with the facts organised and the documents attached, you review the draft on a digital desk, and you can carry a matter forward as your own case once the notice has gone out. Register your interest and we will reach out when it opens.</p>
+        <AdvocateInterestForm />
       </section>
 
       <section className="lp-closing">
@@ -157,6 +217,8 @@ export default async function Home() {
           <Link href="/login" className="lp-textlink">Log in</Link>
         </div>
       </section>
+
+      <AssistantChat prices={prices} />
 
       <footer className="lp-footer">
         <div className="lp-footer-in">

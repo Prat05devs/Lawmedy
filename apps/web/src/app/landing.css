@@ -106,3 +106,42 @@ html:has(.lp) { scroll-behavior: smooth; }
 .lp-credit-fig .lp-doc-photo { margin-bottom: 6px; }
 .lp-credit-fig figcaption { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 .lp-credit-fig figcaption a { text-decoration: underline; }
+
+.lp-facts-h { font-size: 20px; margin: 34px 0 16px; }
+.lp-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.lp-fact { margin: 0; padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; }
+.lp-fact strong { font-family: var(--font-serif), Georgia, serif; font-weight: 500; font-size: clamp(30px, 3.4vw, 40px); line-height: 1.05; letter-spacing: -0.02em; }
+.lp-fact p { margin: 10px 0 14px; color: #3a362f; font-size: 15.5px; line-height: 1.55; flex: 1; }
+.lp-fact figcaption { font-size: 13px; color: var(--muted); }
+.lp-fact figcaption a { text-decoration: underline; color: var(--muted); }
+.lp-fact figcaption a:hover { color: var(--ink); }
+#facts .lp-note { margin-top: 22px; }
+
+.lp-soon { display: inline-block; font-size: 12px !important; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; background: rgba(0,0,0,.05); margin-bottom: 14px !important; }
+.adv-form { display: grid; gap: 14px; max-width: 520px; margin-top: 20px; }
+.adv-form label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+.adv-form input { font: inherit; font-weight: 400; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.adv-form small { font-weight: 400; font-size: 13px; color: var(--muted); }
+.adv-form small.nudge { color: var(--ink); font-weight: 600; }
+.adv-label-row { display: flex; justify-content: space-between; align-items: center; }
+.adv-label-row em { font-style: normal; font-size: 12px; color: #2f6a47; background: #eaf2ec; padding: 2px 8px; border-radius: 999px; }
+.adv-form .button { justify-self: start; padding: 12px 22px; }
+
+.acct { position: relative; display: flex; align-items: center; gap: 12px; }
+.acct-desk { display: inline-flex; align-items: center; gap: 8px; }
+.acct-avatar { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font: 600 14px var(--font-sans), sans-serif; display: inline-grid; place-items: center; cursor: pointer; flex: none; }
+.acct-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.acct-who .acct-avatar.big { width: 44px; height: 44px; cursor: default; display: inline-grid; place-items: center; color: #fff; font-size: 15px; font-weight: 600; }
+.acct-pop { position: absolute; right: 0; top: calc(100% + 10px); z-index: 50; width: min(300px, calc(100vw - 32px)); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.14); padding: 14px; display: grid; gap: 4px; animation: acct-in .18s ease-out both; }
+.acct-who { display: flex; gap: 12px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.acct-who strong { display: block; font-size: 15px; }
+.acct-who span { display: block; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.acct-details { margin: 0 0 6px; display: grid; gap: 4px; font-size: 13px; }
+.acct-details div { display: flex; justify-content: space-between; gap: 12px; }
+.acct-details dt { color: var(--muted); }
+.acct-details dd { margin: 0; font-weight: 600; }
+.acct-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 8px; border-radius: 8px; border: 0; background: none; font: 500 14px var(--font-sans), sans-serif; color: var(--ink); cursor: pointer; text-align: left; }
+.acct-item:hover { background: rgba(0,0,0,.05); }
+.acct-pop form { margin: 0; }
+@keyframes acct-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 900px) { .lp-header-in .acct { margin-left: auto; } .lp-header-in .acct-desk { display: none; } .lp-menu .acct-desk { display: inline-flex; } }

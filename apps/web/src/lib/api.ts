@@ -259,3 +259,19 @@ export type Overview = {
 
 // Layout and page both need the signed-in user; cache() makes that one API call per request.
 export const getMe = cache(() => api<User>("/users/me"));
+
+// The signed-in user for public pages, or null. Unlike getMe, it never redirects to the login page.
+export const getOptionalUser = cache(async (): Promise<(User & { createdAt?: string }) | null> => {
+  const token = (await cookies()).get("lawmedy_session")?.value;
+  if (!token) return null;
+  try {
+    const response = await fetch(`${process.env.API_URL || "http://127.0.0.1:4000"}/users/me`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    return response.ok ? ((await response.json()) as User & { createdAt?: string }) : null;
+  } catch {
+    return null;
+  }
+});

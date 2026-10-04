@@ -19,7 +19,7 @@ export default function Contact() {
       </ul>
 
       <h2>Are you an advocate?</h2>
-      <p>We are building an advocate portal so more advocates can take part. Write to us at the address above and we will keep you informed.</p>
+      <p>Our advocate portal is coming soon. <Link href="/#advocates">Register your interest</Link> and we will reach out by phone or email when it opens.</p>
       {site.address && (<><h2>Address</h2><p>{site.address}</p></>)}
     </LegalShell>
   );

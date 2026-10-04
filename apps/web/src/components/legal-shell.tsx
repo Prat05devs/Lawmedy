@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { site } from "@/lib/site";
+import { getOptionalUser } from "@/lib/api";
+import { AccountMenu } from "@/components/account-menu";
+import "@/app/landing.css";
 
 const links = [
   { href: "/privacy", label: "Privacy Policy" },
@@ -10,14 +13,19 @@ const links = [
   { href: "/delete-account", label: "Delete account" },
 ];
 
-export function LegalShell({ title, intro, children }: { title: string; intro?: string; children: React.ReactNode }) {
+export async function LegalShell({ title, intro, children }: { title: string; intro?: string; children: React.ReactNode }) {
+  const user = await getOptionalUser();
   return (
     <div className="site">
       <header className="site-bar">
         <Brand href="/" tone="dark" />
         <nav aria-label="Site">
-          <Link href="/login">Log in</Link>
-          <Link href="/signup" className="button primary">Get started</Link>
+          {user ? <AccountMenu user={user} /> : (
+            <>
+              <Link href="/login">Log in</Link>
+              <Link href="/signup" className="button primary">Get started</Link>
+            </>
+          )}
         </nav>
       </header>
       <main className="site-main">

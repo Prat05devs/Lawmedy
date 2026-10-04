@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -69,6 +70,9 @@ export default async function Home() {
 
       <section className="lp-block" id="how">
         <h2>What happens after you start</h2>
+        <figure className="lp-wide">
+          <Image src="/images/site/court-chambers.webp" alt="Advocates' chambers, a stamp vendor and a typist outside a district court" width={1800} height={1142} sizes="(max-width: 1120px) 100vw, 1072px" />
+        </figure>
         <ol className="lp-steps">
           {steps.map((step, index) => (
             <li key={step.title}>
@@ -81,11 +85,16 @@ export default async function Home() {
 
       <section className="lp-block lp-docs" id="documents">
         <div>
+          <Image className="lp-doc-photo" src="/images/site/neighbourhood-dispute.webp" alt="Neighbours arguing over a boundary in a housing society" width={1800} height={1142} sizes="(max-width: 900px) 100vw, 520px" />
           <h2>A legal notice</h2>
           <p>For money someone owes you, a deposit or refund not returned, a broken agreement, or a consumer or property dispute. It sets out what happened in order, where the other side defaulted, what you want, and by when.</p>
           <p className="lp-note">You send it yourself, by post or courier. We do not deliver it.</p>
         </div>
         <div>
+          <figure className="lp-credit-fig">
+            <Image className="lp-doc-photo" src="/images/courts/supreme-court-2.jpg" alt="The Supreme Court of India, New Delhi" width={1600} height={1067} sizes="(max-width: 900px) 100vw, 520px" />
+            <figcaption>Supreme Court of India. Photo: <a href="https://commons.wikimedia.org/wiki/File:Supreme_Court_of_India.jpg" rel="noopener">Subhashish Panigrahi</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener">CC BY-SA 4.0</a></figcaption>
+          </figure>
           <h2>An RTI application</h2>
           <p>A Section 6(1) application to a central, state or local public authority. You choose the authority and the period. Each request asks for one record that exists, such as a file noting, an order or a sanction letter.</p>
           <p className="lp-note">You file it and pay the government’s application fee directly to the authority.</p>

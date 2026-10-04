@@ -7,6 +7,14 @@ services:
     plan: free
     healthCheckPath: /health
     autoDeployTrigger: commit
+    # Only rebuild the API when API code or dependencies change. Website or app commits
+    # used to redeploy it too, cutting off requests that were in progress.
+    buildFilter:
+      paths:
+        - apps/api/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
     envVars:
       - key: PORT
         value: "4000"

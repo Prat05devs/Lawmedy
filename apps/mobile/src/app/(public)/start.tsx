@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { AppScreen, BarButton, PhotoCard, Progress, success, tap } from "@/components/app-ui";
+import { AppScreen, BarButton, Progress, success, tap } from "@/components/app-ui";
 import { Body, Button, Message } from "@/components/ui";
 import { publicApi } from "@/lib/api";
-import { courts } from "@/lib/courts";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/guest-draft";
 import { errorMessage, money } from "@/lib/hooks";
 import { usePublic, type PublicAuthority, type Pricing, type QuickCheck } from "@/lib/public";
+import { DocCard } from "@/components/doc-card";
 import { colors, fonts, radius } from "@/lib/theme";
 import type { MatterType } from "@/lib/types";
 
@@ -107,8 +107,8 @@ export default function Start() {
           <Text maxFontSizeMultiplier={1.3} style={s.title}>What would you like to prepare?</Text>
           <Body muted style={{ marginBottom: 18 }}>No account needed. We ask you to sign up only when you want to save and continue.</Body>
           <View style={{ gap: 14 }}>
-            <PhotoCard photo={courts.bombayHighCourt} title="A legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => { setType("LEGAL_NOTICE"); setStep("describe"); }} />
-            <PhotoCard photo={courts.supremeCourt} title="An RTI application" text="Records and decisions from a public authority." onPress={() => { setType("RTI"); setStep("describe"); }} />
+            <DocCard kind="LEGAL_NOTICE" title="A legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => { setType("LEGAL_NOTICE"); setStep("describe"); }} />
+            <DocCard kind="RTI" title="An RTI application" text="Records and decisions from a public authority." onPress={() => { setType("RTI"); setStep("describe"); }} />
           </View>
         </>
       )}

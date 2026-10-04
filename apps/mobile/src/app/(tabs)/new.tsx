@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import { AppScreen, PhotoCard } from "@/components/app-ui";
+import { AppScreen } from "@/components/app-ui";
+import { DocCard } from "@/components/doc-card";
 import { Body, Message } from "@/components/ui";
 import { post } from "@/lib/api";
-import { courts } from "@/lib/courts";
 import { errorMessage } from "@/lib/hooks";
 import type { Matter, MatterType } from "@/lib/types";
 
@@ -28,8 +28,8 @@ export default function NewMatter() {
       <Body muted style={{ marginBottom: 18 }}>An advocate reviews every document before you receive it.</Body>
       <Message error={error} />
       <View style={{ gap: 14, opacity: busy ? 0.6 : 1 }}>
-        <PhotoCard photo={courts.bombayHighCourt} title="Legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => start("LEGAL_NOTICE")} />
-        <PhotoCard photo={courts.supremeCourt} title="RTI application" text="Records and decisions from a public authority." onPress={() => start("RTI")} />
+        <DocCard kind="LEGAL_NOTICE" title="Legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => start("LEGAL_NOTICE")} />
+        <DocCard kind="RTI" title="RTI application" text="Records and decisions from a public authority." onPress={() => start("RTI")} />
       </View>
     </AppScreen>
   );

@@ -3,12 +3,12 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { useFocusEffect, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Group, GroupLabel, PhotoCard, tap } from "@/components/app-ui";
+import { Group, GroupLabel, tap } from "@/components/app-ui";
 import { Body, Loading, Message, StatusBadge } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { courts } from "@/lib/courts";
 import { errorMessage, shortDate } from "@/lib/hooks";
+import { DocCard } from "@/components/doc-card";
 import { colors, fonts, radius } from "@/lib/theme";
 import { progressNote, type Matter } from "@/lib/types";
 
@@ -40,8 +40,8 @@ export default function Matters() {
         {matters && matters.length === 0 && (
           <View style={{ gap: 14 }}>
             <Body muted>Nothing here yet. Start with what you need.</Body>
-            <PhotoCard photo={courts.bombayHighCourtStreet} title="Send a legal notice" onPress={() => router.push("/new")} />
-            <PhotoCard photo={courts.supremeCourtWide} title="File an RTI application" onPress={() => router.push("/new")} />
+            <DocCard kind="LEGAL_NOTICE" title="Send a legal notice" onPress={() => router.push("/new")} />
+            <DocCard kind="RTI" title="File an RTI application" onPress={() => router.push("/new")} />
           </View>
         )}
 

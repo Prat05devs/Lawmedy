@@ -76,6 +76,11 @@ The app-local npm override preserves the patched Sharp version when pnpm's root
 configuration is unavailable. The production start script listens on `0.0.0.0` and
 uses the hosting provider's `PORT`.
 
+Production builds explicitly use Webpack: Hostinger's Turbopack CSS worker failed
+to connect in the initial deployment. The app-local `.npmrc` includes development
+dependencies during installation so Tailwind/PostCSS and TypeScript are available
+even if the hosting environment sets `NODE_ENV=production`.
+
 Set these in Hostinger before building; keep the provider-assigned `PORT`:
 
 ```env

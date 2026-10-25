@@ -4,7 +4,7 @@ import { Body, Button, Card, Message, PanelHeader } from "@/components/ui";
 import { post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { colors, fonts } from "@/lib/theme";
-import type { MatterDocument, NoticeContent, RtiContent } from "@/lib/types";
+import type { MatterDocument, NoticeContent, RtiContent, CertificateContent } from "@/lib/types";
 
 export function DraftPanel({ matterId, draft, step, onChanged }: { matterId: string; draft: MatterDocument; step: string; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
@@ -30,7 +30,7 @@ export function DraftPanel({ matterId, draft, step, onChanged }: { matterId: str
         </>
       )}
       {draft.state === "READY" && draft.document && (
-        draft.matterType === "RTI" ? <Rti c={draft.document.content as RtiContent} /> : <Notice c={draft.document.content as NoticeContent} />
+        draft.matterType === "LENDING_CERTIFICATE" ? <Certificate c={draft.document.content as CertificateContent} /> : draft.matterType === "RTI" ? <Rti c={draft.document.content as RtiContent} /> : <Notice c={draft.document.content as NoticeContent} />
       )}
       <Message error={error} />
     </Card>
@@ -60,4 +60,12 @@ function Rti({ c }: { c: RtiContent }) {
       {c.informationRequests.map((r, i) => <Body key={i} style={{ marginTop: 6 }}>{i + 1}. {r.text}</Body>)}
     </View>
   );
+}
+
+function Certificate({ c }: { c: CertificateContent }) {
+  return <View><Label>LENDING CERTIFICATE DRAFT</Label><Body>{c.subject}</Body>
+    <Label>LENDER</Label><Body>{c.lender.name}</Body><Label>BORROWER</Label><Body>{c.borrower.name}</Body>
+    {c.paragraphs.map((p, i) => <Body key={i} style={{ marginTop: 10 }}>{p.text}</Body>)}
+    <Body muted small style={{ marginTop: 12 }}>Our in-house advocate prepares the final signed and stamped PDF on their letterhead within 24 hours of verified payment and complete information.</Body>
+  </View>;
 }

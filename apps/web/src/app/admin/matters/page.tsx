@@ -26,7 +26,7 @@ export default async function AdminMatters({ searchParams }: { searchParams: Pro
         {rows.length === 0 && <p className="muted">No matters match.</p>}
         {rows.map((m) => (
           <Link key={m.id} href={`/admin/matters/${m.id}`} className="admin-row link">
-            <div><strong>{m.referenceNumber}</strong><small>{m.type === "RTI" ? "RTI application" : "Legal notice"} · {date(m.createdAt)}</small></div>
+            <div><strong>{m.referenceNumber}</strong><small>{m.type === "LENDING_CERTIFICATE" ? "Lending certificate" : m.type === "RTI" ? "RTI application" : "Legal notice"} · {date(m.createdAt)}</small></div>
             <div><strong>{m.user.fullName}</strong><small>{m.user.email}</small></div>
             <div className="admin-stats">
               <span className={`badge ${m.status.toLowerCase()}`}><span />{statusLabel[m.status]}</span>

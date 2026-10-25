@@ -1,13 +1,17 @@
+import { ProviderConfigurationService } from "../configuration/configuration.service";
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
   NotFoundException,
 } from "@nestjs/common";
 import { CaseFactSource, Prisma } from "@prisma/client";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma.service";
 import { canonicalFactType, normalizeFactValue } from "./reconciliation";
+import { normalizeWhatsapp } from "../whatsapp";
+import { paymentSettings } from "../payment/settings";
 
 type Candidate = {
   type: string;
@@ -22,6 +26,7 @@ export class ReviewService {
   constructor(
     private readonly db: PrismaService,
     private readonly config: ConfigService,
+    @Optional() private readonly providers?: ProviderConfigurationService,
   ) {}
 
   private async matter(userId: string, matterId: string) {
@@ -218,30 +223,19 @@ export class ReviewService {
       };
     });
     const amount = this.price(matter.type);
-    const keyId = this.config.get<string>("RAZORPAY_KEY_ID", "").trim();
-    const keySecret = this.config.get<string>("RAZORPAY_KEY_SECRET", "").trim();
-    const webhookSecret = this.config
-      .get<string>("RAZORPAY_WEBHOOK_SECRET", "")
-      .trim();
+    const payments = this.providers?.razorpay() ?? paymentSettings(this.config);
     return {
       status: matter.status,
       matterType: matter.type,
       prepared,
       factGroups,
       recipient: matter.recipient,
-      applicant: { address: matter.applicantAddress, phone: matter.applicantPhone },
+      applicant: { address: matter.applicantAddress, phone: matter.applicantPhone, whatsapp: matter.whatsappNumber },
       payment: matter.payments[0] ?? null,
       pricing: { amount, currency: "INR" },
-      paymentMode: this.config.get<string>("PAYMENT_MODE", "manual") === "razorpay" ? "razorpay" : "manual",
-      paymentLink: this.config.get<string>("PAYMENT_LINK_URL", "https://razorpay.me/@aawasyojana").trim(),
-      paymentConfigured:
-        this.config.get<string>("PAYMENT_MODE", "manual") !== "razorpay" ||
-        (!!keyId &&
-        !!keySecret &&
-        !!webhookSecret &&
-        !keyId.startsWith("replace-") &&
-        !keySecret.startsWith("replace-") &&
-        !webhookSecret.startsWith("replace-")),
+      paymentMode: payments.mode,
+      paymentLink: payments.link,
+      paymentConfigured: payments.mode === "razorpay" ? payments.configured : !!payments.link,
     };
   }
 
@@ -256,9 +250,9 @@ export class ReviewService {
     };
   }
 
-  private price(matterType: "LEGAL_NOTICE" | "RTI") {
-    const key = matterType === "RTI" ? "RTI_PRICE_PAISE" : "LEGAL_NOTICE_PRICE_PAISE";
-    const value = Number(this.config.get(key, 29900));
+  private price(matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE") {
+    const key = matterType === "RTI" ? "RTI_PRICE_PAISE" : matterType === "LENDING_CERTIFICATE" ? "LENDING_CERTIFICATE_PRICE_PAISE" : "LEGAL_NOTICE_PRICE_PAISE";
+    const value = Number(this.config.get(key, matterType === "LENDING_CERTIFICATE" ? 19900 : 29900));
     if (!Number.isSafeInteger(value) || value < 100)
       throw new Error(`${key} must be an integer in paise.`);
     return value;
@@ -268,7 +262,7 @@ export class ReviewService {
     userId: string,
     matterId: string,
     input: {
-      applicant: { address: string; phone?: string };
+      applicant: { address: string; phone?: string; whatsapp?: string };
       selections: { type: string; caseFactId: string }[];
       recipient?: {
         name: string;
@@ -283,6 +277,9 @@ export class ReviewService {
       throw new BadRequestException(
         "Confirm that the information is accurate.",
       );
+    const whatsappNumber = input.applicant.whatsapp ? normalizeWhatsapp(input.applicant.whatsapp) : null;
+    if (input.applicant.whatsapp && !whatsappNumber)
+      throw new BadRequestException("Enter a valid WhatsApp number, for example 98765 43210.");
     await this.db.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<
         { id: string; status: string }[]
@@ -294,7 +291,7 @@ export class ReviewService {
         where: { id: matterId },
         include: { rtiDetail: true },
       });
-      if (matter.type === "LEGAL_NOTICE" && !input.recipient)
+      if (matter.type !== "RTI" && !input.recipient)
         throw new BadRequestException("Enter the recipient details.");
       if (matter.type === "RTI" && !matter.rtiDetail)
         throw new BadRequestException("Select the public authority and save the RTI details first.");
@@ -331,7 +328,7 @@ export class ReviewService {
           data: { confirmedByUser: true },
         });
       }
-      if (matter.type === "LEGAL_NOTICE" && input.recipient)
+      if (matter.type !== "RTI" && input.recipient)
         await tx.matterRecipient.upsert({
         where: { matterId },
         create: {
@@ -354,6 +351,7 @@ export class ReviewService {
           status: "READY_FOR_PAYMENT",
           applicantAddress: input.applicant.address,
           applicantPhone: input.applicant.phone || null,
+          ...(whatsappNumber ? { whatsappNumber } : {}),
         },
       });
       await tx.auditLog.create({

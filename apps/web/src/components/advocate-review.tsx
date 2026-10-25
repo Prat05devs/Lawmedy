@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, LoaderCircle, MessageSquarePlus, Save } from "lucide-react";
-import type { AdvocateMatterDetail, NoticeContent, RtiContent } from "@/lib/advocate-types";
+import type { AdvocateMatterDetail, NoticeContent, RtiContent, CertificateContent } from "@/lib/advocate-types";
 import {
   approveAdvocateDraft,
   requestAdvocateInformation,
   saveAdvocateDraft,
   saveAdvocateRtiDraft,
+  uploadSignedCertificate,
 } from "@/lib/advocate-actions";
 
 export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail }) {
@@ -19,7 +20,9 @@ export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail
   if (!version) return <p className="message error">No draft is available.</p>;
   return (
     <div className="advocate-action-stack">
-      {detail.matter.type === "RTI" ? (
+      {detail.matter.type === "LENDING_CERTIFICATE" ? (
+        <CertificateDelivery matterId={detail.matter.id} content={version.content as CertificateContent} version={version.versionNumber} editable={detail.matter.status === "UNDER_ADVOCATE_REVIEW"} />
+      ) : detail.matter.type === "RTI" ? (
         <RtiEditForm matterId={detail.matter.id} versionNumber={version.versionNumber} content={version.content as RtiContent} editable={editable} />
       ) : (
         <DraftEditForm
@@ -31,7 +34,7 @@ export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail
       {detail.matter.status === "UNDER_ADVOCATE_REVIEW" && (
         <div className="advocate-decision-grid">
           <InformationRequestForm matterId={detail.matter.id} />
-          <ApprovalForm matterId={detail.matter.id} />
+          {detail.matter.type !== "LENDING_CERTIFICATE" && <ApprovalForm matterId={detail.matter.id} />}
         </div>
       )}
       {detail.matter.status === "USER_RESPONSE_REQUIRED" && (
@@ -46,6 +49,24 @@ export function AdvocateReviewActions({ detail }: { detail: AdvocateMatterDetail
       )}
     </div>
   );
+}
+
+function CertificateDelivery({ matterId, content, version, editable }: { matterId: string; content: CertificateContent; version: number; editable: boolean }) {
+  const [state, action, pending] = useActionState(uploadSignedCertificate.bind(null, matterId), {});
+  return <section className="panel form-stack">
+    <h2>Lending certificate · Version {version}</h2>
+    <p><strong>Lender:</strong> {content.lender.name}<br /><strong>Borrower:</strong> {content.borrower.name}</p>
+    <h3>{content.subject}</h3>
+    {content.paragraphs.map((p, index) => <p key={index}>{p.text}</p>)}
+    <p className="field-note">Review the confirmed facts and payment records. Prepare the final certificate on your letterhead, with your stamp and signature. Delivery is due within 24 hours of verified payment and complete information.</p>
+    {editable && <form action={action} className="form-stack">
+      <input type="hidden" name="expectedVersion" value={version} />
+      <label>Signed final PDF (up to 10 MB)<input type="file" name="file" accept="application/pdf" required /></label>
+      <label className="confirm-check"><input type="checkbox" name="confirmed" required /><span>I reviewed the facts and this final PDF, and it is on my letterhead with my stamp and signature.</span></label>
+      <button className="button primary" disabled={pending}>{pending ? "Delivering…" : "Approve and deliver signed certificate"}</button>
+      <Messages state={state} />
+    </form>}
+  </section>;
 }
 
 function DraftEditForm({

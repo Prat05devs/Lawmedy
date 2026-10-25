@@ -40,13 +40,15 @@ export class AccountService {
       await tx.matterAssignment.deleteMany({ where: { matterId: { in: mid } } });
       await tx.notification.deleteMany({ where: { userId } });
       await tx.aiRun.deleteMany({ where: { matterId: { in: mid } } });
-      await tx.matter.updateMany({ where: { id: { in: mid } }, data: { currentStatementId: null, applicantAddress: null, applicantPhone: null } });
+      await tx.matter.updateMany({ where: { id: { in: mid } }, data: { currentStatementId: null, applicantAddress: null, applicantPhone: null, whatsappNumber: null } });
       await tx.matterStatement.deleteMany({ where: { matterId: { in: mid } } });
       await tx.user.update({
         where: { id: userId },
         data: {
           active: false,
+          tokenVersion: { increment: 1 },
           fullName: "Deleted user",
+          googleSubject: null,
           email: `deleted-${userId}@deleted.lawmedy.invalid`,
           passwordHash: await bcrypt.hash(randomBytes(32).toString("hex"), 10),
         },

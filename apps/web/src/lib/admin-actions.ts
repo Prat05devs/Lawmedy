@@ -60,7 +60,7 @@ export async function saveTestimonialAction(id: string | null, _: FormState, dat
         name: data.get("name"),
         descriptor: data.get("descriptor") || undefined,
         quote: data.get("quote"),
-        matterType: type === "LEGAL_NOTICE" || type === "RTI" ? type : undefined,
+        matterType: type === "LEGAL_NOTICE" || type === "RTI" || type === "LENDING_CERTIFICATE" ? type : undefined,
         consentGiven: data.get("consentGiven") === "on",
         published: data.get("published") === "on",
       }),
@@ -82,4 +82,11 @@ export async function setAdvocateInterestStatusAction(id: string, _: FormState, 
   catch (e) { return fail(e); }
   revalidatePath("/admin/advocate-signups"); revalidatePath("/admin");
   return { success: "Status saved." };
+}
+
+export async function markWhatsappSentAction(matterId: string, _: FormState, _data: FormData): Promise<FormState> {
+  try { await api(`/admin/matters/${enc(matterId)}/whatsapp-sent`, { method: "POST" }); }
+  catch (e) { return fail(e); }
+  revalidatePath(`/admin/matters/${matterId}`);
+  return { success: "Marked as sent on WhatsApp." };
 }

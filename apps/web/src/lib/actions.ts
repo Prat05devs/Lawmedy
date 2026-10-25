@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { api, ApiError, Matter } from "./api";
+function afterLogin(value: unknown) {
+  return typeof value === "string" && ["/matters/new", "/matters/new/rti", "/matters/new/lending"].includes(value) ? value : "/dashboard";
+}
 export type FormState = { error?: string; success?: string };
 function errorState(error: unknown): FormState {
   if (error instanceof ApiError) return { error: error.message };
@@ -36,9 +39,9 @@ export async function authenticate(
   } catch (error) {
     return errorState(error);
   }
-  redirect("/dashboard");
+  redirect(afterLogin(data.get("next")));
 }
-export async function googleSignIn(idToken: string): Promise<FormState> {
+export async function googleSignIn(idToken: string, nextPath?: string): Promise<FormState> {
   try {
     const result = await api<{ accessToken: string }>(
       "/auth/google",
@@ -55,14 +58,17 @@ export async function googleSignIn(idToken: string): Promise<FormState> {
   } catch (error) {
     return errorState(error);
   }
-  redirect("/dashboard");
+  redirect(afterLogin(nextPath));
 }
 export async function logout() {
+  // Revoke copied bearer tokens too. If the API is down, retain the session so
+  // the user can retry instead of presenting a successful server-side logout.
+  await api("/auth/logout", { method: "POST" });
   (await cookies()).delete("lawmedy_session");
   redirect("/login");
 }
 export async function createMatter(
-  type: "LEGAL_NOTICE" | "RTI",
+  type: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE",
   _: FormState,
   _data: FormData,
 ): Promise<FormState> {
@@ -229,6 +235,7 @@ export async function confirmReview(
         applicant: {
           address: data.get("applicantAddress"),
           phone: data.get("applicantPhone") || undefined,
+          whatsapp: data.get("applicantWhatsapp") || undefined,
         },
         ...(data.get("recipientName") ? { recipient: {
           name: data.get("recipientName"),
@@ -278,15 +285,14 @@ export async function verifyPayment(
   payment: { orderId: string; paymentId: string; signature: string },
 ) {
   try {
-    await api(`/matters/${encodeURIComponent(id)}/payment/verify`, {
+    const result = await api<{ status: "PAID" | "PENDING" }>(`/matters/${encodeURIComponent(id)}/payment/verify`, {
       method: "POST",
       body: JSON.stringify(payment),
     });
     revalidatePath(`/matters/${id}`);
-    return true;
+    return { status: result.status, error: undefined };
   } catch {
-    // The signed webhook can still confirm the payment.
-    return false;
+    return { status: "PENDING" as const, error: "Payment confirmation is pending. Check again shortly; do not pay again." };
   }
 }
 

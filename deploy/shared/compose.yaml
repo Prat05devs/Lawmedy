@@ -1,0 +1,66 @@
+# For the existing shared DigitalOcean platform. Never starts PostgreSQL or Caddy.
+name: lawmedy
+services:
+  api:
+    image: lawmedy-api:${RELEASE_TAG:-current}
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      TRUST_PROXY_HOPS: 1
+      NODE_OPTIONS: --max-old-space-size=384
+      STORAGE_DRIVER: local
+      PRIVATE_STORAGE_DIR: /var/lib/lawmedy/private
+    init: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    stop_grace_period: 90s
+    volumes:
+      - private_files:/var/lib/lawmedy/private
+    networks:
+      data: {}
+      edge:
+        aliases: [lawmedy-api]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      start_period: 90s
+      retries: 5
+  backup:
+    image: alpine:3.23
+    restart: unless-stopped
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 32m
+    pids_limit: 32
+    user: "1000:1000"
+    volumes:
+      - private_files:/files:ro
+      - ${BACKUP_DIR:-/opt/apps/lawmedy/backups}:/backups
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: [sh, -c, "while true; do sh /backup.sh; sleep 86400; done"]
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: "2"}
+networks:
+  edge: {external: true}
+  data: {external: true}
+volumes:
+  private_files:

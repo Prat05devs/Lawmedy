@@ -12,7 +12,7 @@ export function FinalDocumentPanel({
 }: {
   matterId: string;
   finalDocument: FinalDocument;
-  matterType: "LEGAL_NOTICE" | "RTI";
+  matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
 }) {
   const [state, action, pending] = useActionState(
     retryFinalDocument.bind(null, matterId),
@@ -25,7 +25,7 @@ export function FinalDocumentPanel({
       <div className="panel-heading">
         <span className="step-number">07</span>
         <div>
-          <h2>Your {matterType === "RTI" ? "RTI Application" : "Legal Notice"} is Ready</h2>
+          <h2>Your {matterType === "LENDING_CERTIFICATE" ? "Lending certificate" : matterType === "RTI" ? "RTI Application" : "Legal Notice"} is Ready</h2>
           <p className="muted small">
             The final document is private and available only after sign-in.
           </p>

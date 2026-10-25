@@ -13,6 +13,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 import { Response } from "express";
 import { AuthGuard, UserId } from "../auth.guard";
 import { EvidenceService } from "./evidence.service";
@@ -24,9 +25,10 @@ export class EvidenceController {
   constructor(private readonly evidence: EvidenceService) {}
 
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseInterceptors(
     FileInterceptor("file", {
-      limits: { files: 1, fileSize: 10 * 1024 * 1024 },
+      limits: { files: 1, fileSize: 10 * 1024 * 1024, fields: 0, parts: 1, fieldNameSize: 100 },
     }),
   )
   async upload(
@@ -54,6 +56,7 @@ export class EvidenceController {
   }
 
   @Post(":evidenceId/retry")
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
   async retry(
     @UserId() userId: string,

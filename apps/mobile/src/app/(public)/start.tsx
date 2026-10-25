@@ -6,8 +6,9 @@ import { AppScreen, BarButton, Progress, success, tap } from "@/components/app-u
 import { Body, Button, Message } from "@/components/ui";
 import { publicApi } from "@/lib/api";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/guest-draft";
-import { errorMessage, money } from "@/lib/hooks";
+import { errorMessage } from "@/lib/hooks";
 import { usePublic, type PublicAuthority, type Pricing, type QuickCheck } from "@/lib/public";
+import { services, servicePrice } from "@/lib/services";
 import { DocCard } from "@/components/doc-card";
 import { colors, fonts, radius } from "@/lib/theme";
 import type { MatterType } from "@/lib/types";
@@ -16,15 +17,16 @@ type Step = "type" | "describe" | "authority" | "result";
 
 const prompts: Record<MatterType, string> = {
   LEGAL_NOTICE: "Who was involved? What happened, and when? Any amounts or promises? What do you want to happen?",
+  LENDING_CERTIFICATE: "Who did you lend or pay money to? Give the amount, transfer date and method, payment reference, and any repayment terms.",
   RTI: "Which office? What records or decisions do you want? For what period?",
 };
 
 export default function Start() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ type?: string }>();
+  const params = useLocalSearchParams<{ type?: string; story?: string; draftKey?: string }>();
   const pricing = usePublic<Pricing | null>("/public/pricing", null);
   const authorities = usePublic<PublicAuthority[]>("/public/rti-authorities", []);
-  const preset: MatterType | null = params.type === "RTI" ? "RTI" : params.type === "LEGAL_NOTICE" ? "LEGAL_NOTICE" : null;
+  const preset: MatterType | null = params.type === "RTI" ? "RTI" : params.type === "LEGAL_NOTICE" ? "LEGAL_NOTICE" : params.type === "LENDING_CERTIFICATE" ? "LENDING_CERTIFICATE" : null;
   const [type, setType] = useState<MatterType | null>(preset);
   const [step, setStep] = useState<Step>(preset ? "describe" : "type");
   const [statement, setStatement] = useState("");
@@ -37,14 +39,16 @@ export default function Start() {
 
   useEffect(() => {
     void loadDraft().then((d) => {
-      if (d && !loaded.current) {
+      if (d && (!loaded.current || params.draftKey)) {
         if (!preset) { setType(d.type); setStep("describe"); }
         if (!preset || preset === d.type) { setStatement(d.statement); setAuthorityId(d.authorityId ?? ""); setSubject(d.subject ?? ""); }
       }
+      if (preset) { setType(preset); setStep("describe"); setResult(null); }
+      // A situation picked on the home screen starts the story with blanks to fill in.
+      if (params.story) setStatement(params.story);
       loaded.current = true;
     });
-  }, [preset]);
-  useEffect(() => { if (preset) { setType(preset); setStep("describe"); setResult(null); } }, [preset]);
+  }, [preset, params.story, params.draftKey]);
   useEffect(() => {
     if (!loaded.current || !type || !statement.trim()) return;
     const t = setTimeout(() => saveDraft({ type, statement, authorityId: authorityId || undefined, subject: subject || undefined }), 500);
@@ -54,7 +58,7 @@ export default function Start() {
   const order: Step[] = type === "RTI" ? ["type", "describe", "authority", "result"] : ["type", "describe", "result"];
   const index = Math.max(order.indexOf(step), 0);
   const back = () => { setError(""); if (index === 0) return router.back(); setStep(order[index - 1]); };
-  const price = pricing && type ? money(type === "RTI" ? pricing.rti : pricing.legalNotice, pricing.currency) : "₹299";
+  const price = type ? servicePrice(pricing, type) : "Fee shown at checkout";
 
   async function runCheck() {
     if (!type) return;
@@ -100,15 +104,14 @@ export default function Start() {
 
   return (
     <AppScreen left={step === "type" ? undefined : <BarButton icon="chevron-left" label="Back" onPress={back} />} footer={footer}>
-      {step !== "type" && <Progress step={index + 1} total={order.length} label={type === "RTI" ? "RTI application" : "Legal notice"} />}
+      {step !== "type" && <Progress step={index + 1} total={order.length} label={type === "LENDING_CERTIFICATE" ? "Lending certificate" : type === "RTI" ? "RTI application" : "Legal notice"} />}
 
       {step === "type" && (
         <>
           <Text maxFontSizeMultiplier={1.3} style={s.title}>What would you like to prepare?</Text>
           <Body muted style={{ marginBottom: 18 }}>No account needed. We ask you to sign up only when you want to save and continue.</Body>
           <View style={{ gap: 14 }}>
-            <DocCard kind="LEGAL_NOTICE" title="A legal notice" text="Money owed, a deposit or refund, a broken agreement, a consumer or property dispute." onPress={() => { setType("LEGAL_NOTICE"); setStep("describe"); }} />
-            <DocCard kind="RTI" title="An RTI application" text="Records and decisions from a public authority." onPress={() => { setType("RTI"); setStep("describe"); }} />
+            {services.map((service) => <DocCard key={service.type} kind={service.type} title={`${service.title} · ${servicePrice(pricing, service.type)}`} text={service.text} onPress={() => { setType(service.type); setStatement(""); setSubject(""); setAuthorityId(""); setResult(null); setStep("describe"); }} />)}
           </View>
         </>
       )}
@@ -150,7 +153,7 @@ export default function Start() {
             })}
           </View>
           <Text style={s.label}>Subject, in a few words (optional)</Text>
-          <TextInput value={subject} onChangeText={setSubject} placeholder="What information do you want?" placeholderTextColor={colors.faint} style={s.input} />
+          <TextInput accessibilityLabel="Subject (optional)" value={subject} onChangeText={setSubject} placeholder="What information do you want?" placeholderTextColor={colors.faint} style={s.input} />
         </>
       )}
 

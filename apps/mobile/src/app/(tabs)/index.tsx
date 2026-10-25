@@ -8,6 +8,7 @@ import { MatterList, NEEDS_YOU, NeedsYouCard, useMatters } from "@/components/ma
 import { Message } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { post } from "@/lib/api";
+import { setStatementDraft } from "@/lib/statement-draft";
 import { errorMessage } from "@/lib/hooks";
 import { colors, fonts } from "@/lib/theme";
 import type { Matter, MatterType } from "@/lib/types";
@@ -20,12 +21,13 @@ export default function SignedInHome() {
   const [startError, setStartError] = useState("");
   const busy = React.useRef(false);
 
-  async function start(type?: MatterType) {
+  async function start(type?: MatterType, story?: string) {
     if (!type) return router.push("/new");
     if (busy.current) return;
     busy.current = true; setStartError("");
     try {
       const matter = await post<Matter>("/matters", { type });
+      if (story) setStatementDraft(matter.id, story);
       router.push({ pathname: "/matter/[id]", params: { id: matter.id } });
     } catch (e) { setStartError(errorMessage(e)); }
     finally { busy.current = false; }

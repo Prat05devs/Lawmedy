@@ -13,7 +13,7 @@ declare global {
 }
 
 // Renders Google's own "Continue with Google" button when a client ID is configured.
-export function GoogleButton() {
+export function GoogleButton({ nextPath }: { nextPath?: string }) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const holder = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export function GoogleButton() {
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async ({ credential }) => {
-          const result = await googleSignIn(credential);
+          const result = await googleSignIn(credential, nextPath);
           if (result?.error) setError(result.error);
         },
       });
@@ -43,7 +43,7 @@ export function GoogleButton() {
     script.async = true;
     script.onload = mount;
     document.head.appendChild(script);
-  }, [clientId]);
+  }, [clientId, nextPath]);
 
   if (!clientId) return null;
   return (

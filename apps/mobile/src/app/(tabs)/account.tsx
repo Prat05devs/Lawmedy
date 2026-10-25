@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Alert, Linking, StyleSheet, Text } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { Body, Button, Card, H1, Field, Message, Screen } from "@/components/ui";
 import { Group, GroupLabel, ListRow } from "@/components/app-ui";
@@ -8,7 +7,7 @@ import { useRouter } from "expo-router";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth";
-import { WEB_URL } from "@/lib/links";
+import { WEB_URL, WHATSAPP_DISPLAY, WHATSAPP_LINK } from "@/lib/links";
 import { colors, fonts } from "@/lib/theme";
 
 const links = [
@@ -38,9 +37,10 @@ export default function Account() {
       <H1>{user?.fullName}</H1>
       <Body muted style={{ marginBottom: 22 }}>{user?.email}</Body>
       <Group style={{ marginBottom: 24 }}>
-        <ListRow icon="folder" title="My matters" text="Every legal notice and RTI application you started" onPress={() => router.push("/matters")} last />
+        <ListRow icon="folder" title="My matters" text="All your notices, RTI applications and lending certificates" onPress={() => router.push("/matters")} last />
       </Group>
       <Group>
+        <ListRow title="WhatsApp Team Lawmedy" text={WHATSAPP_DISPLAY} onPress={() => Linking.openURL(WHATSAPP_LINK)} />
         {links.map((l) => <ListRow key={l.path} title={l.label} onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}${l.path}`)} />)}
         <ListRow title="Photo credits" onPress={() => router.push("/credits")} last />
       </Group>
@@ -62,7 +62,7 @@ export default function Account() {
           </>
         )}
       </Card>
-      <Button variant="outline" title="Log out" icon="log-out" onPress={() => Alert.alert("Log out?", "You can log back in any time.", [{ text: "Cancel", style: "cancel" }, { text: "Log out", style: "destructive", onPress: () => void logout() }])} />
+      <Button variant="outline" title="Log out" icon="log-out" onPress={() => Alert.alert("Log out?", "This signs you out on all devices. You can log back in any time.", [{ text: "Cancel", style: "cancel" }, { text: "Log out", style: "destructive", onPress: () => { void logout().catch((e) => setError(errorMessage(e))); } }])} />
       <Text style={s.foot}>Lawmedy helps you prepare documents. It is not a substitute for legal advice on complex disputes.</Text>
     </Screen>
   );

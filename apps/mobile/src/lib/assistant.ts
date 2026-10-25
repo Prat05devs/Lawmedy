@@ -54,7 +54,7 @@ export const topics: Topic[] = [
     id: "advocate",
     question: "Is a real advocate involved?",
     answer: () => [
-      "Yes. We work with in-house advocates, and every legal notice and RTI application is reviewed by one of them before it reaches you.",
+      "Yes. We work with in-house advocates, and every legal notice, RTI application and lending certificate is reviewed by one of them before it reaches you.",
       "They check that the terms, the facts and the demand are clear and correct. They can edit the draft or ask you a question first.",
       "If our advocate cannot take your matter, you get a full refund.",
     ],
@@ -91,7 +91,7 @@ export const topics: Topic[] = [
     id: "court",
     question: "Can you take my case further?",
     answer: () => [
-      "Lawmedy prepares legal notices and RTI applications. Often a notice is enough to get things moving.",
+      "Lawmedy prepares legal notices, RTI applications and lending certificates. Often a notice is enough to get things moving.",
       "If the other side does not reply, or your matter has to go further, our advocates can talk to you about the next steps.",
     ],
     action: { label: "Contact us", to: "contact" },

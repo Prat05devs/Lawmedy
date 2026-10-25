@@ -38,7 +38,7 @@ const envPath = resolve(root, "apps/api/.env");
 if (!existsSync(envPath)) {
   writeFileSync(
     envPath,
-    `DATABASE_URL=postgresql://lawmedy:${password}@127.0.0.1:5433/lawmedy?schema=public\nJWT_SECRET=${randomBytes(48).toString("hex")}\nWEB_ORIGIN=http://localhost:3000\nPORT=4000\n`,
+    `DATABASE_URL=postgresql://lawmedy:${password}@127.0.0.1:5433/lawmedy?schema=public\nDIRECT_URL=postgresql://lawmedy:${password}@127.0.0.1:5433/lawmedy?schema=public\nJWT_SECRET=${randomBytes(48).toString("hex")}\nWEB_ORIGIN=http://localhost:3000\nPORT=4000\n`,
     { mode: 0o600 },
   );
   console.log("Created apps/api/.env with local development credentials.");

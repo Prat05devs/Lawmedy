@@ -16,6 +16,7 @@ export default async function AdminDashboard() {
   return (
     <>
       <div className="page-heading"><div><h1>Overview</h1><p className="muted">What needs your attention right now.</p></div></div>
+      <p><Link href="/admin/operations">API operations and capacity</Link></p>
       <div className="admin-cards">
         {cards.map(({ href, label, value, Icon, hot }) => (
           <Link key={label} href={href} className={`admin-stat ${hot ? "hot" : ""}`}>

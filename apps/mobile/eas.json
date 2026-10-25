@@ -16,18 +16,14 @@
       "ios": {
         "simulator": true
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://lawmedy-api.onrender.com"
-      }
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://lawmedy-api.onrender.com"
-      }
+      "environment": "production"
     }
   },
   "submit": {

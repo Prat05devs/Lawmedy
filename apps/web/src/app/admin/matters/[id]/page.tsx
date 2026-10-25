@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, FileText, Package } from "lucide-react";
 import { api, ApiError, date, statusLabel, type Matter } from "@/lib/api";
-import { AssignForm, PaymentActions } from "@/components/admin-forms";
+import { AssignForm, PaymentActions, WhatsappSentForm } from "@/components/admin-forms";
 
 type Json = Record<string, unknown>;
 type Detail = {
   id: string; referenceNumber: string; type: Matter["type"]; status: Matter["status"]; createdAt: string;
-  applicantAddress: string | null; applicantPhone: string | null;
+  applicantAddress: string | null; applicantPhone: string | null; whatsappNumber: string | null; whatsappSentAt: string | null;
   user: { id: string; fullName: string; email: string; createdAt: string };
   statements: { id: string; statement: string; createdAt: string }[];
   questions: { id: string; question: string; requestedByAdvocate: { fullName: string } | null; answer: { answer: string } | null }[];
@@ -47,7 +47,7 @@ export default async function AdminMatter({ params }: { params: Promise<{ id: st
       <div className="page-heading matter-heading">
         <div>
           <p className="eyebrow">{m.referenceNumber}</p>
-          <h1>{m.type === "RTI" ? "RTI application" : "Legal notice"}</h1>
+          <h1>{m.type === "LENDING_CERTIFICATE" ? "Lending certificate" : m.type === "RTI" ? "RTI application" : "Legal notice"}</h1>
           <p className="muted">Started {date(m.createdAt)}</p>
         </div>
         <span className={`badge ${m.status.toLowerCase()}`}><span />{statusLabel[m.status]}</span>
@@ -58,6 +58,7 @@ export default async function AdminMatter({ params }: { params: Promise<{ id: st
         <dl className="admin-dl">
           <div><dt>Name</dt><dd>{m.user.fullName}</dd></div>
           <div><dt>Email</dt><dd><a href={`mailto:${m.user.email}`}>{m.user.email}</a></dd></div>
+          <div><dt>WhatsApp</dt><dd>{m.whatsappNumber ? <a href={`https://wa.me/${m.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">{m.whatsappNumber}</a> : "Not given"}</dd></div>
           <div><dt>Phone</dt><dd>{m.applicantPhone || "Not given"}</dd></div>
           <div><dt>Postal address</dt><dd className="pre-wrap">{m.applicantAddress || "Not given"}</dd></div>
         </dl>
@@ -177,7 +178,31 @@ export default async function AdminMatter({ params }: { params: Promise<{ id: st
           {typeof content?.demand === "string" && <p><strong>Demand:</strong> {content.demand}</p>}
         </section>
       )}
-      {m.finalDocument && <section className="panel"><h2>Final PDF</h2><p>{m.finalDocument.filename} · {kb(m.finalDocument.sizeBytes)} · generated {date(m.finalDocument.generatedAt)}</p></section>}
+      {m.finalDocument && (
+        <section className="panel">
+          <h2>Final PDF</h2>
+          <p>{m.finalDocument.filename} · {kb(m.finalDocument.sizeBytes)} · generated {date(m.finalDocument.generatedAt)}</p>
+          <div className="admin-actions-row">
+            <a className="button outline" href={`/admin/files/${m.id}/final`}><Download size={16} /> Download PDF</a>
+            {m.whatsappNumber && (
+              <a className="button primary" target="_blank" rel="noopener noreferrer"
+                href={`https://wa.me/${m.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello ${m.user.fullName}, your Lawmedy ${m.type === "LENDING_CERTIFICATE" ? "Lending certificate" : m.type === "RTI" ? "RTI application" : "legal notice"} (${m.referenceNumber}) is ready. Here is the PDF. You can also download it from your Lawmedy account.`)}`}>
+                Open WhatsApp chat
+              </a>
+            )}
+          </div>
+          {!m.whatsappNumber ? (
+            <p className="muted small">No WhatsApp number on this matter. The customer can download the PDF from their account.</p>
+          ) : m.whatsappSentAt ? (
+            <p className="muted small">Sent on WhatsApp {date(m.whatsappSentAt)}.</p>
+          ) : (
+            <>
+              <p className="muted small">Download the PDF, open the chat, attach the PDF and send it. Then mark it as sent.</p>
+              <WhatsappSentForm matterId={m.id} />
+            </>
+          )}
+        </section>
+      )}
 
       <section className="panel">
         <h2>Activity</h2>

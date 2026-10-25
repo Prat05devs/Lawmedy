@@ -29,6 +29,6 @@ export class AppThrottlerGuard extends ThrottlerGuard {
   // Health checks and the payment webhook must never be rate limited.
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
     const path: string = context.switchToHttp().getRequest().path ?? "";
-    return path === "/health" || path.startsWith("/payments/razorpay/webhook");
+    return path === "/health" || path === "/health/ready" || path === "/payments/razorpay/webhook";
   }
 }

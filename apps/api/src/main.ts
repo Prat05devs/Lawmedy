@@ -6,11 +6,19 @@ import helmet from "helmet";
 import compression from "compression";
 import type { Server } from "node:http";
 import { AppModule } from "./app.module";
+import { checkProductionSecurity } from "./security-config";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   const config = app.get(ConfigService);
-  // Render terminates TLS in front of us: trust one proxy hop so req.ip is the real client.
-  app.getHttpAdapter().getInstance().set("trust proxy", 1);
+  checkProductionSecurity(config);
+  // Private responses must not be retained by shared HTTP/CDN caches. Public
+  // read-only controllers explicitly override this with their bounded TTLs.
+  app.use((_request: unknown, response: { setHeader(name: string, value: string): void }, next: () => void) => {
+    response.setHeader("Cache-Control", "private, no-store");
+    next();
+  });
+  // The host terminates TLS in front of us: trust its proxy hops so req.ip is the real client.
+  app.getHttpAdapter().getInstance().set("trust proxy", Number(config.get("TRUST_PROXY_HOPS", 1)));
   app.use(helmet());
   app.use(compression());
   // WEB_ORIGIN may list several origins, comma-separated (for example the site plus a local preview).

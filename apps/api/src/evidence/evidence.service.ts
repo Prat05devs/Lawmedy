@@ -17,6 +17,7 @@ import { PrismaService } from "../prisma.service";
 import { GeminiService } from "../intake/gemini.service";
 import { EVIDENCE_PROMPT_VERSION, parseEvidenceExtraction } from "./extraction";
 import { PrivateStorage } from "./storage.service";
+import { AI_LEASE_MS } from "../ai-timing";
 
 const allowedMimeTypes = new Set([
   "application/pdf",
@@ -29,6 +30,7 @@ const allowedMimeTypes = new Set([
 export class EvidenceService {
   private readonly maxBytes: number;
   private readonly signingSecret: string;
+  private readonly maxFiles: number;
 
   constructor(
     private readonly db: PrismaService,
@@ -37,6 +39,9 @@ export class EvidenceService {
     config: ConfigService,
   ) {
     this.maxBytes = Number(config.get("EVIDENCE_MAX_BYTES", 10 * 1024 * 1024));
+    this.maxFiles = Number(config.get("EVIDENCE_MAX_FILES", 10));
+    if (!Number.isSafeInteger(this.maxFiles) || this.maxFiles < 1 || this.maxFiles > 100)
+      throw new Error("EVIDENCE_MAX_FILES must be between 1 and 100.");
     const fileSecret = config.get<string>("FILE_SIGNING_SECRET", "").trim();
     this.signingSecret =
       fileSecret && !fileSecret.startsWith("replace-")
@@ -106,6 +111,14 @@ export class EvidenceService {
     await this.storage.put(storageKey, file.buffer);
     try {
       const evidence = await this.db.$transaction(async (tx) => {
+        // Same row lock as review confirmation: a concurrent upload cannot alter
+        // the evidence after the confirmed record has been locked for payment.
+        await tx.$queryRaw`SELECT id FROM "Matter" WHERE id = ${matterId} AND "userId" = ${userId} FOR UPDATE`;
+        const current = await tx.matter.findFirst({ where: { id: matterId, userId } });
+        if (!current || !["DRAFT", "INTAKE_IN_PROGRESS"].includes(current.status))
+          throw new ConflictException("This matter can no longer be edited.");
+        if (await tx.evidence.count({ where: { matterId } }) >= this.maxFiles)
+          throw new ConflictException(`This matter supports up to ${this.maxFiles} evidence files.`);
         const created = await tx.evidence.create({
           data: {
             id: evidenceId,
@@ -210,6 +223,7 @@ export class EvidenceService {
     )
       throw new BadRequestException("This file link has expired.");
     const expected = this.signature(userId, matterId, evidenceId, expires);
+    if (!/^[a-f0-9]{64}$/i.test(signature || "")) throw new BadRequestException("Invalid file link.");
     const supplied = Buffer.from(signature || "", "hex");
     const expectedBuffer = Buffer.from(expected, "hex");
     if (
@@ -254,6 +268,13 @@ export class EvidenceService {
     });
     if (!evidence || evidence.status !== "PROCESSING") return;
     const run = await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Matter" WHERE id = ${matterId} FOR UPDATE`;
+      const current = await tx.evidence.findFirst({ where: { id: evidenceId, matterId, status: "PROCESSING", matter: { userId } } });
+      if (!current) return null;
+      const now = new Date();
+      const scope = { taskType: "EVIDENCE_EXTRACTION", inputReference: evidenceId };
+      if (await tx.aiRun.findFirst({ where: { ...scope, status: "RUNNING", expiresAt: { gt: now } } })) return null;
+      await tx.aiRun.updateMany({ where: { ...scope, status: "RUNNING", expiresAt: { lte: now } }, data: { status: "FAILED", error: "INTERRUPTED_OR_TIMED_OUT", finishedAt: now } });
       const created = await tx.aiRun.create({
         data: {
           matterId,
@@ -262,7 +283,7 @@ export class EvidenceService {
           modelName: settings.modelName || "NOT_CONFIGURED",
           promptVersion: EVIDENCE_PROMPT_VERSION,
           inputReference: evidence.id,
-          expiresAt: new Date(Date.now() + 120000),
+          expiresAt: new Date(Date.now() + AI_LEASE_MS),
         },
       });
       await tx.auditLog.create({
@@ -276,6 +297,7 @@ export class EvidenceService {
       });
       return created;
     });
+    if (!run) return;
     const started = Date.now();
     let output: Prisma.InputJsonValue | undefined;
     let inputTokens: number | null = null;
@@ -286,6 +308,7 @@ export class EvidenceService {
         contents,
         evidence.mimeType,
         settings.modelName,
+        run.id,
       );
       output = {
         text: response.text,

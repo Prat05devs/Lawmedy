@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { PrismaService } from "./prisma.service";
 import { GeminiService } from "./intake/gemini.service";
 import { parseAnalysis, PROMPT_VERSION } from "./intake/analysis";
+import { AI_LEASE_MS } from "./ai-timing";
 
 // A free, account-less look at a case: what we understood, and what we would need. It uses the
 // same analysis as the real intake, is heavily rate limited, saves nothing about the person,
@@ -24,19 +25,19 @@ export class QuickCheckService {
         modelName: settings.modelName,
         promptVersion: PROMPT_VERSION,
         inputReference: `quick-check:${createHash("sha256").update(statement).digest("hex").slice(0, 16)}`,
-        expiresAt: new Date(Date.now() + 90_000),
+        expiresAt: new Date(Date.now() + AI_LEASE_MS),
       },
     });
     const started = Date.now();
     try {
-      const response = await this.gemini.classify(statement, settings.modelName, type);
+      const response = await this.gemini.classify(statement, settings.modelName, type, run.id);
       const parsed = parseAnalysis(response.text, statement);
       await this.db.aiRun.update({
         where: { id: run.id },
         data: { status: "SUCCEEDED", output: { text: response.text }, inputTokens: response.inputTokens, outputTokens: response.outputTokens, latencyMs: Date.now() - started, finishedAt: new Date() },
       });
       return {
-        document: type === "RTI" ? "RTI application" : "Legal notice",
+        document: type === "RTI" ? "RTI application" : type === "LENDING_CERTIFICATE" ? "Lending certificate" : "Legal notice",
         category: parsed.category,
         summary: parsed.summary,
         facts: parsed.facts.map((fact) => ({ key: fact.key, value: fact.value })),

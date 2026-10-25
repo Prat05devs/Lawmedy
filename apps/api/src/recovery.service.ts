@@ -9,7 +9,7 @@ const BATCH = 5;
 // A matter whose AI work keeps failing is left for a manual retry instead of looping forever.
 const MAX_FAILED_RUNS = 3;
 const FAILURE_WINDOW_MINUTES = 120;
-const DRAFT_TASKS = ["NOTICE_GENERATION", "NOTICE_QA", "RTI_GENERATION", "RTI_QA"] as const;
+const DRAFT_TASKS = ["NOTICE_GENERATION", "NOTICE_QA", "RTI_GENERATION", "RTI_QA", "CERTIFICATE_GENERATION", "CERTIFICATE_QA"] as const;
 
 // Background work (drafting, reading uploads, rendering PDFs) starts after the HTTP response.
 // A deploy or a free-instance restart can kill it midway, leaving a matter waiting forever.

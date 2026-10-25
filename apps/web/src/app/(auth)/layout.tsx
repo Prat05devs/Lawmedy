@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <section className="auth-story">
         <Brand href="/" />
         <div className="auth-story-body">
-          <h1>Legal notices and RTI applications, reviewed by an advocate.</h1>
+          <h1>Legal notices, RTI applications and lending certificates, reviewed by an advocate.</h1>
           <p>You write what happened and confirm the facts. We draft, an advocate reviews, and you download a PDF.</p>
         </div>
         <p className="auth-foot">Your files are private. You can delete your account from inside the app.</p>

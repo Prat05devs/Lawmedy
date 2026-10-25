@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { AI_LEASE_MS } from "../ai-timing";
 import { MatterType, Prisma } from "@prisma/client";
 import { AdvocateService } from "../advocate/advocate.service";
 import { FinalDocumentService } from "../final-document/final-document.service";
@@ -9,10 +10,12 @@ import { parseRti, parseRtiQa, RTI_PROMPT_VERSION, RTI_QA_PROMPT_VERSION, type R
 import { legalBasisFor } from "./legal-basis";
 import { NOTICE_PROMPT_VERSION, parseNotice, parseNoticeQa, QA_PROMPT_VERSION, type Notice } from "./notice";
 
+import { CERTIFICATE_PROMPT_VERSION, CERTIFICATE_QA_PROMPT_VERSION, parseCertificate, type LendingCertificate } from "./lending-certificate";
+
 const MAX_INLINE_EVIDENCE_BYTES = 14 * 1024 * 1024;
 
 type ConfirmedFact = { id: string; type: string; value: string };
-type Draft = Notice | RtiDraft;
+type Draft = Notice | RtiDraft | LendingCertificate;
 
 @Injectable()
 export class DocumentsService {
@@ -24,8 +27,8 @@ export class DocumentsService {
     private readonly storage: PrivateStorage,
   ) {}
 
-  private documentType(type: MatterType) { return type === "RTI" ? "RTI" : "LEGAL_NOTICE"; }
-  private taskTypes(type: MatterType) { return type === "RTI" ? ["RTI_GENERATION", "RTI_QA"] : ["NOTICE_GENERATION", "NOTICE_QA"]; }
+  private documentType(type: MatterType) { return type; }
+  private taskTypes(type: MatterType) { return type === "RTI" ? ["RTI_GENERATION", "RTI_QA"] : type === "LENDING_CERTIFICATE" ? ["CERTIFICATE_GENERATION", "CERTIFICATE_QA"] : ["NOTICE_GENERATION", "NOTICE_QA"]; }
 
   async get(userId: string, matterId: string) {
     const matter = await this.db.matter.findFirst({
@@ -92,12 +95,12 @@ export class DocumentsService {
       const category = matter.analyses[0]?.category ?? "*";
       const specific = await tx.matterWorkflowConfiguration.findUnique({ where: { matterType_category: { matterType: type, category } } });
       const fallback = specific ?? await tx.matterWorkflowConfiguration.findUnique({ where: { matterType_category: { matterType: type, category: "*" } } });
-      const requiresAdvocateReview = fallback?.requiresAdvocateReview ?? true;
+      const requiresAdvocateReview = type === "LENDING_CERTIFICATE" || (fallback?.requiresAdvocateReview ?? true);
       const generationTask = taskTypes[0];
       const run = await tx.aiRun.create({ data: {
         matterId, taskType: generationTask, provider: settings.provider, modelName: settings.modelName || "NOT_CONFIGURED",
-        promptVersion: type === "RTI" ? RTI_PROMPT_VERSION : NOTICE_PROMPT_VERSION,
-        inputReference: `confirmed-facts:${document.currentVersion + 1};evidence:${supportingEvidence.map((item) => item.id).join(",") || "none"}`, expiresAt: new Date(now.getTime() + 90000),
+        promptVersion: type === "RTI" ? RTI_PROMPT_VERSION : type === "LENDING_CERTIFICATE" ? CERTIFICATE_PROMPT_VERSION : NOTICE_PROMPT_VERSION,
+        inputReference: `confirmed-facts:${document.currentVersion + 1};evidence:${supportingEvidence.map((item) => item.id).join(",") || "none"}`, expiresAt: new Date(now.getTime() + AI_LEASE_MS),
       } });
       await tx.matter.update({ where: { id: matterId }, data: { status: "AI_PROCESSING" } });
       await tx.auditLog.create({ data: { actorType: "SYSTEM", actorId: "lawmedy", action: `${generationTask}_REQUESTED`, entityType: "AiRun", entityId: run.id } });
@@ -109,7 +112,7 @@ export class DocumentsService {
       } : {
         category, confirmedFacts,
         sender: { name: matter.user.fullName, address: matter.applicantAddress },
-        availableLegalBasis: legalBasisFor(category).map(({ id, appliesWhen }) => ({ id, appliesWhen })),
+        availableLegalBasis: (type === "LENDING_CERTIFICATE" ? [] : legalBasisFor(category)).map(({ id, appliesWhen }) => ({ id, appliesWhen })),
         recipient: matter.recipient ? { name: matter.recipient.name, address: matter.recipient.address, phone: matter.recipient.phone, email: matter.recipient.email } : null,
         supportingEvidence: supportingEvidence.map((item) => ({ id: item.id, filename: item.originalFilename, extraction: item.extraction!.extraction })),
       };
@@ -134,9 +137,9 @@ export class DocumentsService {
         budget -= item.sizeBytes;
         documents.push({ id: item.id, filename: item.originalFilename, mimeType: item.mimeType, contents: await this.storage.read(item.storageKey) });
       }
-      const response = claimed.type === "RTI" ? await this.gemini.generateRti(claimed.input, settings.modelName, documents) : await this.gemini.generateNotice(claimed.input, settings.modelName, documents);
+      const response = claimed.type === "RTI" ? await this.gemini.generateRti(claimed.input, settings.modelName, documents, claimed.run.id) : claimed.type === "LENDING_CERTIFICATE" ? await this.gemini.generateCertificate(claimed.input, settings.modelName, documents, claimed.run.id) : await this.gemini.generateNotice(claimed.input, settings.modelName, documents, claimed.run.id);
       rawOutput = { text: response.text, response: response.raw } as Prisma.InputJsonValue;
-      const draft = this.withVerifiedParties(claimed.type === "RTI" ? parseRti(response.text, allowedFactIds) : parseNotice(response.text, allowedFactIds, claimed.category), claimed.parties);
+      const draft = this.withVerifiedParties(claimed.type === "RTI" ? parseRti(response.text, allowedFactIds) : claimed.type === "LENDING_CERTIFICATE" ? parseCertificate(response.text, allowedFactIds) : parseNotice(response.text, allowedFactIds, claimed.category), claimed.parties);
       if (draft.status === "MISSING_INFORMATION") {
         await this.finishMissingInformation(claimed.run.id, claimed.document.id, rawOutput, response, started, claimed.type);
         return;
@@ -151,6 +154,7 @@ export class DocumentsService {
   // Names and addresses come from the confirmed record, never from the model.
   private withVerifiedParties(draft: Draft, parties: { sender: { name: string; address: string | null; phone: string | null }; recipient: { name: string; address: string } | null; authority: { name: string; department: string; address: string } | null }): Draft {
     if (draft.status !== "READY") return draft;
+    if ("lender" in draft) return { ...draft, lender: { name: parties.sender.name, address: parties.sender.address }, borrower: parties.recipient ?? draft.borrower };
     if ("informationRequests" in draft)
       return { ...draft, applicant: { name: parties.sender.name, address: parties.sender.address, phone: parties.sender.phone },
         publicAuthority: parties.authority ? { name: parties.authority.name, department: parties.authority.department, address: parties.authority.address } : draft.publicAuthority };
@@ -184,7 +188,7 @@ export class DocumentsService {
       await tx.aiRun.update({ where: { id: runId }, data: { status: "SUCCEEDED", output, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, latencyMs: Date.now() - started, finishedAt: new Date() } });
       const version = await tx.documentVersion.create({ data: { documentId, versionNumber, content: draft, createdByType: "AI", createdById: settings.modelName || "gemini", aiRunId: runId } });
       await tx.legalDocument.update({ where: { id: documentId }, data: { currentVersion: versionNumber, status: "PROCESSING" } });
-      const qaRun = await tx.aiRun.create({ data: { matterId, taskType: type === "RTI" ? "RTI_QA" : "NOTICE_QA", provider: settings.provider, modelName: settings.modelName || "NOT_CONFIGURED", promptVersion: type === "RTI" ? RTI_QA_PROMPT_VERSION : QA_PROMPT_VERSION, inputReference: version.id, expiresAt: new Date(Date.now() + 90000) } });
+      const qaRun = await tx.aiRun.create({ data: { matterId, taskType: this.taskTypes(type)[1], provider: settings.provider, modelName: settings.modelName || "NOT_CONFIGURED", promptVersion: type === "RTI" ? RTI_QA_PROMPT_VERSION : type === "LENDING_CERTIFICATE" ? CERTIFICATE_QA_PROMPT_VERSION : QA_PROMPT_VERSION, inputReference: version.id, expiresAt: new Date(Date.now() + AI_LEASE_MS) } });
       return { versionId: version.id, qaRunId: qaRun.id };
     });
   }
@@ -193,7 +197,7 @@ export class DocumentsService {
     const started = Date.now();
     let rawOutput: Prisma.InputJsonValue | undefined;
     try {
-      const response = type === "RTI" ? await this.gemini.qaRti({ confirmedFacts, matter: input, draft }, modelName, documents) : await this.gemini.qaNotice({ confirmedFacts, matter: input, draft }, modelName, documents);
+      const response = type === "RTI" ? await this.gemini.qaRti({ confirmedFacts, matter: input, draft }, modelName, documents, qaRunId) : type === "LENDING_CERTIFICATE" ? await this.gemini.qaCertificate({ confirmedFacts, matter: input, draft }, modelName, documents, qaRunId) : await this.gemini.qaNotice({ confirmedFacts, matter: input, draft }, modelName, documents, qaRunId);
       rawOutput = { text: response.text, response: response.raw } as Prisma.InputJsonValue;
       const qa = type === "RTI" ? parseRtiQa(response.text, allowedFactIds) : parseNoticeQa(response.text, allowedFactIds);
       // A draft only moves forward when automated QA passes with no issues.

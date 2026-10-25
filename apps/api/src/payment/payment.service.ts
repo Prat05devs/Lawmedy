@@ -22,9 +22,9 @@ export class PaymentService {
     private readonly documents: DocumentsService,
   ) {}
 
-  private price(matterType: "LEGAL_NOTICE" | "RTI") {
-    const key = matterType === "RTI" ? "RTI_PRICE_PAISE" : "LEGAL_NOTICE_PRICE_PAISE";
-    const amount = Number(this.config.get(key, 29900));
+  private price(matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE") {
+    const key = matterType === "RTI" ? "RTI_PRICE_PAISE" : matterType === "LENDING_CERTIFICATE" ? "LENDING_CERTIFICATE_PRICE_PAISE" : "LEGAL_NOTICE_PRICE_PAISE";
+    const amount = Number(this.config.get(key, matterType === "LENDING_CERTIFICATE" ? 19900 : 29900));
     if (!Number.isSafeInteger(amount) || amount < 100)
       throw new Error(`${key} must be an integer in paise.`);
     return amount;
@@ -33,8 +33,7 @@ export class PaymentService {
   // "manual": the user pays on a hosted payment link, then our team verifies the
   // reference by hand. "razorpay": automatic checkout (needs API keys).
   manualSettings() {
-    const mode = this.config.get<string>("PAYMENT_MODE", "manual") === "razorpay" ? "razorpay" : "manual";
-    const link = this.config.get<string>("PAYMENT_LINK_URL", "https://razorpay.me/@aawasyojana").trim();
+    const { mode, link } = this.razorpay.settings();
     return { mode, link } as const;
   }
 
@@ -170,56 +169,35 @@ export class PaymentService {
   async createOrder(userId: string, matterId: string) {
     if (this.manualSettings().mode === "manual")
       throw new ConflictException("Online checkout is not enabled. Use the payment link and submit your reference.");
-    const matter = await this.db.matter.findFirst({
-      where: { id: matterId, userId },
-      include: { user: true },
-    });
-    if (!matter) throw new NotFoundException("Matter not found.");
-    if (matter.status === "PAID")
-      throw new ConflictException("This matter is already paid.");
-    if (matter.status !== "READY_FOR_PAYMENT")
-      throw new ConflictException("Confirm your case information first.");
-    const existing = await this.db.payment.findFirst({
-      where: { matterId, status: "CREATED" },
-      orderBy: { createdAt: "desc" },
-    });
     const settings = this.razorpay.settings();
     if (!settings.configured)
-      throw new ServiceUnavailableException(
-        "Online payment is not configured yet. Your confirmed information is saved.",
-      );
-    if (existing)
-      return this.checkout(existing, settings.keyId, matter.user, matter.type);
-
-    const amount = this.price(matter.type);
-    const currency = "INR";
-    const order = await this.razorpay.createOrder({
-      amount,
-      currency,
-      receipt: matter.referenceNumber,
-      matterId,
-    });
-    const payment = await this.db.$transaction(async (tx) => {
-      const created = await tx.payment.create({
-        data: {
-          matterId,
-          provider: "razorpay",
-          providerOrderId: order.id,
-          amount,
-          currency,
-        },
+      throw new ServiceUnavailableException("Online payment is not configured yet. Your confirmed information is saved.");
+    // Serialize repeated taps and simultaneous web/mobile requests for this matter.
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Matter" WHERE id = ${matterId} FOR UPDATE`;
+      const matter = await tx.matter.findFirst({ where: { id: matterId, userId }, include: { user: true } });
+      if (!matter) throw new NotFoundException("Matter not found.");
+      if (matter.status !== "READY_FOR_PAYMENT")
+        throw new ConflictException("This matter cannot accept a payment. Check its current status.");
+      const existing = await tx.payment.findFirst({
+        where: { matterId, provider: "razorpay", status: "CREATED" }, orderBy: { createdAt: "desc" },
+      });
+      if (existing) {
+        const original = existing.providerCredentialId ? this.razorpay.settings(existing.providerCredentialId) : settings;
+        if (!original.configured) throw new ServiceUnavailableException("The credentials for this payment are unavailable. Contact support before paying.");
+        return this.checkout(existing, original.keyId, matter.user, matter.type);
+      }
+      const amount = this.price(matter.type);
+      const currency = "INR";
+      const order = await this.razorpay.createOrder({ amount, currency, receipt: matter.referenceNumber, matterId }, settings);
+      const payment = await tx.payment.create({
+        data: { matterId, provider: "razorpay", providerCredentialId: settings.credentialId ?? null, providerOrderId: order.id, amount, currency },
       });
       await tx.auditLog.create({
-        data: {
-          actorId: userId,
-          action: "PAYMENT_ORDER_CREATED",
-          entityType: "Payment",
-          entityId: created.id,
-        },
+        data: { actorId: userId, action: "PAYMENT_ORDER_CREATED", entityType: "Payment", entityId: payment.id },
       });
-      return created;
-    });
-    return this.checkout(payment, settings.keyId, matter.user, matter.type);
+      return this.checkout(payment, settings.keyId, matter.user, matter.type);
+    }, { timeout: 25000 });
   }
 
   private checkout(
@@ -230,7 +208,7 @@ export class PaymentService {
     },
     keyId: string,
     user: { fullName: string; email: string },
-    matterType: "LEGAL_NOTICE" | "RTI" = "LEGAL_NOTICE",
+    matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" = "LEGAL_NOTICE",
   ) {
     return {
       keyId,
@@ -238,32 +216,23 @@ export class PaymentService {
       amount: payment.amount,
       currency: payment.currency,
       name: "Lawmedy",
-      description: matterType === "RTI" ? "RTI drafting" : "Legal notice review",
+      description: matterType === "RTI" ? "RTI drafting" : matterType === "LENDING_CERTIFICATE" ? "Lending certificate" : "Legal notice review",
       prefill: { name: user.fullName, email: user.email },
     };
   }
 
   async webhook(rawBody: Buffer | undefined, signature: string | undefined) {
-    const settings = this.razorpay.settings();
-    if (
-      !settings.webhookSecret ||
-      settings.webhookSecret.startsWith("replace-")
-    )
-      throw new ServiceUnavailableException(
-        "Payment webhook is not configured.",
-      );
-    if (!rawBody || !signature)
-      throw new UnauthorizedException("Invalid webhook signature.");
-    const expected = createHmac("sha256", settings.webhookSecret)
-      .update(rawBody)
-      .digest("hex");
+    const versions = this.razorpay.versions();
+    if (!versions.some(s => s.webhookSecret && !s.webhookSecret.startsWith("replace-")))
+      throw new ServiceUnavailableException("Payment webhook is not configured.");
+    if (!rawBody || !signature || !/^[a-f0-9]{64}$/i.test(signature)) throw new UnauthorizedException("Invalid webhook signature.");
     const supplied = Buffer.from(signature, "hex");
-    const expectedBuffer = Buffer.from(expected, "hex");
-    if (
-      supplied.length !== expectedBuffer.length ||
-      !timingSafeEqual(supplied, expectedBuffer)
-    )
-      throw new UnauthorizedException("Invalid webhook signature.");
+    const matching = versions.filter(settings => {
+      if (!settings.webhookSecret) return false;
+      const expected = createHmac("sha256", settings.webhookSecret).update(rawBody).digest();
+      return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+    });
+    if (!matching.length) throw new UnauthorizedException("Invalid webhook signature.");
 
     let payload: unknown;
     try {
@@ -277,6 +246,7 @@ export class PaymentService {
       where: { providerOrderId: event.orderId },
     });
     if (!payment) return { received: true };
+    if (payment.providerCredentialId && !matching.some(s => s.credentialId === payment.providerCredentialId)) throw new UnauthorizedException("Webhook credentials do not match the payment.");
     if (
       payment.amount !== event.amount ||
       payment.currency !== event.currency ||
@@ -288,7 +258,7 @@ export class PaymentService {
   }
 
 
-  // Shared by the signed webhook and the signature-verified checkout callback.
+  // Both paths must establish capture before settling the order.
   private async settle(paymentRowId: string, matterId: string, providerPaymentId: string, actor: string) {
     const shouldGenerate = await this.db.$transaction(async (tx) => {
       const updated = await tx.payment.updateMany({
@@ -310,19 +280,26 @@ export class PaymentService {
 
   // Checkout callback: Razorpay signs "order_id|payment_id" with the key secret.
   async verifyCheckout(userId: string, matterId: string, input: { orderId: string; paymentId: string; signature: string }) {
-    const settings = this.razorpay.settings();
-    if (!settings.configured) throw new ServiceUnavailableException("Online payment is not configured.");
     const payment = await this.db.payment.findFirst({
       where: { matterId, providerOrderId: input.orderId, matter: { userId } },
     });
     if (!payment) throw new NotFoundException("Payment not found.");
-    const expected = createHmac("sha256", settings.keySecret).update(`${input.orderId}|${input.paymentId}`).digest("hex");
+    if (!/^[a-f0-9]{64}$/i.test(input.signature)) throw new UnauthorizedException("Payment signature is invalid.");
     const supplied = Buffer.from(input.signature, "hex");
-    const expectedBuffer = Buffer.from(expected, "hex");
-    if (supplied.length !== expectedBuffer.length || !timingSafeEqual(supplied, expectedBuffer))
-      throw new UnauthorizedException("Payment signature is invalid.");
-    await this.settle(payment.id, matterId, input.paymentId, "razorpay-checkout");
-    return { status: "PAID" };
+    const versions = payment.providerCredentialId ? [this.razorpay.settings(payment.providerCredentialId)] : this.razorpay.versions();
+    const settings = versions.find(value => {
+      if (!value.configured) return false;
+      const expected = createHmac("sha256", value.keySecret).update(`${payment.providerOrderId}|${input.paymentId}`).digest();
+      return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+    });
+    if (!settings) throw new UnauthorizedException("Payment signature is invalid.");
+    if (payment.status === "PAID") return { status: "PAID" as const };
+    const captured = await this.razorpay.fetchPayment(input.paymentId, settings);
+    if (captured.orderId !== payment.providerOrderId || captured.amount !== payment.amount || captured.currency !== payment.currency)
+      throw new BadRequestException("Payment details do not match the order.");
+    if (captured.status !== "captured") return { status: "PENDING" as const };
+    await this.settle(payment.id, matterId, captured.id, "razorpay-checkout");
+    return { status: "PAID" as const };
   }
 
   private paymentEvent(payload: unknown) {

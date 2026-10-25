@@ -38,7 +38,8 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
@@ -67,7 +68,6 @@
       ]
     ],
     "extra": {
-      "apiUrl": "https://lawmedy-api.onrender.com",
       "router": {},
       "eas": {
         "projectId": "2476c535-9857-4fd1-af74-6621da960759"

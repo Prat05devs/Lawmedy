@@ -17,6 +17,7 @@ import {
   IsInt,
   Min,
   IsDateString,
+  IsDefined,
 } from "class-validator";
 import { AdvocateInterestStatus, GovernmentLevel, MatterType } from "@prisma/client";
 
@@ -72,8 +73,14 @@ export class ApplicantDto {
   @IsOptional()
   @Matches(/^[+0-9() -]{7,30}$/)
   phone?: string;
+  // Optional in the API so older app builds keep working; the website requires it.
+  @Transform(trim)
+  @IsOptional()
+  @Matches(/^[+0-9() .-]{8,30}$/, { message: "Enter a valid WhatsApp number." })
+  whatsapp?: string;
 }
 export class ConfirmReviewDto {
+  @IsDefined()
   @ValidateNested()
   @Type(() => ApplicantDto)
   applicant!: ApplicantDto;

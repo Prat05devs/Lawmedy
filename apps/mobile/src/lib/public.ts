@@ -19,7 +19,7 @@ export function usePublic<T>(path: string, fallback: T) {
   return data;
 }
 
-export type Pricing = { currency: string; legalNotice: number; rti: number };
-export type Testimonial = { id: string; name: string; descriptor: string | null; quote: string; matterType: "LEGAL_NOTICE" | "RTI" | null };
+export type Pricing = { currency: string; legalNotice: number; rti: number; lendingCertificate: number };
+export type Testimonial = { id: string; name: string; descriptor: string | null; quote: string; matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" | null };
 export type PublicAuthority = { id: string; name: string; department: string; governmentLevel: "CENTRAL" | "STATE" | "LOCAL"; state: string | null; address: string };
 export type QuickCheck = { document: string; category: string; summary: string; facts: { key: string; value: string }[]; needed: string[] };

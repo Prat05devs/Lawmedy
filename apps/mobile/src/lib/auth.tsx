@@ -24,14 +24,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(result.user);
   }, []);
 
-  const logout = useCallback(async () => {
+  const clearSession = useCallback(async () => {
     setToken(null);
     setUser(null);
     await SecureStore.deleteItemAsync(KEY).catch(() => undefined);
   }, []);
 
+  const logout = useCallback(async () => {
+    try { await api("/auth/logout", { method: "POST" }); }
+    catch (error) { if (!(error instanceof ApiError) || error.status !== 401) throw error; }
+    await clearSession();
+  }, [clearSession]);
+
   useEffect(() => {
-    setUnauthorizedHandler(() => { void logout(); });
+    setUnauthorizedHandler(() => { void clearSession(); });
     (async () => {
       try {
         const saved = await SecureStore.getItemAsync(KEY);
@@ -40,12 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(await api<User>("/users/me"));
         }
       } catch (error) {
-        if (error instanceof ApiError && error.status === 401) await logout();
+        if (error instanceof ApiError && error.status === 401) await clearSession();
       } finally {
         setLoading(false);
       }
     })();
-  }, [logout]);
+  }, [clearSession]);
 
   const value: AuthState = {
     user,

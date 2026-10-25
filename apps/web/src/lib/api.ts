@@ -13,7 +13,7 @@ export type Statement = { id: string; statement: string; createdAt: string };
 export type Matter = {
   id: string;
   referenceNumber: string;
-  type: "LEGAL_NOTICE" | "RTI";
+  type: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
   status:
     | "DRAFT"
     | "INTAKE_IN_PROGRESS"
@@ -39,7 +39,7 @@ export type ReviewFactValue = {
   confirmed: boolean;
 };
 export type MatterReview = {
-  matterType: "LEGAL_NOTICE" | "RTI";
+  matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
   status:
     | "DRAFT"
     | "INTAKE_IN_PROGRESS"
@@ -73,7 +73,7 @@ export type MatterReview = {
     submittedAt?: string | null;
     reviewNote?: string | null;
   };
-  applicant: { address: string | null; phone: string | null };
+  applicant: { address: string | null; phone: string | null; whatsapp: string | null };
   pricing: { amount: number; currency: string };
   paymentConfigured: boolean;
   paymentMode: "manual" | "razorpay";
@@ -82,7 +82,7 @@ export type MatterReview = {
 export type PublicAuthority = { id: string; name: string; department: string; governmentLevel: "CENTRAL" | "STATE" | "LOCAL"; state: string | null; address: string; rtiPortalUrl: string | null };
 export type RtiDetail = { id: string; matterId: string; governmentLevel: "CENTRAL" | "STATE" | "LOCAL"; state: string | null; department: string; publicAuthorityId: string; subject: string; periodFrom: string | null; periodTo: string | null; publicAuthority: PublicAuthority };
 export type MatterDocument = {
-  matterType: "LEGAL_NOTICE" | "RTI";
+  matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
   matterStatus: Matter["status"];
   state:
     | "NOT_STARTED"
@@ -113,7 +113,7 @@ export type MatterDocument = {
       subject: string;
       period: { from: string | null; to: string | null } | null;
       informationRequests: Array<{ text: string; caseFactIds: string[] }>;
-    };
+    } | import("./advocate-types").CertificateContent;
     qa: null | { passed: boolean; issueCount: number; warningCount: number };
   };
 };

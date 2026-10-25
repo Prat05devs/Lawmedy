@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { PaymentService } from "./payment.service";
 
 describe("PaymentService webhook", () => {
@@ -44,6 +44,7 @@ describe("PaymentService webhook", () => {
     };
     const razorpay = {
       settings: () => ({ webhookSecret: secret }),
+      versions: () => [{ webhookSecret: secret, credentialId: "old-live" }],
     };
     const config = { get: jest.fn() };
     const documents = { generateAfterPayment: jest.fn().mockResolvedValue(undefined) };
@@ -53,7 +54,7 @@ describe("PaymentService webhook", () => {
       config as never,
       documents as never,
     );
-    return { service, db, tx, documents };
+    return { service, db, tx, documents, razorpay };
   }
 
   it("rejects an invalid webhook signature before database changes", async () => {
@@ -108,12 +109,17 @@ describe("PaymentService checkout verification", () => {
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
     const db = {
-      payment: { findFirst: jest.fn().mockResolvedValue({ id: "row", matterId: "m1", providerOrderId: "order_1" }) },
+      payment: { findFirst: jest.fn().mockResolvedValue({ id: "row", matterId: "m1", providerOrderId: "order_1", amount: 29900, currency: "INR", status: "CREATED" }) },
       $transaction: jest.fn(async (callback: (value: typeof tx) => unknown) => callback(tx)),
     };
     const documents = { generateAfterPayment: jest.fn().mockResolvedValue(undefined) };
-    const service = new PaymentService(db as never, { settings: () => ({ configured: true, keySecret }) } as never, { get: jest.fn() } as never, documents as never);
-    return { service, tx, documents };
+    const razorpay = {
+      settings: () => ({ configured: true, keySecret }),
+      versions: () => [{ configured: true, keySecret }],
+      fetchPayment: jest.fn().mockResolvedValue({ id: "pay_1", orderId: "order_1", amount: 29900, currency: "INR", status: "captured" }),
+    };
+    const service = new PaymentService(db as never, razorpay as never, { get: jest.fn() } as never, documents as never);
+    return { service, tx, documents, razorpay, db };
   }
 
   it("marks the matter paid only for a valid checkout signature", async () => {
@@ -122,6 +128,32 @@ describe("PaymentService checkout verification", () => {
     await service.verifyCheckout("u1", "m1", { orderId: "order_1", paymentId: "pay_1", signature });
     expect(tx.payment.updateMany).toHaveBeenCalled();
     expect(documents.generateAfterPayment).toHaveBeenCalledWith("m1");
+  });
+
+  it("does not settle an authorised payment until it is captured", async () => {
+    const { service, razorpay, tx } = setup();
+    razorpay.fetchPayment.mockResolvedValue({ id: "pay_1", orderId: "order_1", amount: 29900, currency: "INR", status: "authorized" });
+    const signature = createHmac("sha256", keySecret).update("order_1|pay_1").digest("hex");
+    await expect(service.verifyCheckout("u1", "m1", { orderId: "order_1", paymentId: "pay_1", signature })).resolves.toEqual({ status: "PENDING" });
+    expect(tx.payment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { orderId: "order_other" }, { amount: 1 }, { currency: "USD" },
+  ])("rejects captured payment details that do not match: %j", async (mismatch) => {
+    const { service, razorpay, tx } = setup();
+    razorpay.fetchPayment.mockResolvedValue({ id: "pay_1", orderId: "order_1", amount: 29900, currency: "INR", status: "captured", ...mismatch });
+    const signature = createHmac("sha256", keySecret).update("order_1|pay_1").digest("hex");
+    await expect(service.verifyCheckout("u1", "m1", { orderId: "order_1", paymentId: "pay_1", signature })).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.payment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership before calling Razorpay", async () => {
+    const { service, db, razorpay } = setup();
+    db.payment.findFirst.mockResolvedValue(null as never);
+    await expect(service.verifyCheckout("stranger", "m1", { orderId: "order_1", paymentId: "pay_1", signature: "a".repeat(64) })).rejects.toBeInstanceOf(NotFoundException);
+    expect(db.payment.findFirst).toHaveBeenCalledWith({ where: { matterId: "m1", providerOrderId: "order_1", matter: { userId: "stranger" } } });
+    expect(razorpay.fetchPayment).not.toHaveBeenCalled();
   });
 
   it("rejects a forged signature without touching the database", async () => {

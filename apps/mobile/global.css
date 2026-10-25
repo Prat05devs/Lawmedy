@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* "Mor & Genda", the same palette as the website: robe black and band white, with
+   Mor (peacock) for work and home, Genda (marigold) for money, Rani (pink) for shopping. */
+@layer base {
+  :root {
+    --background: 60 11% 97%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 60 11% 93%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 60 11% 93%;
+    --muted-foreground: 60 4% 32%;
+    --accent: 170 41% 91%;
+    --accent-foreground: 177 82% 18%;
+    --destructive: 0 75% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 60 8% 88%;
+    --input: 60 5% 77%;
+    --ring: 177 82% 24%;
+    --radius: 0.625rem;
+    --mor: 177 82% 24%;
+    --mor-tint: 170 41% 91%;
+    --mor-ink: 177 82% 18%;
+    --genda: 42 100% 47%;
+    --genda-tint: 44 92% 90%;
+    --genda-ink: 40 100% 21%;
+    --rani: 336 78% 43%;
+    --rani-tint: 338 77% 94%;
+    --rani-ink: 336 80% 31%;
+  }
+}

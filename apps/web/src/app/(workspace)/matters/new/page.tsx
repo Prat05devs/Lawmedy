@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { CreateMatterForm } from "@/components/forms";
+import { DraftBanner } from "@/components/home-start";
 export const metadata = { title: "New legal notice" };
 export default function NewMatter() {
   return (
@@ -16,6 +17,7 @@ export default function NewMatter() {
         </div>
         <h1>Let’s start with your story.</h1>
         <p className="muted">Create a private matter for your legal notice.</p>
+        <DraftBanner action="new" />
         <section className="panel new-matter">
           <h2>Legal notice</h2>
           <p>

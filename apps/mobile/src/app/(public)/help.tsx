@@ -10,7 +10,7 @@ const faqs = [
   { q: "Is this legal advice?", a: "No. Lawmedy prepares documents and an advocate reviews each one. For a large or complicated dispute, speak to an advocate before you send anything." },
   { q: "Do I need documents to start?", a: "No. You can begin with your own account. Documents make the draft more exact." },
   { q: "Do you send it for me?", a: "No. You get a PDF and you send it. For an RTI application, you pay the government fee directly to the authority." },
-  { q: "How long does it take?", a: "Usually within 24 hours of verified payment. Payment is verified by hand." },
+  { q: "How long does it take?", a: "Usually within 24 hours of verified payment and complete information. Razorpay payments are confirmed securely." },
   { q: "What if you cannot take my matter?", a: "If our advocate declines a matter, you get a full refund." },
   { q: "Can I delete my data?", a: "Yes. After you create an account, open Account and choose Delete my account." },
 ];

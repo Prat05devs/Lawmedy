@@ -11,7 +11,7 @@ const money = (paise: number, currency = "INR") =>
 export function ManualPaymentPanel({ matterId, review }: { matterId: string; review: MatterReview }) {
   const [state, action, pending] = useActionState(submitManualPayment.bind(null, matterId), {});
   const amount = money(review.pricing.amount, review.pricing.currency);
-  const label = review.matterType === "RTI" ? "RTI application" : "Legal notice";
+  const label = review.matterType === "LENDING_CERTIFICATE" ? "Lending certificate" : review.matterType === "RTI" ? "RTI application" : "Legal notice";
 
   if (review.status === "PAID") {
     return (

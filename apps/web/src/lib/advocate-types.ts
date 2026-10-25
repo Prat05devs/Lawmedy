@@ -1,5 +1,11 @@
 import type { Matter } from "./api";
 
+export type CertificateContent = {
+  status: "READY"; lender: { name: string; address: string | null };
+  borrower: { name: string; address: string | null }; subject: string;
+  paragraphs: Array<{ text: string; caseFactIds: string[] }>;
+};
+
 export type NoticeContent = {
   status: "READY";
   missingInformation?: string[];
@@ -79,7 +85,7 @@ export type AdvocateMatterDetail = {
         versionNumber: number;
         createdByType: "AI" | "ADVOCATE";
         createdAt: string;
-        content: NoticeContent | RtiContent;
+        content: NoticeContent | RtiContent | CertificateContent;
         qa: null | {
           passed: boolean;
           issues: Array<{

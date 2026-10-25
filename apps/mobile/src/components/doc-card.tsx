@@ -6,13 +6,13 @@ import { tap } from "@/components/app-ui";
 import { photos } from "@/lib/photos";
 import { colors, fonts, radius, shadow } from "@/lib/theme";
 
-type Kind = "LEGAL_NOTICE" | "RTI";
+type Kind = "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
 
 // The card for choosing a document. The whole card is the button; the photo shows the document.
-export function DocCard({ kind, title, text, onPress }: { kind: Kind; title: string; text?: string; onPress: () => void }) {
+export function DocCard({ kind, title, text, disabled = false, onPress }: { kind: Kind; title: string; text?: string; disabled?: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.card, pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] }]}>
-      <Image source={kind === "RTI" ? photos.rtiCard : photos.legalNoticeCard} style={s.photo} contentFit="cover" transition={150} accessible={false} />
+    <Pressable disabled={disabled} accessibilityState={{ disabled }} onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.card, pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] }]}>
+      {kind !== "LENDING_CERTIFICATE" && <Image source={kind === "RTI" ? photos.rtiCard : photos.legalNoticeCard} style={s.photo} contentFit="cover" transition={150} accessible={false} />}
       <View style={s.body}>
         <View style={{ flex: 1 }}>
           <Text maxFontSizeMultiplier={1.3} style={s.title}>{title}</Text>

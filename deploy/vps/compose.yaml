@@ -1,0 +1,115 @@
+name: lawmedy
+x-logging: &bounded-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *bounded-logs
+    mem_limit: 768m
+    command: [postgres, -c, shared_buffers=128MB, -c, max_connections=40, -c, work_mem=4MB]
+    environment:
+      POSTGRES_USER: platform_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set the database admin password}
+      POSTGRES_DB: postgres
+      LAWMEDY_DB_PASSWORD: ${LAWMEDY_DB_PASSWORD:?Set the Lawmedy database password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-database.sh:/docker-entrypoint-initdb.d/10-lawmedy.sh:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U platform_admin -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    logging: *bounded-logs
+    stop_grace_period: 90s
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set the Lawmedy connection string}
+      DIRECT_URL: ${DIRECT_URL:?Set the migration connection string}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?Set CONFIG_ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      FILE_SIGNING_SECRET: ${FILE_SIGNING_SECRET:?Set FILE_SIGNING_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN:?Set the website origin}
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-}
+      LEGAL_NOTICE_PRICE_PAISE: ${LEGAL_NOTICE_PRICE_PAISE:-29900}
+      RTI_PRICE_PAISE: ${RTI_PRICE_PAISE:-29900}
+      LENDING_CERTIFICATE_PRICE_PAISE: ${LENDING_CERTIFICATE_PRICE_PAISE:-19900}
+      EVIDENCE_MAX_BYTES: ${EVIDENCE_MAX_BYTES:-10485760}
+      EVIDENCE_MAX_FILES: ${EVIDENCE_MAX_FILES:-10}
+      PAYMENT_MODE: ${PAYMENT_MODE:-razorpay}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADVOCATE_EMAIL: ${ADVOCATE_EMAIL:-}
+      ADVOCATE_FULL_NAME: ${ADVOCATE_FULL_NAME:-Lawmedy Advocate}
+      ADVOCATE_PASSWORD: ${ADVOCATE_PASSWORD:-}
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=512
+      HOST: 0.0.0.0
+      PORT: 4000
+      TRUST_PROXY_HOPS: 1
+      STORAGE_DRIVER: local
+      PRIVATE_STORAGE_DIR: /var/lib/lawmedy/private
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 768m
+    volumes:
+      - private_files:/var/lib/lawmedy/private
+    networks: [default, database]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *bounded-logs
+    mem_limit: 128m
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set the public API hostname}
+      ACME_EMAIL: ${ACME_EMAIL:?Set the certificate contact email}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+networks:
+  database:
+    internal: true
+volumes:
+  postgres_data:
+  private_files:
+  caddy_data:
+  caddy_config:

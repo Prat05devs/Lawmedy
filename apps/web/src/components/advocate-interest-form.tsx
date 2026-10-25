@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://lawmedy-api.onrender.com").replace(/\/$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
 // Advocates register interest in the upcoming advocate portal. Sent straight from the browser so
 // the API's per-visitor rate limit applies to each visitor, not to the website's server.
@@ -10,6 +10,7 @@ export function AdvocateInterestForm() {
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!API) return setState({ status: "idle", error: "Registration is temporarily unavailable. Please contact our team." });
     const form = new FormData(e.currentTarget);
     const body = {
       fullName: String(form.get("fullName") || "").trim(),

@@ -311,8 +311,10 @@ export class AdvocateService {
         "UNDER_ADVOCATE_REVIEW",
       ]);
       const matter = await tx.matter.findUniqueOrThrow({ where: { id: matterId }, select: { type: true } });
+      if (matter.type === "LENDING_CERTIFICATE")
+        throw new ConflictException("Upload the signed and stamped certificate on your letterhead to complete this matter.");
       const document = await tx.legalDocument.findFirst({
-        where: { matterId, documentType: matter.type === "RTI" ? "RTI" : "LEGAL_NOTICE", status: "READY" },
+        where: { matterId, documentType: matter.type, status: "READY" },
       });
       if (!document || document.currentVersion < 1)
         throw new ConflictException("No final draft is available to approve.");

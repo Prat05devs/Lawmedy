@@ -1,0 +1,30 @@
+api.lawmedy.in {
+    encode zstd gzip
+    request_body {
+        max_size 12MB
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options nosniff
+        -Server
+    }
+    # No request bodies, credentials or signed query strings in access logs.
+    log {
+        format filter {
+            wrap json
+            fields {
+                request>uri query {
+                    replace signature REDACTED
+                    replace token REDACTED
+                }
+            }
+        }
+    }
+    @internal path /metrics /.env /.git/*
+    respond @internal 404
+    reverse_proxy lawmedy-api:4000 {
+        health_uri /health/ready
+        health_interval 20s
+        health_timeout 5s
+    }
+}

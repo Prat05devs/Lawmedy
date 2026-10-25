@@ -8,7 +8,14 @@ import {
   Post,
   Res,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { FinalDocumentService } from "../final-document/final-document.service";
+import { IsIn, IsInt, Min } from "class-validator";
+import { Type } from "class-transformer";
 import type { Response } from "express";
 import { UserRole } from "@prisma/client";
 import { AuthGuard, UserId } from "../auth.guard";
@@ -21,11 +28,16 @@ import {
 } from "../dto";
 import { AdvocateService } from "./advocate.service";
 
+class SignedCertificateDto {
+  @Type(() => Number) @IsInt() @Min(1) expectedVersion!: number;
+  @IsIn(["true"]) confirmed!: string;
+}
+
 @Controller("advocate")
 @UseGuards(AuthGuard, RolesGuard)
 @Roles(UserRole.ADVOCATE)
 export class AdvocateController {
-  constructor(private readonly advocates: AdvocateService) {}
+  constructor(private readonly advocates: AdvocateService, private readonly finalDocuments: FinalDocumentService) {}
 
   @Get("matters")
   list(@UserId() advocateId: string) {
@@ -78,6 +90,16 @@ export class AdvocateController {
     @Body() dto: AdvocateApprovalDto,
   ) {
     return this.advocates.approve(advocateId, matterId, dto.confirmed);
+  }
+
+  @Post("matters/:id/certificate-final")
+  @HttpCode(200)
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2, fieldSize: 100, fieldNameSize: 100, parts: 3 },
+    fileFilter: (_req, file, cb) => cb(file.mimetype === "application/pdf" ? null : new BadRequestException("Upload a PDF."), file.mimetype === "application/pdf"),
+  }))
+  uploadCertificate(@UserId() advocateId: string, @Param("id", ParseUUIDPipe) matterId: string,
+    @UploadedFile() file: Express.Multer.File | undefined, @Body() body: SignedCertificateDto) {
+    return this.finalDocuments.uploadCertificate(advocateId, matterId, file, body.expectedVersion, body.confirmed === "true");
   }
 
   @Get("matters/:matterId/evidence/:evidenceId/file")

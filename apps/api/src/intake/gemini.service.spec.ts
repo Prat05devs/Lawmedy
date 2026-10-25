@@ -1,4 +1,6 @@
-import { generationContents } from "./gemini.service";
+import { GeminiService, generationContents } from "./gemini.service";
+import { ConfigService } from "@nestjs/config";
+import { AI_PROVIDER_BUDGET_MS } from "../ai-timing";
 
 describe("Gemini document generation inputs", () => {
   it("includes supporting file bytes and identifies the source alongside structured facts", () => {
@@ -24,5 +26,17 @@ describe("Gemini document generation inputs", () => {
     expect(generationContents({ confirmedFacts: [] })[0].parts).toEqual([
       { text: JSON.stringify({ confirmedFacts: [] }) },
     ]);
+  });
+});
+
+describe("provider deadline", () => {
+  it("does not issue another provider call after the overall budget expires", async () => {
+    const now = jest.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(AI_PROVIDER_BUDGET_MS + 1);
+    const generateContent = jest.fn();
+    try {
+      const service = new GeminiService(new ConfigService({ GEMINI_FALLBACK_MODELS: "", AI_FALLBACK_PROVIDERS: "" }));
+      await expect(service["generate"]({ models: { generateContent } } as never, { model: "fixture", contents: "test" })).rejects.toThrow("AI_PROVIDER_TIMEOUT");
+      expect(generateContent).not.toHaveBeenCalled();
+    } finally { now.mockRestore(); }
   });
 });

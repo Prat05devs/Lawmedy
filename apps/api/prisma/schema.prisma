@@ -11,6 +11,7 @@ datasource db {
 enum MatterType {
   LEGAL_NOTICE
   RTI
+  LENDING_CERTIFICATE
 }
 
 enum GovernmentLevel {
@@ -43,9 +44,11 @@ model User {
   id           String     @id @default(uuid())
   email        String     @unique
   passwordHash String
+  googleSubject String? @unique
   fullName     String
   role         UserRole   @default(USER)
   active       Boolean    @default(true)
+  tokenVersion Int        @default(0)
   createdAt    DateTime   @default(now())
   matters      Matter[]
   evidence     Evidence[] @relation("EvidenceUploader")
@@ -67,6 +70,9 @@ model Matter {
   statements         MatterStatement[]  @relation("Statements")
   applicantAddress   String?
   applicantPhone     String?
+  // The team sends the final PDF here by hand; whatsappSentAt records when they did.
+  whatsappNumber     String?
+  whatsappSentAt     DateTime?
   currentStatementId String?            @unique
   currentStatement   MatterStatement?   @relation("CurrentStatement", fields: [currentStatementId], references: [id], onDelete: SetNull)
   aiRuns             AiRun[]
@@ -149,6 +155,9 @@ enum AiRunStatus {
 }
 
 model AiRun {
+  parentRunId        String?
+  parentRun          AiRun?              @relation("ProviderAttempts", fields: [parentRunId], references: [id], onDelete: Cascade)
+  providerAttempts   AiRun[]             @relation("ProviderAttempts")
   id                 String              @id @default(uuid())
   // Null for runs made before an account exists (the guest quick check).
   matterId           String?
@@ -172,6 +181,7 @@ model AiRun {
   generatedVersion   DocumentVersion?     @relation("GenerationRun")
   qaVersion          DocumentVersion?     @relation("QaRun")
 
+  @@index([parentRunId])
   @@index([matterId, inputReference, createdAt])
   @@map("ai_runs")
 }
@@ -312,6 +322,7 @@ model Payment {
   matterId          String
   matter            Matter        @relation(fields: [matterId], references: [id])
   provider          String
+  providerCredentialId String?
   providerOrderId   String        @unique
   providerPaymentId String?       @unique
   amount            Int
@@ -491,4 +502,32 @@ model AdvocateInterest {
   updatedAt     DateTime               @updatedAt
 
   @@index([status, createdAt])
+}
+
+// Provider secrets are encrypted by the API using a deployment-owned encryption key.
+model ProviderConfiguration {
+  id                   String   @id @default("providers")
+  paymentMode          String
+  geminiModel          String
+  geminiFallbackModels String[]
+  revision             Int      @default(1)
+  updatedAt            DateTime @updatedAt
+
+  @@map("provider_configuration")
+}
+
+model ProviderCredential {
+  id         String   @id @default(uuid())
+  provider   String
+  mode       String   @default("")
+  label      String
+  ciphertext String   @db.Text
+  enabled    Boolean  @default(true)
+  priority   Int      @default(0)
+  retired    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([provider, mode, retired])
+  @@map("provider_credentials")
 }

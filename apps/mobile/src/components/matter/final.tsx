@@ -13,13 +13,13 @@ export function FinalPanel({ matterId, doc, type, step, onChanged }: { matterId:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   if (doc.state === "NOT_READY") return null;
-  const name = type === "RTI" ? "RTI application" : "Legal notice";
+  const name = type === "LENDING_CERTIFICATE" ? "Lending certificate" : type === "RTI" ? "RTI application" : "Legal notice";
 
   async function download(d: Extract<FinalDocument, { state: "READY" }>) {
     setBusy(true); setError("");
     try {
       const query = d.downloadUrl.includes("?") ? d.downloadUrl.slice(d.downloadUrl.indexOf("?")) : "";
-      const target = new File(Paths.cache, `lawmedy-${type === "RTI" ? "rti" : "legal-notice"}.pdf`);
+      const target = new File(Paths.cache, `lawmedy-${type === "RTI" ? "rti" : type === "LENDING_CERTIFICATE" ? "lending-certificate" : "legal-notice"}.pdf`);
       if (target.exists) target.delete();
       const file = await File.downloadFileAsync(`${API_URL}/matters/${matterId}/final-document/file${query}`, target, { headers: authHeaders() });
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", UTI: "com.adobe.pdf", dialogTitle: `Your ${name}` });

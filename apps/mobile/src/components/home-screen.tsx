@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Image, type ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
@@ -8,25 +8,20 @@ import { useRouter } from "expo-router";
 import { AppScreen, tap } from "@/components/app-ui";
 import { AssistantButton, AssistantSheet } from "@/components/assistant";
 import { Button } from "@/components/ui";
+import { saveDraft } from "@/lib/guest-draft";
 import { courts } from "@/lib/courts";
-import { money } from "@/lib/hooks";
+import { services, servicePrice } from "@/lib/services";
 import { WEB_URL } from "@/lib/links";
 import { photos } from "@/lib/photos";
 import { usePublic, type Pricing, type Testimonial } from "@/lib/public";
 import type { AssistantAction } from "@/lib/assistant";
 import type { MatterType } from "@/lib/types";
+import { categories, scenarios, type Tone } from "@/lib/scenarios";
 import { colors, fonts, radius, shadow } from "@/lib/theme";
 
 type Icon = keyof typeof Feather.glyphMap;
 
-// Each category opens the same guided start, set to the right document. The notice types match
-// the categories the drafting service handles (money, employment, consumer, property).
-const remedies: { icon: Icon; title: string; text: string; tag: string; meta: string; type: MatterType }[] = [
-  { icon: "file-text", title: "Send a legal notice", text: "Money owed, a security deposit, a broken agreement, a tenant or property dispute.", tag: "Legal notice", meta: "Advocate-reviewed", type: "LEGAL_NOTICE" },
-  { icon: "credit-card", title: "Unpaid salary or dues", text: "Withheld salary, full and final settlement, unpaid freelance invoices.", tag: "Legal notice", meta: "Employment and money", type: "LEGAL_NOTICE" },
-  { icon: "shopping-bag", title: "Notice to a seller or company", text: "Faulty goods, a refund that never came, a service that was not delivered.", tag: "Legal notice", meta: "Consumer dispute", type: "LEGAL_NOTICE" },
-  { icon: "book-open", title: "File an RTI application", text: "Ask a public authority for records, file status, decisions or answer sheets.", tag: "RTI Act, 2005", meta: "Central and state", type: "RTI" },
-];
+const toneDot: Record<Tone, string> = { genda: "bg-genda", mor: "bg-mor", rani: "bg-rani" };
 
 // What our AI system does, in order. Each step matches the API: intake analysis, follow-up
 // questions, evidence extraction, structured drafting with vetted legal bases, QA, advocate review.
@@ -41,7 +36,7 @@ const aiSteps: { title: string; text: string }[] = [
 
 // Signed-in extras for the shared home page: who is signed in, how "start" works for them, and
 // a section shown above everything else (their matters).
-export type SignedIn = { name: string; onStart: (type?: MatterType) => void; top?: React.ReactNode };
+export type SignedIn = { name: string; onStart: (type?: MatterType, story?: string) => void; top?: React.ReactNode };
 
 // The main page. Everyone sees the same home, signed in or not; signed-in people also see their
 // matters at the top, and starting a document creates a matter instead of the guest quick check.
@@ -49,10 +44,16 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
   const router = useRouter();
   const pricing = usePublic<Pricing | null>("/public/pricing", null);
   const testimonials = usePublic<Testimonial[]>("/public/testimonials", []);
-  const price = pricing ? money(pricing.legalNotice, pricing.currency) : "₹299";
-  const rtiPrice = pricing ? money(pricing.rti, pricing.currency) : "₹299";
+  const price = servicePrice(pricing, "LEGAL_NOTICE");
+  const rtiPrice = servicePrice(pricing, "RTI");
   const [chat, setChat] = useState(false);
-  const start = (type?: MatterType) => signedIn ? signedIn.onStart(type) : router.push(type ? { pathname: "/start", params: { type } } : "/start");
+  const [story, setStory] = useState("");
+  const start = (type?: MatterType, statement?: string) => {
+    if (signedIn) return signedIn.onStart(type, statement);
+    if (!type) return router.push("/start");
+    if (statement) saveDraft({ type, statement });
+    router.push({ pathname: "/start", params: { type, ...(statement ? { draftKey: String(Date.now()) } : {}) } });
+  };
   const initials = signedIn?.name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   const act = (to: AssistantAction) => {
     setChat(false);
@@ -67,7 +68,7 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
   return (
     <View style={{ flex: 1 }}>
     <AppScreen
-      left={<Image source={require("../../assets/logo-dark.png")} style={{ width: 112, height: 30 }} contentFit="contain" contentPosition="left" />}
+      left={<Image source={require("../../assets/logo-dark.png")} style={{ width: 112, height: 30 }} contentFit="contain" contentPosition="left" accessibilityLabel="Lawmedy" />}
       right={signedIn ? (
         <Pressable onPress={() => { tap(); router.push("/account"); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Your account, ${signedIn.name}`} style={s.account}>
           <View style={s.avatar}><Text style={s.initials}>{initials}</Text></View>
@@ -81,17 +82,55 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
     >
       <View style={{ gap: 20, marginTop: 4 }}>
         {signedIn?.top}
-        <View style={[s.card, { padding: 20 }]}>
-          <Text style={s.eyebrow}>For working professionals · AI-drafted, advocate-reviewed</Text>
-          <Text maxFontSizeMultiplier={1.3} style={s.headline} accessibilityRole="header">No time to go to court or an advocate during office hours?</Text>
-          <Text style={s.lead}>Send a legal notice or file an RTI application without taking leave. Describe the problem in your own words, from your desk or your phone. Our AI drafts it from the facts you give, and an advocate checks it before you get the PDF.</Text>
-          <View style={[s.inset, { marginTop: 16 }]}>
-            <Feather name="check-circle" size={20} color={colors.ink} style={{ marginTop: 1 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.insetTitle}>{price} per document · Checked by an advocate</Text>
-              <Text style={s.insetText}>Usually ready within 24 hours of verified payment.{signedIn ? "" : " No account needed to start."}</Text>
-            </View>
+        <View className="rounded-2xl bg-robe p-5">
+          <Text maxFontSizeMultiplier={1.3} accessibilityRole="header" className="font-display text-[28px] leading-[32px] tracking-tight text-white">
+            Legal notices, RTI applications and lending certificates, <Text className="font-display text-genda">on your side.</Text>
+          </Text>
+          <Text className="mt-3 font-sans text-[15px] leading-[23px] text-white/75">
+            Tell us what happened in your own words. You confirm the facts, an advocate reviews your document, and the PDF reaches you on WhatsApp.
+          </Text>
+          <View style={{ marginTop: 16, padding: 14, backgroundColor: colors.card, borderRadius: radius.sm }}>
+            <Text style={s.insetTitle}>Tell us what happened</Text>
+            <TextInput value={story} onChangeText={setStory} multiline maxLength={5000} accessibilityLabel="Tell us what happened" placeholder="Who was involved? What happened, and what would you like to happen?" placeholderTextColor={colors.muted} style={{ minHeight: 100, textAlignVertical: "top", fontFamily: fonts.sans, fontSize: 16, lineHeight: 24, color: colors.ink, paddingVertical: 10 }} />
+            <Button variant="gold" title="Start my legal notice" icon="arrow-right" iconAfter onPress={() => start("LEGAL_NOTICE", story.trim())} />
           </View>
+          <Text className="mt-3 font-sans-bold text-sm text-white">{price} per notice · usually ready within 24 hours of verified payment</Text>
+        </View>
+
+        <View style={{ gap: 12 }}>
+          <Text accessibilityRole="header" style={s.sectionTitle}>Three services, clear prices</Text>
+          {services.map((service) => (
+            <Pressable key={service.type} accessibilityRole="button" accessibilityLabel={`Start ${service.title}`} onPress={() => { tap(); start(service.type); }} style={({ pressed }) => [s.card, s.remedy, pressed && { opacity: 0.75 }]}>
+              <View style={s.tile}><Feather name={service.icon} size={22} color={colors.ink} accessible={false} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.remedyTitle}>{service.title}</Text>
+                <Text style={[s.sectionTitle, { marginTop: 6 }]}>{servicePrice(pricing, service.type)}</Text>
+                <Text style={s.remedyText}>{service.text}</Text>
+                <Text style={[s.insetTitle, { marginTop: 12 }]}>Get started →</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={{ gap: 12 }}>
+          <Text accessibilityRole="header" style={s.sectionTitle}>Situations we help with</Text>
+          <Text style={s.lead}>Choose the one closest to yours. We’ll start your story with blanks for you to fill in.</Text>
+          {categories.map((category) => (
+            <View key={category.title} style={[s.card, { padding: 16 }]}>
+              <Text accessibilityRole="header" style={s.remedyTitle}>{category.title}</Text>
+              <Text style={s.remedyText}>{category.text}</Text>
+              {category.items.map((title) => {
+                const scenario = scenarios.find((item) => item.title === title)!;
+                return <Pressable key={title} accessibilityRole="button" accessibilityLabel={title} onPress={() => { tap(); start("LEGAL_NOTICE", scenario.example); }} style={({ pressed }) => [{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }, pressed && { opacity: 0.6 }]}>
+                  <View className={`h-2.5 w-2.5 rounded-full ${toneDot[scenario.tone]}`} accessible={false} />
+                  <Text style={[s.remedyText, { flex: 1, marginTop: 0 }]}>{title}</Text>
+                  <Feather name="chevron-right" size={18} color={colors.muted} accessible={false} />
+                </Pressable>;
+              })}
+            </View>
+          ))}
+          <Shortcut icon="book-open" title="Government records (RTI)" text="Application status, public decisions, file notings and answer sheets." onPress={() => start("RTI")} />
+          <Shortcut icon="file-plus" title="Record money already lent" text="Loans to friends or family and payments already made, with the transfer and repayment terms you provide." onPress={() => start("LENDING_CERTIFICATE")} />
         </View>
 
         <Feature
@@ -141,29 +180,6 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
           onPress={() => start("LEGAL_NOTICE")}
         />
 
-        <View style={{ gap: 12 }}>
-          <View style={s.sectionHead}>
-            <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>What we can help with</Text>
-            <Text style={s.sectionMeta}>4 kinds</Text>
-          </View>
-          {remedies.map((r) => (
-            <Pressable key={r.title} onPress={() => { tap(); start(r.type); }} accessibilityRole="button" accessibilityLabel={r.title} style={({ pressed }) => [s.card, s.remedy, pressed && { backgroundColor: colors.tint }]}>
-              <View style={s.tile}><Feather name={r.icon} size={22} color={colors.ink} /></View>
-              <View style={{ flex: 1 }}>
-                <View style={s.remedyHead}>
-                  <Text style={s.remedyTitle}>{r.title}</Text>
-                  <Feather name="arrow-right" size={20} color={colors.muted} />
-                </View>
-                <Text style={s.remedyText} numberOfLines={2}>{r.text}</Text>
-                <View style={s.tags}>
-                  <Text style={s.tag}>{r.tag}</Text>
-                  <Text style={s.tagMeta}>{r.meta}</Text>
-                </View>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-
         <Feature
           photo={courts.supremeCourtWide}
           chip="Right to Information"
@@ -208,7 +224,7 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
               <Feather name="shield" size={20} color={colors.ink} />
               <Text style={s.cardTitle}>Reviewed by an advocate</Text>
             </View>
-            <Text style={s.lead}>Every legal notice and RTI application is checked by one of our in-house advocates before it reaches you. Our AI does the heavy lifting; a person decides what goes out.</Text>
+            <Text style={s.lead}>Every legal notice, RTI application and lending certificate is checked by one of our in-house advocates before it reaches you. Our AI does the heavy lifting; a person decides what goes out.</Text>
             <View style={{ gap: 8 }}>
               <Point icon="edit-3" title="Edited, not just approved" text="The advocate may correct the draft or ask you a question first." />
               <Point icon="rotate-ccw" title="Full refund if we decline" text="If our advocate cannot take your matter, you get your money back." />
@@ -314,7 +330,7 @@ const s = StyleSheet.create({
   remedyHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   remedyTitle: { flex: 1, fontFamily: fonts.sansBold, fontSize: 16, lineHeight: 22, letterSpacing: -0.1, color: colors.ink },
   remedyText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 3 },
-  tags: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  tags: { flexWrap: "wrap", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
   tag: { fontFamily: fonts.sansBold, fontSize: 11, color: colors.ink, backgroundColor: colors.tint2, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, overflow: "hidden" },
   tagMeta: { fontFamily: fonts.sansBold, fontSize: 11, color: colors.muted },
   cardHead: { flexDirection: "row", alignItems: "center", gap: 8 },

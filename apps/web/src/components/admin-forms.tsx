@@ -2,7 +2,7 @@
 import { useActionState, useState } from "react";
 import { BadgeCheck, LoaderCircle, UserPlus, XCircle } from "lucide-react";
 import type { FormState } from "@/lib/actions";
-import { setAdvocateInterestStatusAction, deleteTestimonialAction, saveTestimonialAction, assignAdvocateAction, createAdvocateAction, rejectPaymentAction, resetAdvocatePasswordAction, setAdvocateActiveAction, verifyPaymentAction } from "@/lib/admin-actions";
+import { setAdvocateInterestStatusAction, deleteTestimonialAction, saveTestimonialAction, assignAdvocateAction, createAdvocateAction, markWhatsappSentAction, rejectPaymentAction, resetAdvocatePasswordAction, setAdvocateActiveAction, verifyPaymentAction } from "@/lib/admin-actions";
 
 const Msg = ({ state }: { state: FormState }) =>
   state.error ? <p className="message error" role="alert">{state.error}</p> : state.success ? <p className="message success" role="status">{state.success}</p> : null;
@@ -84,7 +84,7 @@ export function AdvocateRow({ id, fullName, email, active, open, completed }: { 
   );
 }
 
-export type TestimonialRow = { id: string; name: string; descriptor: string | null; quote: string; matterType: "LEGAL_NOTICE" | "RTI" | null; consentGiven: boolean; published: boolean };
+export type TestimonialRow = { id: string; name: string; descriptor: string | null; quote: string; matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" | null; consentGiven: boolean; published: boolean };
 
 export function TestimonialForm({ item }: { item?: TestimonialRow }) {
   const [state, action, pending] = useActionState(saveTestimonialAction.bind(null, item?.id ?? null), {});
@@ -96,7 +96,7 @@ export function TestimonialForm({ item }: { item?: TestimonialRow }) {
         <label>Name as they want it shown<input name="name" required minLength={2} maxLength={80} defaultValue={item?.name} /></label>
         <label>Where from or what for <span className="muted small">Optional, e.g. Dehradun, legal notice</span><input name="descriptor" maxLength={120} defaultValue={item?.descriptor ?? ""} /></label>
         <label>Their words<textarea name="quote" required minLength={20} maxLength={600} rows={4} defaultValue={item?.quote} /></label>
-        <label>Document<select name="matterType" defaultValue={item?.matterType ?? ""}><option value="">Not specified</option><option value="LEGAL_NOTICE">Legal notice</option><option value="RTI">RTI application</option></select></label>
+        <label>Document<select name="matterType" defaultValue={item?.matterType ?? ""}><option value="">Not specified</option><option value="LEGAL_NOTICE">Legal notice</option><option value="RTI">RTI application</option><option value="LENDING_CERTIFICATE">Lending certificate</option></select></label>
         <label className="check"><input type="checkbox" name="consentGiven" defaultChecked={item?.consentGiven} /> This person agreed to have their words and name shown publicly</label>
         <label className="check"><input type="checkbox" name="published" defaultChecked={item?.published} /> Show on the website and in the app</label>
         <button className="button primary" disabled={pending}>{pending ? "Saving…" : item ? "Save" : "Add"}</button>
@@ -145,4 +145,14 @@ export function SignupsCsvButton({ items }: { items: AdvocateSignup[] }) {
     a.click(); URL.revokeObjectURL(url);
   };
   return <button type="button" className="button outline" onClick={download} disabled={!items.length}>Download CSV</button>;
+}
+
+export function WhatsappSentForm({ matterId }: { matterId: string }) {
+  const [state, action, pending] = useActionState(markWhatsappSentAction.bind(null, matterId), {});
+  return (
+    <form action={action}>
+      <button className="button outline" disabled={pending}>{pending ? "Saving…" : "Mark as sent on WhatsApp"}</button>
+      <Msg state={state} />
+    </form>
+  );
 }

@@ -155,7 +155,7 @@ try {
     body: {},
   });
   const amountGroup = prepared.factGroups.find(
-    (group) => group.type === "amount",
+    (group) => group.type === "amount:principal",
   );
   assert.equal(amountGroup.conflict, true);
   assert.equal(amountGroup.values.length, 2);
@@ -165,7 +165,8 @@ try {
   const confirmed = await request(`/matters/${matter.id}/review/confirm`, {
     token: owner.accessToken,
     body: {
-      selections: [{ type: "amount", caseFactId: chosen.id }],
+      selections: [{ type: amountGroup.type, caseFactId: chosen.id }],
+      applicant: { address: "10 Test Road, Bengaluru, Karnataka 560001", whatsapp: "9876543210" },
       recipient: {
         name: "Asha Rao",
         address: "12 Test Road, Bengaluru, Karnataka 560001",

@@ -1,5 +1,6 @@
 import { ConflictException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { paymentSettings } from "./payment/settings";
 import { PaymentService } from "./payment/payment.service";
 
 describe("PaymentService manual payments", () => {
@@ -15,7 +16,7 @@ describe("PaymentService manual payments", () => {
   };
   const documents = { generateAfterPayment: jest.fn().mockResolvedValue(undefined) };
   const config = { get: (key: string, fallback?: unknown) => ({ PAYMENT_MODE: "manual", LEGAL_NOTICE_PRICE_PAISE: 29900 } as Record<string, unknown>)[key] ?? fallback };
-  const service = new PaymentService(db as never, {} as never, config as never, documents as never);
+  const service = new PaymentService(db as never, { settings: () => paymentSettings(config as never) } as never, config as never, documents as never);
 
   beforeEach(() => jest.clearAllMocks());
 

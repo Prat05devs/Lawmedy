@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Body, Button, Card, Field, Message, PanelHeader } from "@/components/ui";
@@ -6,16 +6,23 @@ import { post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { colors, fonts } from "@/lib/theme";
 import type { MatterReview } from "@/lib/types";
+import { WHATSAPP_DISPLAY } from "@/lib/links";
 
 const label = (t: string) => t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 const sourceName = { STATEMENT: "Your statement", ANSWER: "Your answer", EVIDENCE: "Your document" } as const;
 
 export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: string; review: MatterReview; step: string; onChanged: () => void }) {
-  const locked = !["INTAKE_IN_PROGRESS", "DRAFT"].includes(review.status) && review.status !== "READY_FOR_PAYMENT";
+  const locked = !["INTAKE_IN_PROGRESS", "DRAFT"].includes(review.status);
   const editable = review.status === "INTAKE_IN_PROGRESS";
-  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [choices, setSelected] = useState<Record<string, string>>({});
+  const selected: Record<string, string> = {};
+  for (const g of review.factGroups) {
+    const choice = choices[g.type];
+    selected[g.type] = g.values.some((v) => v.id === choice) ? choice : g.selectedId ?? g.values.find((v) => v.confirmed)?.id ?? (g.conflict ? "" : g.values[0]?.id ?? "");
+  }
   const [address, setAddress] = useState(review.applicant.address ?? "");
   const [phone, setPhone] = useState(review.applicant.phone ?? "");
+  const [whatsapp, setWhatsapp] = useState(review.applicant.whatsapp ?? "");
   const [rName, setRName] = useState(review.recipient?.name ?? "");
   const [rAddress, setRAddress] = useState(review.recipient?.address ?? "");
   const [rPhone, setRPhone] = useState(review.recipient?.phone ?? "");
@@ -25,11 +32,6 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
-  useEffect(() => {
-    const next: Record<string, string> = {};
-    for (const g of review.factGroups) next[g.type] = g.selectedId ?? g.values.find((v) => v.confirmed)?.id ?? (g.conflict ? "" : g.values[0]?.id ?? "");
-    setSelected(next);
-  }, [review]);
 
   async function prepare() {
     setBusy(true); setError("");
@@ -41,14 +43,15 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
     const missing = review.factGroups.find((g) => !selected[g.type]);
     if (missing) return setError(`Please choose the correct value for “${label(missing.type)}”.`);
     if (address.trim().length < 5) return setError("Please enter your postal address.");
-    if (review.matterType === "LEGAL_NOTICE" && (rName.trim().length < 2 || rAddress.trim().length < 5)) return setError("Please enter the other party's name and address.");
+    if (whatsapp.replace(/\D/g, "").length < 10) return setError("Please enter your WhatsApp number. We send your finished PDF there.");
+    if (review.matterType !== "RTI" && (rName.trim().length < 2 || rAddress.trim().length < 5)) return setError("Please enter the other party's name and address.");
     if (!agree) return setError("Please tick the confirmation box.");
     setBusy(true);
     try {
       await post(`/matters/${matterId}/review/confirm`, {
         selections: Object.entries(selected).map(([type, caseFactId]) => ({ type, caseFactId })),
-        applicant: { address: address.trim(), phone: phone.trim() || undefined },
-        ...(review.matterType === "LEGAL_NOTICE" ? { recipient: { name: rName.trim(), address: rAddress.trim(), phone: rPhone.trim() || undefined, email: rEmail.trim() || undefined } } : {}),
+        applicant: { address: address.trim(), phone: phone.trim() || undefined, whatsapp: whatsapp.trim() },
+        ...(review.matterType !== "RTI" ? { recipient: { name: rName.trim(), address: rAddress.trim(), phone: rPhone.trim() || undefined, email: rEmail.trim() || undefined } } : {}),
         confirmed: true,
       });
       setOk("Your case information is confirmed."); onChanged();
@@ -74,7 +77,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
               {g.values.map((v) => {
                 const on = selected[g.type] === v.id;
                 return (
-                  <Pressable key={v.id} disabled={!editable} onPress={() => setSelected((p) => ({ ...p, [g.type]: v.id }))} style={{ flexDirection: "row", gap: 10, padding: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1.5, borderColor: on ? colors.navy : colors.line, backgroundColor: on ? colors.tint : colors.card }}>
+                  <Pressable key={v.id} accessibilityRole="radio" accessibilityLabel={v.value} accessibilityState={{ checked: on, disabled: !editable }} disabled={!editable} onPress={() => setSelected((p) => ({ ...p, [g.type]: v.id }))} style={{ flexDirection: "row", gap: 10, padding: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1.5, borderColor: on ? colors.navy : colors.line, backgroundColor: on ? colors.tint : colors.card }}>
                     <Feather name={on ? "check-circle" : "circle"} size={20} color={colors.navy} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: fonts.sansMedium, fontSize: 14.5, color: colors.ink }}>{v.value}</Text>
@@ -87,10 +90,11 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
           ))}
           <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>Your contact details</Text>
           <Field label="Your postal address" editable={editable} multiline value={address} onChangeText={setAddress} placeholder="So the reply reaches you" style={{ minHeight: 80 }} />
+          <Field label="WhatsApp number" note={`Our team will send your finished PDF to this number on WhatsApp, from ${WHATSAPP_DISPLAY}.`} editable={editable} value={whatsapp} onChangeText={setWhatsapp} keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" placeholder="98765 43210" />
           <Field label="Phone (optional)" editable={editable} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+91" />
-          {review.matterType === "LEGAL_NOTICE" && (
+          {review.matterType !== "RTI" && (
             <>
-              <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>The other party</Text>
+              <Text maxFontSizeMultiplier={1.3} style={{ fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: colors.ink, marginBottom: 10 }}>{review.matterType === "LENDING_CERTIFICATE" ? "Borrower details" : "The other party"}</Text>
               <Field label="Name" editable={editable} value={rName} onChangeText={setRName} placeholder="Person or company" />
               <Field label="Address" editable={editable} multiline value={rAddress} onChangeText={setRAddress} placeholder="Where the notice will be sent" style={{ minHeight: 80 }} />
               <Field label="Phone (optional)" editable={editable} value={rPhone} onChangeText={setRPhone} keyboardType="phone-pad" />
@@ -98,7 +102,7 @@ export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: s
             </>
           )}
           {editable && (
-            <Pressable onPress={() => setAgree((v) => !v)} style={{ flexDirection: "row", gap: 10, marginVertical: 10 }}>
+            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agree }} accessibilityLabel="I confirm these facts are accurate" onPress={() => setAgree((v) => !v)} style={{ flexDirection: "row", alignItems: "center", minHeight: 48, gap: 10, marginVertical: 10 }}>
               <Feather name={agree ? "check-square" : "square"} size={24} color={colors.navy} />
               <Body style={{ flex: 1, fontSize: 14 }}>I have checked these facts and confirm they are accurate to the best of my knowledge.</Body>
             </Pressable>

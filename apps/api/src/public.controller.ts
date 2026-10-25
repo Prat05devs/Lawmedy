@@ -23,7 +23,7 @@ export class PublicController {
   @Header("Cache-Control", "public, max-age=300")
   pricing() {
     const amount = (key: string) => Number(this.config.get(key, 29900));
-    return { currency: "INR", legalNotice: amount("LEGAL_NOTICE_PRICE_PAISE"), rti: amount("RTI_PRICE_PAISE") };
+    return { currency: "INR", legalNotice: amount("LEGAL_NOTICE_PRICE_PAISE"), rti: amount("RTI_PRICE_PAISE"), lendingCertificate: Number(this.config.get("LENDING_CERTIFICATE_PRICE_PAISE", 19900)) };
   }
 
   @Get("rti-authorities")

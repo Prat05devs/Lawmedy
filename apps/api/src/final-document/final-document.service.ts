@@ -16,9 +16,8 @@ import { noticeSchema } from "../documents/notice";
 import { rtiSchema } from "../rti/rti";
 import { PrivateStorage } from "../evidence/storage.service";
 import { TransactionalEmailService } from "./email.service";
-import { renderLegalNoticeHtml } from "./legal-notice-template";
-import { renderRtiHtml } from "./rti-template";
-import { PdfRendererService } from "./pdf-renderer.service";
+import { renderLegalNoticeHtml, renderLegalNoticePdf } from "./legal-notice-template";
+import { renderRtiHtml, renderRtiPdf } from "./rti-template";
 
 @Injectable()
 export class FinalDocumentService {
@@ -28,7 +27,6 @@ export class FinalDocumentService {
   constructor(
     private readonly db: PrismaService,
     private readonly storage: PrivateStorage,
-    private readonly renderer: PdfRendererService,
     private readonly email: TransactionalEmailService,
     config: ConfigService,
   ) {
@@ -63,6 +61,8 @@ export class FinalDocumentService {
       },
     });
     if (!matter) throw new NotFoundException("Matter not found.");
+    if (matter.type === "LENDING_CERTIFICATE")
+      throw new ConflictException("The assigned advocate must upload the signed and stamped certificate on their letterhead.");
     if (matter.status !== "APPROVED")
       throw new ConflictException("The document must be approved first.");
     const document = matter.documents.find((item) => item.documentType === (matter.type === "RTI" ? "RTI" : "LEGAL_NOTICE"));
@@ -78,10 +78,10 @@ export class FinalDocumentService {
       },
     });
     if (!version) throw new ConflictException("The approved draft was not found.");
-    const html = matter.type === "RTI"
-      ? (() => { const parsed = rtiSchema.safeParse(version.content); if (!parsed.success || parsed.data.status !== "READY") throw new ConflictException("The approved draft is invalid."); return renderRtiHtml({ referenceNumber: matter.referenceNumber, issuedAt: new Date(), content: parsed.data }); })()
-      : (() => { const parsed = noticeSchema.safeParse(version.content); if (!parsed.success || parsed.data.status !== "READY") throw new ConflictException("The approved draft is invalid."); return renderLegalNoticeHtml({ referenceNumber: matter.referenceNumber, issuedAt: document.reviewedAt!, reviewedBy: document.reviewedBy!.fullName, content: parsed.data }); })();
-    const pdf = await this.renderer.render(html);
+    // The HTML is kept on the final document as a record; the PDF is drawn from the same input.
+    const { html, pdf } = await (matter.type === "RTI"
+      ? (async () => { const parsed = rtiSchema.safeParse(version.content); if (!parsed.success || parsed.data.status !== "READY") throw new ConflictException("The approved draft is invalid."); const input = { referenceNumber: matter.referenceNumber, issuedAt: new Date(), content: parsed.data }; return { html: renderRtiHtml(input), pdf: await renderRtiPdf(input) }; })()
+      : (async () => { const parsed = noticeSchema.safeParse(version.content); if (!parsed.success || parsed.data.status !== "READY") throw new ConflictException("The approved draft is invalid."); const input = { referenceNumber: matter.referenceNumber, issuedAt: document.reviewedAt!, reviewedBy: document.reviewedBy!.fullName, content: parsed.data }; return { html: renderLegalNoticeHtml(input), pdf: await renderLegalNoticePdf(input) }; })());
     if (pdf.subarray(0, 5).toString("ascii") !== "%PDF-")
       throw new Error("INVALID_PDF_OUTPUT");
 
@@ -142,6 +142,61 @@ export class FinalDocumentService {
     return this.db.finalDocument.findUniqueOrThrow({
       where: { id: finalDocument.id },
     });
+  }
+
+  async uploadCertificate(advocateId: string, matterId: string, file: Express.Multer.File | undefined, expectedVersion: number, confirmed: boolean) {
+    if (!confirmed) throw new BadRequestException("Confirm that this is your reviewed, signed and stamped certificate on your letterhead.");
+    if (!file || file.mimetype !== "application/pdf" || file.buffer.length > 10 * 1024 * 1024 ||
+        file.buffer.subarray(0, 5).toString("ascii") !== "%PDF-" || !file.buffer.subarray(-1024).includes(Buffer.from("%%EOF")))
+      throw new BadRequestException("Upload a complete PDF up to 10 MB.");
+    // Check assignment before storing any file, then check it again under the row lock.
+    const assignment = await this.db.matterAssignment.findFirst({ where: { matterId, advocateId } });
+    if (!assignment) throw new NotFoundException("Assigned matter not found.");
+    const finalId = randomUUID();
+    const storageKey = `${matterId}/${finalId}`;
+    await this.storage.put(storageKey, file.buffer);
+    let recipient: { email: string; fullName: string; referenceNumber: string };
+    try {
+      recipient = await this.db.$transaction(async (tx) => {
+        const rows = await tx.$queryRaw<{ id: string }[]>`
+          SELECT m.id FROM "Matter" m JOIN "MatterAssignment" a ON a."matterId" = m.id
+          WHERE m.id = ${matterId} AND a."advocateId" = ${advocateId} FOR UPDATE OF m, a
+        `;
+        if (!rows.length) throw new NotFoundException("Assigned matter not found.");
+        const matter = await tx.matter.findUniqueOrThrow({ where: { id: matterId }, include: { user: true } });
+        if (matter.type !== "LENDING_CERTIFICATE" || matter.status !== "UNDER_ADVOCATE_REVIEW")
+          throw new ConflictException("This matter is not awaiting a signed lending certificate.");
+        const document = await tx.legalDocument.findFirst({ where: { matterId, documentType: "LENDING_CERTIFICATE", status: "READY" },
+          include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } } });
+        if (!document || !document.versions[0] || document.currentVersion !== expectedVersion)
+          throw new ConflictException("The draft changed. Refresh and review it before uploading.");
+        const version = await tx.documentVersion.create({ data: {
+          documentId: document.id, versionNumber: document.currentVersion + 1,
+          content: document.versions[0].content as import("@prisma/client").Prisma.InputJsonValue,
+          createdByType: "ADVOCATE", createdById: advocateId,
+        } });
+        await tx.legalDocument.update({ where: { id: document.id }, data: { currentVersion: version.versionNumber, reviewedAt: new Date(), reviewedById: advocateId } });
+        await tx.finalDocument.create({ data: {
+          id: finalId, matterId, documentVersionId: version.id, storageKey,
+          filename: `${matter.referenceNumber}-lending-certificate.pdf`, sizeBytes: file.buffer.length,
+          sha256: createHash("sha256").update(file.buffer).digest("hex"),
+          renderedHtml: "<p>Advocate-uploaded signed lending certificate. The private PDF is the authoritative final document.</p>",
+        } });
+        await tx.matter.update({ where: { id: matterId }, data: { status: "COMPLETED" } });
+        await tx.matterAssignment.update({ where: { matterId }, data: { status: "COMPLETED", newInformation: false } });
+        await tx.notification.create({ data: { userId: matter.userId, matterId,
+          title: "Your lending certificate is ready", message: "Your advocate has uploaded your signed and stamped PDF on their letterhead. It is ready to download." } });
+        await tx.auditLog.create({ data: { actorType: "ADVOCATE", actorId: advocateId,
+          action: "SIGNED_LENDING_CERTIFICATE_DELIVERED", entityType: "FinalDocument", entityId: finalId } });
+        return { email: matter.user.email, fullName: matter.user.fullName, referenceNumber: matter.referenceNumber };
+      });
+    } catch (error) {
+      await this.storage.remove(storageKey);
+      throw error;
+    }
+    await this.deliver(finalId, { to: recipient.email, fullName: recipient.fullName, referenceNumber: recipient.referenceNumber,
+      matterUrl: `${this.webOrigin}/matters/${matterId}`, documentLabel: "lending certificate" });
+    return { status: "COMPLETED" as const };
   }
 
   private async deliver(
@@ -264,6 +319,7 @@ export class FinalDocumentService {
     });
     if (!finalDocument) throw new NotFoundException("Final document not found.");
     const expected = this.signature(userId, matterId, finalDocument.id, expires);
+    if (!/^[a-f0-9]{64}$/i.test(suppliedSignature || "")) throw new BadRequestException("Invalid download link.");
     const supplied = Buffer.from(suppliedSignature || "", "hex");
     const expectedBuffer = Buffer.from(expected, "hex");
     if (

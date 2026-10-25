@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException, PayloadTooLargeException } from "@nestjs/common";
 import { MatterStatus, Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { zipSync } from "fflate";
@@ -7,6 +7,9 @@ import { PrivateStorage } from "../evidence/storage.service";
 import { PaymentService } from "../payment/payment.service";
 
 const safeName = (name: string) => name.replace(/[^\w.\- ]+/g, "_").slice(0, 120) || "file";
+// ZIP generation buffers its inputs and output. Keep its memory budget below the
+// API container limit; larger matters remain available as individual downloads.
+const ZIP_MAX_BYTES = 25 * 1024 * 1024;
 
 @Injectable()
 export class AdminService {
@@ -92,16 +95,31 @@ export class AdminService {
     return { evidence, contents: await this.storage.read(evidence.storageKey) };
   }
 
+  async finalDocumentFile(matterId: string) {
+    const finalDocument = await this.db.finalDocument.findUnique({ where: { matterId } });
+    if (!finalDocument) throw new NotFoundException("The final PDF is not ready yet.");
+    return { finalDocument, contents: await this.storage.read(finalDocument.storageKey) };
+  }
+
   async evidenceZip(matterId: string) {
     const matter = await this.db.matter.findUnique({ where: { id: matterId }, select: { referenceNumber: true, evidence: { orderBy: { createdAt: "asc" } } } });
     if (!matter || !matter.evidence.length) throw new NotFoundException("This matter has no uploaded files.");
+    const tooLarge = () => new PayloadTooLargeException("These files exceed the 25 MB ZIP limit. Download them individually.");
+    if (matter.evidence.reduce((sum, file) => sum + file.sizeBytes, 0) > ZIP_MAX_BYTES) throw tooLarge();
     const files: Record<string, Uint8Array> = {};
     let index = 1;
+    let totalBytes = 0;
     for (const item of matter.evidence) {
       const contents = await this.storage.read(item.storageKey);
+      totalBytes += contents.length;
+      if (totalBytes > ZIP_MAX_BYTES) throw tooLarge();
       files[`${String(index++).padStart(2, "0")}-${safeName(item.originalFilename)}`] = new Uint8Array(contents);
     }
     return { name: `${matter.referenceNumber}-files.zip`, contents: Buffer.from(zipSync(files, { level: 0 })) };
+  }
+
+  recordRecovery(adminId: string) {
+    return this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "RECOVERY_REQUESTED", entityType: "System", entityId: "recovery" } });
   }
 
   async assign(adminId: string, matterId: string, advocateId: string) {
@@ -121,6 +139,20 @@ export class AdminService {
         await tx.matter.update({ where: { id: matterId }, data: { status: "UNDER_ADVOCATE_REVIEW" } });
       await tx.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "MATTER_ASSIGNED_BY_ADMIN", entityType: "MatterAssignment", entityId: assignment.id } });
       return { advocateId };
+    });
+  }
+
+  // The team shares the final PDF on WhatsApp by hand; this records that it was sent.
+  async markWhatsappSent(adminId: string, matterId: string) {
+    return this.db.$transaction(async (tx) => {
+      const matter = await tx.matter.findUnique({ where: { id: matterId }, include: { finalDocument: { select: { id: true } } } });
+      if (!matter) throw new NotFoundException("Matter not found.");
+      if (!matter.finalDocument) throw new ConflictException("The final PDF is not ready yet.");
+      if (!matter.whatsappNumber) throw new ConflictException("This matter has no WhatsApp number.");
+      const sentAt = new Date();
+      await tx.matter.update({ where: { id: matterId }, data: { whatsappSentAt: sentAt } });
+      await tx.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "FINAL_PDF_SENT_ON_WHATSAPP", entityType: "Matter", entityId: matterId } });
+      return { whatsappSentAt: sentAt };
     });
   }
 
@@ -167,7 +199,7 @@ export class AdminService {
   }
 
   async setActive(adminId: string, advocateId: string, active: boolean) {
-    const result = await this.db.user.updateMany({ where: { id: advocateId, role: "ADVOCATE" }, data: { active } });
+    const result = await this.db.user.updateMany({ where: { id: advocateId, role: "ADVOCATE" }, data: { active, tokenVersion: { increment: 1 } } });
     if (!result.count) throw new NotFoundException("Advocate not found.");
     await this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: active ? "ADVOCATE_ACTIVATED" : "ADVOCATE_DEACTIVATED", entityType: "User", entityId: advocateId } });
     return { active };
@@ -175,7 +207,7 @@ export class AdminService {
 
   async resetPassword(adminId: string, advocateId: string, password: string) {
     if (Buffer.byteLength(password, "utf8") > 72) throw new ConflictException("Use a password of at most 72 bytes.");
-    const result = await this.db.user.updateMany({ where: { id: advocateId, role: "ADVOCATE" }, data: { passwordHash: await bcrypt.hash(password, 12) } });
+    const result = await this.db.user.updateMany({ where: { id: advocateId, role: "ADVOCATE" }, data: { passwordHash: await bcrypt.hash(password, 12), tokenVersion: { increment: 1 } } });
     if (!result.count) throw new NotFoundException("Advocate not found.");
     await this.db.auditLog.create({ data: { actorType: "ADMIN", actorId: adminId, action: "ADVOCATE_PASSWORD_RESET", entityType: "User", entityId: advocateId } });
     return { ok: true };
@@ -190,7 +222,7 @@ export class AdminService {
       throw new ConflictException("Confirm you have the person's permission before publishing their words.");
   }
 
-  async saveTestimonial(adminId: string, id: string | null, input: { name: string; descriptor?: string; quote: string; matterType?: "LEGAL_NOTICE" | "RTI"; consentGiven: boolean; published: boolean }) {
+  async saveTestimonial(adminId: string, id: string | null, input: { name: string; descriptor?: string; quote: string; matterType?: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE"; consentGiven: boolean; published: boolean }) {
     this.checkTestimonial(input);
     const data = { name: input.name, descriptor: input.descriptor || null, quote: input.quote, matterType: input.matterType ?? null, consentGiven: input.consentGiven, published: input.published };
     const row = id

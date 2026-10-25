@@ -1,4 +1,37 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn/ui colour slots, mapped onto the Lawmedy palette ("Mor & Genda", see refine.css). */
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: #ffffff;
+  --color-card-foreground: var(--ink);
+  --color-popover: #ffffff;
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--ink);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #efefeb;
+  --color-secondary-foreground: var(--ink);
+  --color-muted: #efefeb;
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--mor-tint);
+  --color-accent-foreground: var(--mor-ink);
+  --color-destructive: #ba1a1a;
+  --color-border: var(--line);
+  --color-input: #c9c9c3;
+  --color-ring: var(--mor);
+  --color-robe: var(--robe);
+  --color-mor: var(--mor);
+  --color-mor-tint: var(--mor-tint);
+  --color-mor-ink: var(--mor-ink);
+  --color-genda: var(--genda);
+  --color-genda-tint: var(--genda-tint);
+  --color-genda-ink: var(--genda-ink);
+  --color-rani: var(--rani);
+  --color-rani-tint: var(--rani-tint);
+  --color-rani-ink: var(--rani-ink);
+}
 
 :root {
   --ink: #1c1a19;
@@ -10,6 +43,11 @@
   --line: #e6e4e3;
   --paper: #f9f9f9;
   --serif: Georgia, "Times New Roman", serif;
+}
+/* Element defaults live in the base layer so shadcn/ui utility classes can override them. */
+@layer base {
+*, ::before, ::after {
+  border-color: var(--color-border);
 }
 * {
   box-sizing: border-box;
@@ -81,6 +119,7 @@ h3 {
 }
 p {
   line-height: 1.65;
+}
 }
 .muted {
   color: var(--muted);
@@ -708,6 +747,7 @@ p {
   flex-direction: column;
   gap: 21px;
 }
+@layer base {
 label {
   display: flex;
   flex-direction: column;
@@ -746,6 +786,7 @@ textarea::placeholder {
 textarea {
   resize: vertical;
   min-height: 220px;
+}
 }
 .form-bottom {
   display: flex;

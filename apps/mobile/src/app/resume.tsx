@@ -15,9 +15,9 @@ export default function Resume() {
   const router = useRouter();
   const [error, setError] = useState("");
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (initial?: Awaited<ReturnType<typeof loadDraft>>) => {
+    const draft = initial === undefined ? await loadDraft() : initial;
     setError("");
-    const draft = await loadDraft();
     if (!draft) return router.replace("/");
     try {
       const matter = await post<Matter>("/matters", { type: draft.type });
@@ -44,7 +44,7 @@ export default function Resume() {
     }
   }, [router]);
 
-  useEffect(() => { void run(); }, [run]);
+  useEffect(() => { void loadDraft().then((draft) => run(draft)); }, [run]);
 
   return (
     <Screen>

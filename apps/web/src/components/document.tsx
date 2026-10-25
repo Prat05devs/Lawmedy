@@ -38,7 +38,7 @@ export function DraftPanel({
       <div className="panel-heading">
         <span className="step-number">06</span>
         <div>
-          <h2>Your {draft.matterType === "RTI" ? "RTI application" : "legal notice"} draft</h2>
+          <h2>Your {draft.matterType === "LENDING_CERTIFICATE" ? "Lending certificate" : draft.matterType === "RTI" ? "RTI application" : "legal notice"} draft</h2>
           <p className="muted small">
             Prepared from the case information you confirmed.
           </p>
@@ -92,8 +92,14 @@ export function DraftPanel({
   );
 }
 
-function DraftPreview({ draft, matterType }: { draft: NonNullable<MatterDocument["document"]>; matterType: "LEGAL_NOTICE" | "RTI" }) {
+function DraftPreview({ draft, matterType }: { draft: NonNullable<MatterDocument["document"]>; matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" }) {
   const content = draft.content;
+  if ("lender" in content) return <div className="notice-preview">
+    <p className="message success">Draft prepared for advocate review · Version {draft.versionNumber}</p>
+    <h3>{content.subject}</h3><p>Lender: {content.lender.name}<br />Borrower: {content.borrower.name}</p>
+    <ol>{content.paragraphs.map((p, i) => <li key={i}>{p.text}</li>)}</ol>
+    <p className="field-note">Our in-house advocate will provide the signed and stamped PDF on their letterhead within 24 hours after verified payment and complete information.</p>
+  </div>;
   if ("informationRequests" in content) return (
     <div className="notice-preview"><div className="draft-ready"><CheckCircle2 size={18}/><span>Automated QA complete · Version {draft.versionNumber}. Your final RTI PDF is being prepared directly.</span></div><article><p className="notice-label">RTI APPLICATION</p><div className="notice-parties"><div><small>Applicant</small><strong>{content.applicant.name}</strong></div><div><small>Public authority</small><strong>{content.publicAuthority.name}</strong><span>{content.publicAuthority.department}</span></div></div><h3>{content.subject}</h3><ol>{content.informationRequests.map((request, index) => <li key={index}>{request.text}</li>)}</ol></article><p className="field-note">This structured draft uses only your confirmed facts and proceeds directly to the final PDF.</p></div>
   );

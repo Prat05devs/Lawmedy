@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -8,6 +8,7 @@ import {
   Save,
 } from "lucide-react";
 import { authenticate, createMatter, saveStatement } from "@/lib/actions";
+import { clearDraft, readDraft } from "./home-start";
 function Message({ error, success }: { error?: string; success?: string }) {
   return (
     <>
@@ -25,13 +26,14 @@ function Message({ error, success }: { error?: string; success?: string }) {
     </>
   );
 }
-export function AuthForm({ mode }: { mode: "signup" | "login" }) {
+export function AuthForm({ mode, nextPath }: { mode: "signup" | "login"; nextPath?: string }) {
   const [state, action, pending] = useActionState(
     authenticate.bind(null, mode),
     {},
   );
   return (
     <form action={action} className="form-stack">
+      <input type="hidden" name="next" value={nextPath ?? ""} />
       {mode === "signup" && (
         <label>
           Full name
@@ -94,7 +96,7 @@ export function AuthForm({ mode }: { mode: "signup" | "login" }) {
     </form>
   );
 }
-export function CreateMatterForm({ type = "LEGAL_NOTICE" }: { type?: "LEGAL_NOTICE" | "RTI" }) {
+export function CreateMatterForm({ type = "LEGAL_NOTICE" }: { type?: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" }) {
   const [state, action, pending] = useActionState(createMatter.bind(null, type), {});
   return (
     <form action={action}>
@@ -117,22 +119,32 @@ export function StatementForm({
 }: {
   id: string;
   initial: string;
-  matterType?: "LEGAL_NOTICE" | "RTI";
+  matterType?: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
 }) {
   const [state, action, pending] = useActionState(
     saveStatement.bind(null, id),
     {},
   );
+  // A legal notice started from the home page box arrives pre-filled for the user to check.
+  const box = useRef<HTMLTextAreaElement>(null);
+  const fromHome = !initial && matterType === "LEGAL_NOTICE";
+  useEffect(() => {
+    if (fromHome && box.current && !box.current.value) box.current.value = readDraft();
+  }, [fromHome]);
+  useEffect(() => {
+    if (state.success && fromHome) clearDraft();
+  }, [state.success, fromHome]);
   return (
     <form action={action} className="form-stack">
       <label htmlFor="statement">
-        {matterType === "RTI" ? "What information are you seeking?" : "What happened?"}
+        {matterType === "LENDING_CERTIFICATE" ? "Tell us about the money you paid or lent" : matterType === "RTI" ? "What information are you seeking?" : "What happened?"}
         <span className="field-note">
-          {matterType === "RTI" ? "Describe the records or information you want, the relevant period, and any identifying details." : "Tell us in your own words. Include the people involved, key dates, and what you would like to resolve."}
+          {matterType === "LENDING_CERTIFICATE" ? "Include who paid whom, the amount, date, payment method and reference, and any agreed repayment terms. Add supporting records after saving." : matterType === "RTI" ? "Describe the records or information you want, the relevant period, and any identifying details." : "Tell us in your own words. Include the people involved, key dates, and what you would like to resolve."}
         </span>
       </label>
       <textarea
         id="statement"
+        ref={box}
         name="statement"
         defaultValue={initial}
         placeholder={matterType === "RTI" ? "For example: certified copies of inspection reports for…" : "Start with what happened and when…"}

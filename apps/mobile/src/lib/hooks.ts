@@ -8,50 +8,52 @@ import { api, ApiError } from "./api";
 const STEPS = [3000, 5000, 8000, 15000, 30000];
 const GIVE_UP_AFTER = 10 * 60 * 1000;
 
-export function useApi<T>(path: string | null, pollWhen?: (data: T) => boolean) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(!!path);
-  const poll = useRef(pollWhen);
-  poll.current = pollWhen;
+export function useApi<T>(path: string | null, pollWhen?: (data: T) => boolean, slowWhen?: (data: T) => boolean) {
+  const [result, setResult] = useState<{ path: string; data: T | null; error: string | null } | null>(null);
+  const data = result?.path === path ? result.data : null;
+  const error = result?.path === path ? result.error : null;
+  const loading = !!path && result?.path !== path;
+  const pending = useRef<{ path: string; promise: Promise<void> } | null>(null);
   const attempt = useRef(0);
   const startedAt = useRef(0);
 
-  const load = useCallback(async (silent = false) => {
-    if (!path) { setData(null); setLoading(false); return; }
-    if (!silent) setLoading(true);
-    try {
-      setData(await api<T>(path, {}, 30000));
-      setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(() => {
+    if (!path) return Promise.resolve();
+    if (pending.current?.path === path) return pending.current.promise;
+    const promise = api<T>(path, {}, 30000).then((next) => {
+      setResult({ path, data: next, error: null });
+    }).catch((e) => {
+      setResult((previous) => ({ path, data: previous?.path === path ? previous.data : null,
+        error: e instanceof ApiError ? e.message : "Something went wrong." }));
+    }).finally(() => { if (pending.current?.promise === promise) pending.current = null; });
+    pending.current = { path, promise };
+    return promise;
   }, [path]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const active = !!data && !!poll.current?.(data);
+  const active = !!data && !!pollWhen?.(data);
+  const slow = !!data && !!slowWhen?.(data);
   useEffect(() => {
     if (!active) { attempt.current = 0; startedAt.current = 0; return; }
     if (!startedAt.current) startedAt.current = Date.now();
+    let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const schedule = () => {
-      if (Date.now() - startedAt.current > GIVE_UP_AFTER) return;
+      if (stopped || Date.now() - startedAt.current > GIVE_UP_AFTER) return;
       timer = setTimeout(() => {
-        if (AppState.currentState === "active") { attempt.current += 1; void load(true); }
-        schedule();
-      }, STEPS[Math.min(attempt.current, STEPS.length - 1)]);
+        if (AppState.currentState === "active") { attempt.current += 1; void load().finally(schedule); }
+        else schedule();
+      }, slow ? 60000 : STEPS[Math.min(attempt.current, STEPS.length - 1)]);
     };
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") { attempt.current = 0; startedAt.current = Date.now(); void load(true); }
+      if (state === "active") { attempt.current = 0; startedAt.current = Date.now(); void load(); }
     });
     schedule();
-    return () => { if (timer) clearTimeout(timer); sub.remove(); };
-  }, [active, load]);
+    return () => { stopped = true; if (timer) clearTimeout(timer); sub.remove(); };
+  }, [active, slow, load]);
 
-  return { data, error, loading, reload: () => { attempt.current = 0; return load(true); } };
+  return { data, error, loading, reload: () => { attempt.current = 0; return load(); } };
 }
 
 export const money = (paise: number, currency = "INR") =>

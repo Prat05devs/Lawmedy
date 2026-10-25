@@ -1,5 +1,5 @@
 export type User = { id: string; email: string; fullName: string; role: "USER" | "ADVOCATE" | "ADMIN" };
-export type MatterType = "LEGAL_NOTICE" | "RTI";
+export type MatterType = "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE";
 export type MatterStatus =
   | "DRAFT" | "INTAKE_IN_PROGRESS" | "READY_FOR_PAYMENT" | "PAYMENT_VERIFICATION" | "PAID" | "AI_PROCESSING"
   | "DRAFT_GENERATED" | "UNDER_ADVOCATE_REVIEW" | "USER_RESPONSE_REQUIRED" | "APPROVED" | "COMPLETED";
@@ -33,7 +33,7 @@ export type MatterReview = {
   matterType: MatterType; status: MatterStatus; prepared: boolean;
   factGroups: { type: string; conflict: boolean; selectedId: string | null; values: ReviewFactValue[] }[];
   recipient: null | { name: string; address: string; phone: string | null; email: string | null };
-  applicant: { address: string | null; phone: string | null };
+  applicant: { address: string | null; phone: string | null; whatsapp: string | null };
   payment: null | { status: "CREATED" | "SUBMITTED" | "PAID" | "FAILED" | "REJECTED"; amount: number; currency: string; providerPaymentId?: string | null; submittedAt?: string | null; reviewNote?: string | null };
   pricing: { amount: number; currency: string };
   paymentConfigured: boolean;
@@ -55,11 +55,12 @@ export type RtiContent = {
   publicAuthority: { name: string; department: string; address: string }; subject: string;
   period: { from: string | null; to: string | null } | null; informationRequests: { text: string; caseFactIds: string[] }[];
 };
+export type CertificateContent = { status: "READY"; lender: { name: string; address: string | null }; borrower: { name: string; address: string | null }; subject: string; paragraphs: { text: string; caseFactIds: string[] }[] };
 export type MatterDocument = {
   matterType: MatterType; matterStatus: MatterStatus;
   state: "NOT_STARTED" | "PROCESSING" | "WAITING_FOR_CONFIGURATION" | "MISSING_INFORMATION" | "FAILED" | "READY";
   configured: boolean; message: string | null;
-  document: null | { id: string; versionNumber: number; createdAt: string; content: NoticeContent | RtiContent; qa: null | { passed: boolean; issueCount: number; warningCount: number } };
+  document: null | { id: string; versionNumber: number; createdAt: string; content: NoticeContent | RtiContent | CertificateContent; qa: null | { passed: boolean; issueCount: number; warningCount: number } };
 };
 export type FinalDocument =
   | { state: "NOT_READY" | "PENDING"; matterStatus: MatterStatus }

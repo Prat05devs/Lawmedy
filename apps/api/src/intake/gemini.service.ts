@@ -1,7 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { createHash } from "node:crypto";
+import { ProviderConfigurationService } from "../configuration/configuration.service";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenAI } from "@google/genai";
+import { AI_PROVIDER_BUDGET_MS } from "../ai-timing";
 import { z } from "zod";
+import { certificateSchema, CERTIFICATE_INTAKE_PROMPT, CERTIFICATE_SYSTEM_PROMPT, CERTIFICATE_QA_PROMPT } from "../documents/lending-certificate";
 import { callFallback, contentsToText, fallbackProviders, type ModelResponse } from "./llm-fallback";
 import { analysisSchema, RTI_SYSTEM_PROMPT, SYSTEM_PROMPT } from "./analysis";
 import {
@@ -61,15 +65,16 @@ function modelSchema(schema: z.ZodType) {
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService, @Optional() private readonly providers?: ProviderConfigurationService) {}
+  private keys() { return this.providers?.gemini().keys ?? [{ id: "environment", apiKey: this.config.get<string>("GEMINI_API_KEY", "").trim() }].filter(k => !!k.apiKey && !k.apiKey.startsWith("replace-")); }
   settings() {
     return {
       provider: this.config.get<string>("AI_PROVIDER", "gemini"),
-      modelName: this.config.get<string>("GEMINI_MODEL", "").trim(),
+      modelName: this.providers?.gemini().model ?? this.config.get<string>("GEMINI_MODEL", "").trim(),
     };
   }
   configured() {
-    const key = this.config.get<string>("GEMINI_API_KEY", "").trim();
+    const key = this.keys()[0]?.apiKey ?? "";
     const { provider, modelName } = this.settings();
     return (
       provider === "gemini" &&
@@ -79,29 +84,52 @@ export class GeminiService {
     );
   }
 
-  // Gemini models occasionally answer 503 "high demand" or 429. Retry once, then fall
-  // back to other models so a provider spike does not fail the user's step.
+  // Provider outages may fall back to configured models within one total deadline.
   private async generate(
     client: GoogleGenAI,
     params: Parameters<GoogleGenAI["models"]["generateContent"]>[0],
-    options: { allowFallback?: boolean } = {},
+    options: { allowFallback?: boolean; parentRunId?: string } = {},
   ): Promise<ModelResponse> {
-    const fallbacks = this.config
+    const deadline = Date.now() + AI_PROVIDER_BUDGET_MS;
+    const remaining = () => {
+      const ms = deadline - Date.now();
+      if (ms <= 0) throw new Error("AI_PROVIDER_TIMEOUT");
+      return ms;
+    };
+    const fallbacks = this.providers?.gemini().fallbackModels ?? this.config
       .get<string>("GEMINI_FALLBACK_MODELS", "gemini-3.7-flash,gemini-3.6-flash")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-    const models = [params.model, ...fallbacks.filter((m) => m !== params.model)].slice(0, 3);
+      .split(",").map(value => value.trim()).filter(Boolean);
+    const models = [params.model, ...fallbacks.filter(m => m !== params.model)].slice(0, 3);
     let lastError: unknown;
+    const keys = this.keys();
+    // The supplied client preserves the current request's primary-key snapshot.
+    const attempts = this.providers ? keys : [{ id: "environment", apiKey: "" }];
+    const rejectedKeys = new Set<string>();
+    const inputDigest = createHash("sha256").update(JSON.stringify(params.contents)).digest("hex");
     for (const model of models) {
-      try {
-        return await client.models.generateContent({ ...params, model });
-      } catch (error) {
-        lastError = error;
-        const text = error instanceof Error ? error.message : String(error);
-        const fallbackWorthy = /\b(404|429|500|502|503|504)\b|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|timed? ?out|abort/i.test(text);
-        this.logger.warn(`Gemini ${model} failed: ${text.replace(/key=[^&\s"]+/gi, "key=<redacted>").slice(0, 200)}`);
-        if (!fallbackWorthy) throw error;
+      for (const [index, key] of attempts.entries()) {
+        if (rejectedKeys.has(key.id)) continue;
+        const activeClient = index === 0 ? client : new GoogleGenAI({ apiKey: key.apiKey, httpOptions: { timeout: 45000, retryOptions: { attempts: 1 } } });
+        remaining();
+        const started = Date.now();
+        const run = await this.providers?.beginAttempt(model, key.id, `sha256:${inputDigest}`, options.parentRunId);
+        try {
+          const result = await activeClient.models.generateContent({ ...params, model,
+            config: { ...params.config, abortSignal: AbortSignal.timeout(Math.min(45000, remaining(), Math.max(5000, Math.floor(AI_PROVIDER_BUDGET_MS / Math.max(attempts.length, 1))))) } });
+          await this.providers?.finishAttempt(run!.id, result, started);
+          return result;
+        } catch (error) {
+          const text = error instanceof Error ? error.message : String(error);
+          const invalidKey = /\b(401|403)\b|API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED/i.test(text);
+          const fallbackWorthy = /\b(404|429|500|502|503|504)\b|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|timed? ?out|abort/i.test(text);
+          const code = invalidKey ? "AI_KEY_REJECTED" : fallbackWorthy ? "AI_PROVIDER_UNAVAILABLE" : "AI_PROVIDER_FAILED";
+          await this.providers?.finishAttempt(run!.id, null, started, code);
+          // Provider errors can contain URLs, keys or prompt excerpts. Retain only safe codes.
+          this.logger.warn(`Gemini ${model} failed: ${code}`);
+          lastError = new Error(code);
+          if (invalidKey) { rejectedKeys.add(key.id); continue; }
+          if (!fallbackWorthy) throw lastError;
+        }
       }
     }
     // Every Gemini model is unavailable: try the extra providers. They only see text, so steps
@@ -111,7 +139,7 @@ export class GeminiService {
       const user = contentsToText(params.contents);
       for (const provider of fallbackProviders(this.config)) {
         try {
-          const response = await callFallback(provider, { system, user, schema: params.config?.responseJsonSchema });
+          const response = await callFallback(provider, { system, user, schema: params.config?.responseJsonSchema }, Math.min(60_000, remaining()));
           this.logger.warn(`Gemini unavailable; answered by ${response.servedBy}`);
           return response;
         } catch (error) {
@@ -125,9 +153,10 @@ export class GeminiService {
   async classify(
     statement: string,
     model: string,
-    matterType: "LEGAL_NOTICE" | "RTI" = "LEGAL_NOTICE",
+    matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" = "LEGAL_NOTICE",
+    parentRunId?: string,
   ) {
-    const key = this.config.get<string>("GEMINI_API_KEY", "").trim();
+    const key = this.keys()[0]?.apiKey ?? "";
     if (
       !key ||
       key.startsWith("replace-") ||
@@ -144,12 +173,12 @@ export class GeminiService {
       contents: JSON.stringify({ statement }),
       config: {
         systemInstruction:
-          matterType === "RTI" ? RTI_SYSTEM_PROMPT : SYSTEM_PROMPT,
+          matterType === "RTI" ? RTI_SYSTEM_PROMPT : matterType === "LENDING_CERTIFICATE" ? CERTIFICATE_INTAKE_PROMPT : SYSTEM_PROMPT,
         responseMimeType: "application/json",
         responseJsonSchema: modelSchema(analysisSchema),
         maxOutputTokens: 4096,
       },
-    });
+    }, { parentRunId });
     return {
       text: response.text ?? "",
       raw: JSON.parse(JSON.stringify(response)) as Record<string, unknown>,
@@ -158,8 +187,8 @@ export class GeminiService {
     };
   }
 
-  async extractEvidence(contents: Buffer, mimeType: string, model: string) {
-    const key = this.config.get<string>("GEMINI_API_KEY", "").trim();
+  async extractEvidence(contents: Buffer, mimeType: string, model: string, parentRunId?: string) {
+    const key = this.keys()[0]?.apiKey ?? "";
     if (
       !key ||
       key.startsWith("replace-") ||
@@ -193,7 +222,7 @@ export class GeminiService {
         responseJsonSchema: modelSchema(evidenceExtractionSchema),
         maxOutputTokens: 4096,
       },
-    }, { allowFallback: false });
+    }, { allowFallback: false, parentRunId });
     return {
       text: response.text ?? "",
       raw: JSON.parse(JSON.stringify(response)) as Record<string, unknown>,
@@ -202,26 +231,34 @@ export class GeminiService {
     };
   }
 
-  async generateNotice(input: unknown, model: string, documents: SupportingDocument[] = []) {
-    return this.generateJson(input, model, NOTICE_SYSTEM_PROMPT, noticeSchema, documents);
+  async generateNotice(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
+    return this.generateJson(input, model, NOTICE_SYSTEM_PROMPT, noticeSchema, documents, parentRunId);
   }
 
-  async qaNotice(input: unknown, model: string, documents: SupportingDocument[] = []) {
+  async qaNotice(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
     return this.generateJson(
       input,
       model,
       NOTICE_QA_SYSTEM_PROMPT,
       noticeQaSchema,
       documents,
+      parentRunId,
     );
   }
 
-  async generateRti(input: unknown, model: string, documents: SupportingDocument[] = []) {
-    return this.generateJson(input, model, RTI_DRAFT_SYSTEM_PROMPT, rtiSchema, documents);
+  async generateRti(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
+    return this.generateJson(input, model, RTI_DRAFT_SYSTEM_PROMPT, rtiSchema, documents, parentRunId);
   }
 
-  async qaRti(input: unknown, model: string, documents: SupportingDocument[] = []) {
-    return this.generateJson(input, model, RTI_QA_SYSTEM_PROMPT, rtiQaSchema, documents);
+  async qaRti(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
+    return this.generateJson(input, model, RTI_QA_SYSTEM_PROMPT, rtiQaSchema, documents, parentRunId);
+  }
+
+  async generateCertificate(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
+    return this.generateJson(input, model, CERTIFICATE_SYSTEM_PROMPT, certificateSchema, documents, parentRunId);
+  }
+  async qaCertificate(input: unknown, model: string, documents: SupportingDocument[] = [], parentRunId?: string) {
+    return this.generateJson(input, model, CERTIFICATE_QA_PROMPT, noticeQaSchema, documents, parentRunId);
   }
 
   private async generateJson(
@@ -232,10 +269,12 @@ export class GeminiService {
       | typeof noticeSchema
       | typeof noticeQaSchema
       | typeof rtiSchema
-      | typeof rtiQaSchema,
+      | typeof rtiQaSchema
+      | typeof certificateSchema,
     documents: SupportingDocument[] = [],
+    parentRunId?: string,
   ) {
-    const key = this.config.get<string>("GEMINI_API_KEY", "").trim();
+    const key = this.keys()[0]?.apiKey ?? "";
     if (!this.configured()) throw new Error("AI_NOT_CONFIGURED");
     const client = new GoogleGenAI({
       apiKey: key,
@@ -250,7 +289,7 @@ export class GeminiService {
         responseJsonSchema: modelSchema(schema),
         maxOutputTokens: 8192,
       },
-    });
+    }, { parentRunId });
     return {
       text: response.text ?? "",
       raw: JSON.parse(JSON.stringify(response)) as Record<string, unknown>,

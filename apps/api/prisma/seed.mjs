@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 
-for (const line of readFileSync(new URL("../.env", import.meta.url), "utf8").split(/\r?\n/)) {
+const envFile = new URL("../.env", import.meta.url);
+for (const line of (existsSync(envFile) ? readFileSync(envFile, "utf8") : "").split(/\r?\n/)) {
   const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
   if (match && process.env[match[1]] === undefined)
     process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "");
@@ -50,6 +51,7 @@ for (const authority of authorities)
 for (const configuration of [
   { matterType: "LEGAL_NOTICE", category: "*", requiresAdvocateReview: true },
   { matterType: "RTI", category: "*", requiresAdvocateReview: true },
+  { matterType: "LENDING_CERTIFICATE", category: "*", requiresAdvocateReview: true },
 ])
   await db.matterWorkflowConfiguration.upsert({
     where: {
@@ -69,6 +71,8 @@ const user = await db.user.upsert({
   select: { id: true, email: true, fullName: true, role: true },
 });
 console.log(`Seeded advocate ${user.email}`);
+await db.auditLog.create({ data: { actorType: "SYSTEM", actorId: "deployment-seed", action: "SEED_ADVOCATE", entityType: "User", entityId: user.id } });
+await db.auditLog.create({ data: { actorType: "SYSTEM", actorId: "deployment-seed", action: "SEED_DEFAULTS", entityType: "Configuration", entityId: "authorities-and-workflows" } });
 console.log(`Seeded ${authorities.length} public authorities and workflow defaults`);
 
 // Optional admin account (full dashboard access): set ADMIN_EMAIL and ADMIN_PASSWORD.
@@ -83,5 +87,6 @@ if (adminEmail && adminPassword) {
     create: { email: adminEmail, fullName: (process.env.ADMIN_FULL_NAME || "Lawmedy Admin").trim(), role: "ADMIN", passwordHash: await bcrypt.hash(adminPassword, 12) },
   });
   console.log(`Seeded admin ${admin.email}`);
+  await db.auditLog.create({ data: { actorType: "SYSTEM", actorId: "deployment-seed", action: "SEED_ADMIN", entityType: "User", entityId: admin.id } });
 }
 await db.$disconnect();

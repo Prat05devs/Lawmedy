@@ -6,7 +6,7 @@ describe("PublicController", () => {
   const controller = new PublicController(db as never, config as never, { authorities: jest.fn() } as never, { run: jest.fn() } as never, { register: jest.fn() } as never);
 
   it("reports prices from configuration, not constants", () => {
-    expect(controller.pricing()).toEqual({ currency: "INR", legalNotice: 29900, rti: 19900 });
+    expect(controller.pricing()).toEqual({ currency: "INR", legalNotice: 29900, rti: 19900, lendingCertificate: 19900 });
   });
 
   it("only ever returns published testimonials that have recorded consent", async () => {

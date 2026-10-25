@@ -50,6 +50,8 @@ export class AuthController {
   @Post("login") @HttpCode(200) login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
   }
+  @Post("logout") @HttpCode(200) @UseGuards(AuthGuard)
+  logout(@UserId() userId: string) { return this.auth.logout(userId); }
 }
 @Controller("users")
 @UseGuards(AuthGuard)
@@ -90,7 +92,8 @@ export class MattersController {
     private readonly evidence: EvidenceService,
     private readonly finalDocuments: FinalDocumentService,
   ) {}
-  @Post() create(@UserId() uid: string, @Body() dto: CreateMatterDto) {
+  @Post() @Throttle({ default: { limit: 10, ttl: 60000 } })
+  create(@UserId() uid: string, @Body() dto: CreateMatterDto) {
     return this.matters.create(uid, dto.type);
   }
   @Get() list(@UserId() uid: string) {
@@ -126,7 +129,8 @@ export class MattersController {
       ]);
     return { matter, intake, evidence, review, document, advocateRequests, finalDocument, authorities, rtiDetails };
   }
-  @Post(":id/statement") async statement(
+  @Post(":id/statement") @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async statement(
     @UserId() uid: string,
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: StatementDto,

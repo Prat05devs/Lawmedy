@@ -1,8 +1,11 @@
+import { ConfigurationController } from "./configuration/configuration.controller";
+import { ProviderConfigurationService } from "./configuration/configuration.service";
 import { HealthController } from "./health.controller";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
+import { OperationsMetrics, UploadCapacity } from "./operations";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { AppThrottlerGuard } from "./throttler.guard";
 import { PrismaService } from "./prisma.service";
@@ -34,7 +37,6 @@ import { AdvocateController } from "./advocate/advocate.controller";
 import { RolesGuard } from "./roles.guard";
 import { FinalDocumentController } from "./final-document/final-document.controller";
 import { FinalDocumentService } from "./final-document/final-document.service";
-import { PdfRendererService } from "./final-document/pdf-renderer.service";
 import { TransactionalEmailService } from "./final-document/email.service";
 import { RtiService } from "./rti/rti.service";
 import {
@@ -77,6 +79,7 @@ import {
     }),
   ],
   controllers: [
+    ConfigurationController,
     HealthController,
     PublicController,
     AdminController,
@@ -89,6 +92,7 @@ import {
     FinalDocumentController,
   ],
   providers: [
+    ProviderConfigurationService,
     PrismaService,
     AuthService,
     AuthGuard,
@@ -108,7 +112,6 @@ import {
     AdvocateService,
     RolesGuard,
     FinalDocumentService,
-    PdfRendererService,
     TransactionalEmailService,
     RtiService,
     {
@@ -120,6 +123,9 @@ import {
           : new LocalPrivateStorage(config),
     },
     { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    OperationsMetrics,
+    { provide: APP_INTERCEPTOR, useExisting: OperationsMetrics },
+    { provide: APP_INTERCEPTOR, useClass: UploadCapacity },
   ],
 })
 export class AppModule {}

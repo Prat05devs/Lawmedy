@@ -1,0 +1,10 @@
+{
+    email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+    request_body {
+        max_size 12MB
+    }
+    reverse_proxy api:4000
+}

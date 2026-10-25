@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DraftBanner } from "@/components/home-start";
 import { redirect } from "next/navigation";
 import { api, getMe, Matter, Notification, date, statusLabel } from "@/lib/api";
 import { markNotificationsRead } from "@/lib/actions";
@@ -15,6 +16,7 @@ export default async function Dashboard() {
   const open = matters.filter((m) => m.status !== "COMPLETED").length;
   return (
     <>
+      <DraftBanner action="dashboard" />
       <div className="page-heading">
         <div>
           <h1>Hello, {user.fullName.split(" ")[0]}</h1>
@@ -27,6 +29,7 @@ export default async function Dashboard() {
         <div className="heading-actions">
           <Link className="button primary" href="/matters/new">New legal notice</Link>
           <Link className="button outline" href="/matters/new/rti">New RTI application</Link>
+          <Link className="button outline" href="/matters/new/lending">Lending certificate</Link>
         </div>
       </div>
 
@@ -50,7 +53,7 @@ export default async function Dashboard() {
             {matters.map((m) => (
               <Link href={`/matters/${m.id}`} className="matter-line" key={m.id}>
                 <div>
-                  <strong>{m.type === "LEGAL_NOTICE" ? "Legal notice" : "RTI application"}</strong>
+                  <strong>{m.type === "LENDING_CERTIFICATE" ? "Lending certificate" : m.type === "LEGAL_NOTICE" ? "Legal notice" : "RTI application"}</strong>
                   <small>{m.referenceNumber}</small>
                 </div>
                 <p>{m.statements[0]?.statement || "No statement added yet."}</p>

@@ -105,3 +105,20 @@ export async function approveAdvocateDraft(
   revalidatePath("/advocate");
   return { success: "The draft has been approved and final delivery has started." };
 }
+
+export async function uploadSignedCertificate(matterId: string, _: FormState, data: FormData): Promise<FormState> {
+  const file = data.get("file");
+  if (!(file instanceof File) || !file.size || file.size > 10 * 1024 * 1024)
+    return { error: "Choose a PDF up to 10 MB." };
+  const form = new FormData();
+  form.set("file", file);
+  form.set("confirmed", String(data.get("confirmed") === "on"));
+  form.set("expectedVersion", String(data.get("expectedVersion")));
+  try {
+    await api(`/advocate/matters/${encodeURIComponent(matterId)}/certificate-final`, { method: "POST", body: form }, true, 60000);
+  } catch (error) { return failure(error); }
+  revalidatePath(`/advocate/matters/${matterId}`);
+  revalidatePath("/advocate");
+  revalidatePath(`/matters/${matterId}`);
+  return { success: "Your signed certificate was delivered privately to the user." };
+}

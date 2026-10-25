@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { LegalShell } from "@/components/legal-shell";
-import { site } from "@/lib/site";
+import { site, whatsappDisplay, whatsappLink } from "@/lib/site";
 export const metadata = { title: "Contact & Support", description: "Get help with Lawmedy, your matter, payments or your data." };
 
 export default function Contact() {
   return (
     <LegalShell title="Contact & support" intro="We are here to help with your matter, a payment, or your data.">
+      <h2>WhatsApp us</h2>
+      <p><a href={whatsappLink} target="_blank" rel="noopener noreferrer">{whatsappDisplay}</a></p>
+      <p>This is Team Lawmedy&apos;s number. Your finished PDF is also sent to you from it, so save it to make sure our message reaches you.</p>
+
       <h2>Email us</h2>
       <p><a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a></p>
       <p>Please write from the email address on your Lawmedy account and include your matter reference number if you have one. We aim to reply within 3 business days.</p>

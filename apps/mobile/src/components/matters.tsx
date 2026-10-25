@@ -28,7 +28,7 @@ export function NeedsYouCard({ matter }: { matter: Matter }) {
   return (
     <Pressable onPress={() => { tap(); router.push({ pathname: "/matter/[id]", params: { id: matter.id } }); }} style={({ pressed }) => [s.next, pressed && { opacity: 0.92 }]} accessibilityRole="button">
       <Text style={s.nextLabel}>Needs you</Text>
-      <Text maxFontSizeMultiplier={1.3} style={s.nextTitle}>{matter.type === "RTI" ? "RTI application" : "Legal notice"} · {matter.referenceNumber}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={s.nextTitle}>{matter.type === "LENDING_CERTIFICATE" ? "Lending certificate" : matter.type === "RTI" ? "RTI application" : "Legal notice"} · {matter.referenceNumber}</Text>
       <Text style={s.nextText}>{progressNote[matter.status]}</Text>
       <View style={s.nextGo}><Text style={s.nextGoText}>Continue</Text><Feather name="arrow-right" size={18} color="#fff" /></View>
     </Pressable>
@@ -42,7 +42,7 @@ export function MatterList({ matters }: { matters: Matter[] }) {
       {matters.map((m, i) => (
         <Pressable key={m.id} onPress={() => { tap(); router.push({ pathname: "/matter/[id]", params: { id: m.id } }); }} style={({ pressed }) => [s.row, i === matters.length - 1 && { borderBottomWidth: 0 }, pressed && { backgroundColor: colors.tint }]} accessibilityRole="button">
           <View style={{ flex: 1, gap: 6 }}>
-            <Text maxFontSizeMultiplier={1.3} style={s.rowTitle}>{m.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={s.rowTitle}>{m.type === "LENDING_CERTIFICATE" ? "Lending certificate" : m.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
             <Text style={s.rowMeta}>{m.referenceNumber} · {shortDate(m.createdAt)}</Text>
             <StatusBadge status={m.status} />
           </View>

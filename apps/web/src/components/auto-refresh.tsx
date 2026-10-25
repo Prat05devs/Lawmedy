@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 const STEPS = [3000, 5000, 8000, 15000, 30000];
 const GIVE_UP_AFTER = 10 * 60 * 1000;
 
-export function AutoRefresh({ active }: { active: boolean }) {
+export function AutoRefresh({ active, slow = false }: { active: boolean; slow?: boolean }) {
   const router = useRouter();
   const attempt = useRef(0);
 
@@ -19,7 +19,7 @@ export function AutoRefresh({ active }: { active: boolean }) {
     let timer: number | undefined;
     const schedule = () => {
       if (Date.now() - startedAt > GIVE_UP_AFTER) return;
-      const delay = STEPS[Math.min(attempt.current, STEPS.length - 1)];
+      const delay = slow ? 60000 : STEPS[Math.min(attempt.current, STEPS.length - 1)];
       timer = window.setTimeout(() => {
         if (document.visibilityState === "visible") { attempt.current += 1; router.refresh(); }
         schedule();
@@ -29,7 +29,7 @@ export function AutoRefresh({ active }: { active: boolean }) {
     document.addEventListener("visibilitychange", onVisible);
     schedule();
     return () => { window.clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [active, router]);
+  }, [active, slow, router]);
 
   return null;
 }

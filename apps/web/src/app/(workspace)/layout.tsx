@@ -32,6 +32,9 @@ export default async function WorkspaceLayout({
           <Link className="nav-item secondary" href="/matters/new/rti">
             <Landmark size={18} /> New RTI application
           </Link>
+          <Link className="nav-item secondary" href="/matters/new/lending">
+            <Plus size={18} /> Lending certificate
+          </Link>
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-card">

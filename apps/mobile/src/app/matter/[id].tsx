@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, KeyboardAvoidingView, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -8,6 +8,7 @@ import { Body, Loading, Message, PanelHeaderVisible, StatusBadge } from "@/compo
 import { useApi, shortDate } from "@/lib/hooks";
 import { colors, fonts, radius } from "@/lib/theme";
 import { progressNote, type Matter, type Overview } from "@/lib/types";
+import { getStatementDraft } from "@/lib/statement-draft";
 import { StatementPanel } from "@/components/matter/statement";
 import { IntakePanel } from "@/components/matter/intake";
 import { RtiDetailsPanel } from "@/components/matter/rti-details";
@@ -25,6 +26,7 @@ const RANK: Record<Matter["status"], number> = {
 };
 
 const isWorking = (o: Overview) =>
+  o.review?.payment?.status === "CREATED" ||
   o.intake?.status === "RUNNING" ||
   o.evidence.some((e) => e.status === "PROCESSING") ||
   o.document.state === "PROCESSING" ||
@@ -37,9 +39,9 @@ export default function MatterScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   // One API call returns the matter and every step's data.
-  const overview = useApi<Overview>(`/matters/${encodeURIComponent(id)}/overview`, isWorking);
+  const overview = useApi<Overview>(`/matters/${encodeURIComponent(id)}/overview`, isWorking, (o) => ["UNDER_ADVOCATE_REVIEW", "PAYMENT_VERIFICATION"].includes(o.matter.status));
   const [refreshing, setRefreshing] = useState(false);
-  const [open, setOpen] = useState<string | null>(null);
+  const [expansion, setExpansion] = useState<{ stage: string | undefined; key: string | null } | null>(null);
   const reload = () => overview.reload();
 
   const data = overview.data;
@@ -50,7 +52,7 @@ export default function MatterScreen() {
     const latest = mt.statements.find((s) => s.id === mt.currentStatementId) ?? mt.statements[0];
     const editable = mt.status === "DRAFT" || mt.status === "INTAKE_IN_PROGRESS";
     const questionsDone = rank >= 2 || (intake?.status === "SUCCEEDED" && (!!intake.allAnswered || !intake.analysis?.questions.length));
-    steps.push({ key: "statement", title: "Tell us what happened", done: !!latest, render: () => <StatementPanel matter={mt} editable={editable} onChanged={reload} /> });
+    steps.push({ key: "statement", title: "Tell us what happened", done: !!latest, render: () => <StatementPanel matter={mt} initialStatement={getStatementDraft(mt.id)} editable={editable} onChanged={reload} /> });
     steps.push({ key: "questions", title: "Answer a few questions", done: questionsDone, render: () => (intake ? <IntakePanel matterId={mt.id} intake={intake} editable={editable} onChanged={reload} /> : <Body muted>Available after you describe what happened.</Body>) });
     if (mt.type === "RTI") steps.push({ key: "authority", title: "Choose the public authority", done: rank >= 2 || !!rtiDetails, render: () => <RtiDetailsPanel matterId={mt.id} authorities={authorities} details={rtiDetails} editable={editable} onChanged={reload} /> });
     steps.push({ key: "documents", title: "Add documents", optional: true, done: rank >= 2 || evidence.length > 0, render: () => <EvidencePanel matterId={mt.id} items={evidence} editable={editable} step="" onChanged={reload} /> });
@@ -62,7 +64,7 @@ export default function MatterScreen() {
   }
   const current = steps.find((s) => !s.done && !s.optional)?.key ?? steps[steps.length - 1]?.key;
   const currentIndex = steps.findIndex((s) => s.key === current);
-  useEffect(() => { setOpen(current ?? null); }, [current]);
+  const open = expansion?.stage === current ? expansion.key : current;
 
   if (overview.loading && !data) return <Loading />;
   if (!data) return <View style={{ padding: 20 }}><Message error={overview.error || "This matter could not be found."} /></View>;
@@ -73,7 +75,7 @@ export default function MatterScreen() {
       <View style={s.bar}><BarButton icon="chevron-left" label="Matters" onPress={() => router.back()} /></View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} />}>
-          <Text maxFontSizeMultiplier={1.3} style={s.title}>{mt.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={s.title}>{mt.type === "LENDING_CERTIFICATE" ? "Lending certificate" : mt.type === "RTI" ? "RTI application" : "Legal notice"}</Text>
           <Text style={s.meta}>{mt.referenceNumber} · started {shortDate(mt.createdAt)}</Text>
           <View style={{ marginTop: 10 }}><StatusBadge status={mt.status} /></View>
           <View style={s.note}><Body style={{ fontSize: 15 }}>{progressNote[mt.status]}</Body></View>
@@ -88,7 +90,7 @@ export default function MatterScreen() {
                   <View key={step.key} style={[s.step, index === steps.length - 1 && { borderBottomWidth: 0 }]}>
                     <Pressable
                       disabled={!expandable}
-                      onPress={() => { tap(); setOpen(expanded ? null : step.key); }}
+                      onPress={() => { tap(); setExpansion({ stage: current, key: expanded ? null : step.key }); }}
                       style={s.stepHead}
                       accessibilityRole="button"
                       accessibilityState={{ expanded, disabled: !expandable }}

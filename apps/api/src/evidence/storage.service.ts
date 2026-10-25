@@ -30,8 +30,8 @@ export class LocalPrivateStorage implements PrivateStorage {
 
   async put(key: string, contents: Buffer) {
     const target = this.resolve(key);
-    await mkdir(path.dirname(target), { recursive: true });
-    await writeFile(target, contents, { flag: "wx" });
+    await mkdir(path.dirname(target), { recursive: true, mode: 0o700 });
+    await writeFile(target, contents, { flag: "wx", mode: 0o600 });
   }
 
   read(key: string) {
@@ -50,7 +50,6 @@ export class SupabasePrivateStorage implements PrivateStorage {
   private readonly base: string;
   private readonly bucket: string;
   private readonly key: string;
-  private ready: Promise<void> | null = null;
 
   constructor(config: ConfigService) {
     this.base = config.get<string>("SUPABASE_URL", "").replace(/\/$/, "");
@@ -66,17 +65,22 @@ export class SupabasePrivateStorage implements PrivateStorage {
     if (!/^[a-f0-9-]+\/[a-f0-9-]+$/.test(key)) throw new Error("INVALID_STORAGE_KEY");
     return `${this.base}/storage/v1/object/${this.bucket}/${key}`;
   }
-  // Creates the bucket as private the first time; a 400/409 means it already exists.
-  private ensureBucket() {
-    this.ready ??= fetch(`${this.base}/storage/v1/bucket`, {
-      method: "POST",
-      headers: this.headers({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ id: this.bucket, name: this.bucket, public: false }),
-    }).then(async (response) => {
-      if (!response.ok && response.status !== 400 && response.status !== 409)
-        throw new Error(`STORAGE_BUCKET_FAILED_${response.status}`);
-    });
-    return this.ready;
+  // An existing public bucket must never silently accept legal evidence. Recheck
+  // before every read/write so a later configuration change fails closed too.
+  private async ensureBucket() {
+    const url = `${this.base}/storage/v1/bucket/${encodeURIComponent(this.bucket)}`;
+    let response = await fetch(url, { headers: this.headers(), signal: AbortSignal.timeout(15000) });
+    if (response.status === 404) {
+      const created = await fetch(`${this.base}/storage/v1/bucket`, {
+        method: "POST", headers: this.headers({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ id: this.bucket, name: this.bucket, public: false }), signal: AbortSignal.timeout(15000),
+      });
+      if (!created.ok && created.status !== 409) throw new Error("STORAGE_BUCKET_CREATION_FAILED");
+      response = await fetch(url, { headers: this.headers(), signal: AbortSignal.timeout(15000) });
+    }
+    const bucket = await response.json().catch(() => null);
+    if (!response.ok || bucket?.id !== this.bucket || bucket?.public !== false)
+      throw new Error("STORAGE_BUCKET_MUST_BE_PRIVATE");
   }
 
   async put(key: string, contents: Buffer) {
@@ -85,17 +89,19 @@ export class SupabasePrivateStorage implements PrivateStorage {
       method: "POST",
       headers: this.headers({ "Content-Type": "application/octet-stream", "x-upsert": "false" }),
       body: new Uint8Array(contents),
+      signal: AbortSignal.timeout(30000),
     });
     if (!response.ok) throw new Error(`STORAGE_PUT_FAILED_${response.status}`);
   }
 
   async read(key: string) {
-    const response = await fetch(this.url(key), { headers: this.headers() });
+    await this.ensureBucket();
+    const response = await fetch(this.url(key), { headers: this.headers(), signal: AbortSignal.timeout(30000) });
     if (!response.ok) throw new Error(`STORAGE_READ_FAILED_${response.status}`);
     return Buffer.from(await response.arrayBuffer());
   }
 
   async remove(key: string) {
-    await fetch(this.url(key), { method: "DELETE", headers: this.headers() });
+    await fetch(this.url(key), { method: "DELETE", headers: this.headers(), signal: AbortSignal.timeout(15000) });
   }
 }

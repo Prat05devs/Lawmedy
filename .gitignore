@@ -2,6 +2,25 @@ node_modules/
 .env
 .env.*
 !.env.example
+# Machine-local credentials, recovery data and private runtime storage.
+.aws/
+.ssh/
+.codex/
+.agents/
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+backups/
+uploads/
+private-files/
+private-storage/
 .next/
 dist/
 .turbo/
@@ -18,3 +37,4 @@ tmp/
 .expo
 expo-env.d.ts
 apps/mobile/.claude
+!.env.example

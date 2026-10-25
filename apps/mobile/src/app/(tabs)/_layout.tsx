@@ -4,7 +4,7 @@ import { loadDraft } from "@/lib/guest-draft";
 import { Feather } from "@expo/vector-icons";
 import { colors, fonts } from "@/lib/theme";
 
-const icon = (name: keyof typeof Feather.glyphMap) => ({ color, size }: { color: string | import("react-native").OpaqueColorValue; size: number }) => <Feather name={name} color={color as string} size={size} />;
+const icon = (name: keyof typeof Feather.glyphMap) => function TabIcon({ color, size }: { color: string | import("react-native").OpaqueColorValue; size: number }) { return <Feather name={name} color={color as string} size={size} />; };
 
 export default function TabsLayout() {
   const router = useRouter();

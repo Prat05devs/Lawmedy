@@ -7,15 +7,24 @@ import { AdvocateInterestStatusDto, TestimonialDto, AdvocateActiveDto, AdvocateP
 import { AdminService } from "./admin.service";
 import { RecoveryService } from "../recovery.service";
 import { AdvocateInterestService } from "../advocate-interest.service";
+import { OperationsMetrics } from "../operations";
+import { Throttle } from "@nestjs/throttler";
 
 @Controller("admin")
 @UseGuards(AuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService, private readonly advocateInterest: AdvocateInterestService) {}
+  constructor(private readonly admin: AdminService, private readonly recovery: RecoveryService, private readonly advocateInterest: AdvocateInterestService, private readonly metrics: OperationsMetrics) {}
+
+  @Get("operations") operations() { return this.metrics.snapshot(); }
 
   // Re-trigger interrupted background work now instead of waiting for the next sweep.
-  @Post("recover") @HttpCode(202) recover() { void this.recovery.sweep(true); return { started: true }; }
+  @Post("recover") @HttpCode(202) @Throttle({ default: { limit: 1, ttl: 60_000 } })
+  async recover(@UserId() adminId: string) {
+    await this.admin.recordRecovery(adminId);
+    void this.recovery.sweep(true);
+    return { started: true };
+  }
 
   @Get("dashboard") dashboard() { return this.admin.dashboard(); }
 
@@ -25,9 +34,24 @@ export class AdminController {
   @Get("matters/:id") matter(@Param("id", ParseUUIDPipe) id: string) { return this.admin.getMatter(id); }
 
   @Get("matters/:id/evidence.zip")
+  @Throttle({ default: { limit: 1, ttl: 60_000 } })
   async zip(@Param("id", ParseUUIDPipe) id: string, @Res() res: Response) {
     const { name, contents } = await this.admin.evidenceZip(id);
     res.set({ "Content-Type": "application/zip", "Content-Length": contents.length.toString(), "Content-Disposition": `attachment; filename="${name}"`, "Cache-Control": "private, no-store" });
+    res.send(contents);
+  }
+
+  // Lets the team download the final PDF to share it with the user on WhatsApp.
+  @Get("matters/:id/final-document/file")
+  async finalFile(@Param("id", ParseUUIDPipe) id: string, @Res() res: Response) {
+    const { finalDocument, contents } = await this.admin.finalDocumentFile(id);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": contents.length.toString(),
+      "Content-Disposition": `attachment; filename="document.pdf"; filename*=UTF-8''${encodeURIComponent(finalDocument.filename)}`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    });
     res.send(contents);
   }
 
@@ -47,6 +71,11 @@ export class AdminController {
   @Post("matters/:id/assign") @HttpCode(200)
   assign(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string, @Body() dto: AssignAdvocateDto) {
     return this.admin.assign(adminId, id, dto.advocateId);
+  }
+
+  @Post("matters/:id/whatsapp-sent") @HttpCode(200)
+  whatsappSent(@UserId() adminId: string, @Param("id", ParseUUIDPipe) id: string) {
+    return this.admin.markWhatsappSent(adminId, id);
   }
 
   @Get("payments") payments() { return this.admin.pendingPayments(); }

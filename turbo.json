@@ -1,19 +1,42 @@
 {
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ],
       "env": [
         "API_URL",
+        "NEXT_PUBLIC_API_URL",
         "DATABASE_URL",
         "JWT_SECRET",
         "WEB_ORIGIN",
         "PORT",
-        "NODE_ENV"
+        "NODE_ENV",
+        "NEXT_PUBLIC_SITE_URL",
+        "NEXT_PUBLIC_SUPPORT_EMAIL",
+        "NEXT_PUBLIC_PRIVACY_EMAIL",
+        "NEXT_PUBLIC_WHATSAPP_NUMBER",
+        "NEXT_PUBLIC_BUSINESS_ADDRESS",
+        "NEXT_PUBLIC_PRICE_LABEL",
+        "NEXT_PUBLIC_GOOGLE_CLIENT_ID"
       ]
     },
-    "dev": { "cache": false, "persistent": true },
-    "typecheck": { "dependsOn": ["^build"] },
-    "test": { "cache": false }
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "test": {
+      "cache": false
+    }
   }
 }

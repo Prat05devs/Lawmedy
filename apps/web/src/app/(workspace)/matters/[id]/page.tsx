@@ -33,6 +33,7 @@ export default async function MatterPage({
     matter.statements.find((statement) => statement.id === matter.currentStatementId) ??
     matter.statements[0];
   const working =
+    review?.payment?.status === "CREATED" ||
     intake?.status === "RUNNING" ||
     evidence.some((item) => item.status === "PROCESSING") ||
     draft.state === "PROCESSING" ||
@@ -49,7 +50,7 @@ export default async function MatterPage({
         <div>
           <p className="eyebrow">{matter.referenceNumber}</p>
           <h1>
-            {matter.type === "LEGAL_NOTICE"
+            {matter.type === "LENDING_CERTIFICATE" ? "Your lending certificate" : matter.type === "LEGAL_NOTICE"
               ? "Your legal notice"
               : "Your RTI matter"}
           </h1>
@@ -60,7 +61,7 @@ export default async function MatterPage({
           {statusLabel[matter.status]}
         </span>
       </div>
-      <AutoRefresh active={working} />
+      <AutoRefresh active={working} slow={["UNDER_ADVOCATE_REVIEW", "PAYMENT_VERIFICATION"].includes(matter.status)} />
       <ProgressTracker status={matter.status} />
       <div className="detail-grid">
         <div>

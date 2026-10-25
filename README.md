@@ -1,6 +1,12 @@
 # Lawmedy
 
-A private workspace for legal matters. The current build covers legal-notice intake, private evidence, fact reconciliation, recipient confirmation, Razorpay test-mode payment, grounded document generation, automated QA, recorded human advocate review, and private final-PDF delivery. RTI-specific screens remain deferred.
+A private workspace for legal notices, RTI applications, and ₹199 lending certificates, with web and Expo mobile clients, private evidence, grounded AI drafting/QA, Razorpay payments, advocate review and private PDF delivery.
+
+The current hosting plan is **Hostinger for the Next.js website and DigitalOcean for the Nest API, PostgreSQL and Caddy**. Follow [docs/deploy-vps.md](docs/deploy-vps.md) for deployment, environment values, Razorpay setup, mobile rebuilds, and the advocate's signed-certificate workflow. See [the security review](docs/security-review.md) and [operations plan](docs/operations.md) before launch. The older API-on-Hostinger guide is an alternative deployment.
+
+Adding valid `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to the API environment automatically replaces the old manual payment flow on both clients. Configure the signed `payment.captured` webhook before going live so payments still complete after checkout is closed. Only captured payments start document work.
+
+Lending certificates record money already paid or lent. The in-house advocate reviews the facts and uploads the final signed and stamped PDF on their letterhead; ordinary approval and automatic PDF generation cannot bypass that upload. Delivery is within 24 hours of verified payment and complete information. This product is a lending record, not an affidavit or notarisation. Its price comes from `LENDING_CERTIFICATE_PRICE_PAISE=19900`.
 
 ## Requirements
 
@@ -41,7 +47,7 @@ pnpm dev
 
 The seed command creates the local advocate from `ADVOCATE_EMAIL`, `ADVOCATE_FULL_NAME`, and `ADVOCATE_PASSWORD` in `apps/api/.env`. Copy the placeholders from `apps/api/.env.example`, replace the password for your own environment, run the seed command, then sign in at `/login`. Advocate accounts are sent to the role-protected `/advocate` workspace.
 
-Final PDF generation uses a locally installed Chrome, Chromium, or Edge executable in headless mode. Windows automatically detects the standard Chrome and Edge locations. On another system, set `CHROMIUM_EXECUTABLE_PATH` in `apps/api/.env` to the browser executable's absolute path.
+Legal-notice and RTI final PDFs are drawn with pdfkit using the Noto fonts in `apps/api/assets/fonts` (Hindi text uses Noto Serif Devanagari). No browser or system fonts are needed, so the API runs on plain Node.js hosts such as Hostinger Cloud Hosting. See [docs/deploy-hostinger.md](docs/deploy-hostinger.md).
 
 Email delivery uses Resend. For sandbox testing, put `RESEND_API_KEY` and a verified `RESEND_FROM` sender in `apps/api/.env`. When these values are absent, advocate approval still creates the private PDF and completes the matter; the user sees the download in Lawmedy with a clear local email-configuration note.
 
@@ -82,6 +88,11 @@ For a fresh checkout without Docker, run `node scripts/local-db.mjs` after `pnpm
 pnpm typecheck
 pnpm test
 pnpm build
+# Isolated PostgreSQL + API integration checks (no live providers or existing databases):
+node scripts/verify-integration.mjs
+# Adversarial API + production website checks and 50/100-request read bursts:
+node scripts/verify-integration.mjs --security
+node scripts/security-static.mjs
 # With API and database running: exercises real auth, persistence, and ownership.
 node scripts/smoke.mjs
 # With API + database running, exercises the successful answer path using a
@@ -102,11 +113,11 @@ The smoke test creates two uniquely named test users and matters in the configur
 
 ## Structure and design decisions
 
-- `apps/web`: Next.js App Router, TypeScript, Tailwind CSS. Server actions forward requests to Nest; the browser never receives the JWT in JavaScript. The JWT lives in a one-day HTTP-only, SameSite cookie (Secure in production). Protected server layouts validate it through `/users/me`, and every API operation independently validates it. Logout clears the browser session; previously copied bearer tokens remain valid until their one-day expiry.
+- `apps/web`: Next.js App Router, TypeScript, Tailwind CSS. Server actions forward requests to Nest; the browser never receives the JWT in JavaScript. The JWT lives in a one-day HTTP-only, SameSite cookie (Secure in production). Protected server layouts validate it through `/users/me`, and every API operation independently checks the active account and session version. Logout revokes all sessions; staff password resets and account deactivation revoke old tokens too. State-changing website requests validate `Origin` against the configured `APP_ORIGIN`.
 - `apps/api`: NestJS owns all business logic. Validation rejects unknown fields; auth endpoints are throttled; passwords use bcrypt with cost 12 and a 72-byte limit. Deploy behind HTTPS; throttling is in-memory for this single-instance foundation.
 - `apps/api/prisma`: PostgreSQL schema and committed migrations. References use a database sequence, e.g. `MAT-2026-000001`, avoiding concurrent count-based collisions. The sequence is global, does not reset annually, and may have gaps after rollbacks.
 - Statements are append-only snapshots; `currentStatementId` identifies the active version. Each analysis points to the exact statement and AI run that produced it, so an older response cannot replace a newer intake.
-- Every Gemini attempt is recorded in `ai_runs` with provider, configured model, prompt version, statement reference, raw output when available, token usage, latency, status, and a sanitized error code. Runs are claimed under a PostgreSQL row lock and have a 90-second lease for crash recovery.
+- Every Gemini attempt is recorded in `ai_runs` with provider, configured model, prompt version, statement reference, raw output when available, token usage, latency, status, and a sanitized error code. Matter work is claimed under PostgreSQL row locks, with five-minute leases for crash recovery. Each provider fallback chain has a two-minute client deadline; this leaves time for private file reads and commits before an attempt can be reclaimed.
 - Gemini receives the statement only after save. Structured-output validation rejects malformed results, unknown fields, duplicate questions, and any extracted fact whose value and source quote cannot be found verbatim in the statement. The UI labels the result as AI-generated and asks the user to correct the source statement when needed.
 - All matter and intake reads/writes filter by owner. Signup, login, matter creation, statement saves, intake requests, AI results, and answer saves create `audit_logs` records. No statement text, answer text, API key, or password is copied into audit logs.
 - Evidence storage is behind a `PrivateStorage` abstraction. Local files use opaque server-generated keys outside static hosting. The API validates the declared MIME type, file signature, and size before storage, records a SHA-256 checksum, and never exposes the storage key.
@@ -114,15 +125,15 @@ The smoke test creates two uniquely named test users and matters in the configur
 - Each extraction attempt is an `EVIDENCE_EXTRACTION` row in `ai_runs`; parsed results and confidence are stored in `EvidenceExtraction`. The prompt forbids guessing and requires visible source text for each extracted value. Upload, success, and failure transitions are recorded in `audit_logs`.
 - Fact preparation reads only the current statement analysis and its answers plus successful evidence extractions. Comparable fields such as amounts, dates, and recipient details are grouped. Equivalent formatting is normalized for comparison; real disagreements remain separate until the user chooses one. Confirmed values are stored as `CaseFact` rows with their source references.
 - Recipient details are stored separately and confirmation moves the matter to `READY_FOR_PAYMENT`. Statement, answer, and evidence mutations are then locked so the confirmed record cannot silently change.
-- Razorpay Orders are created only by Nest using the configured amount. Checkout receives the public key id and trusted database order id; it never receives the key secret. Browser callbacks do not mark a matter paid. The raw webhook body is authenticated with HMAC, and amount, currency, order id, and captured status must match the stored order before the transaction sets both `Payment` and `Matter` to `PAID`.
+- Razorpay Orders are created only by Nest using the configured amount. Checkout receives the public key id and trusted database order id; it never receives the key secret. Browser callbacks alone do not mark a matter paid. The raw webhook body is authenticated with HMAC, and amount, currency, order id, and captured status must match the stored order before the transaction sets both `Payment` and `Matter` to `PAID`. Signature-verified checkout callbacks also fetch Razorpay’s payment status and confirm capture, amount, currency and order before settlement.
 - Document generation uses only confirmed case facts and recipient data. Every generation and QA attempt is retained as an `AiRun`; generated paragraphs keep their supporting `CaseFact` ids, and a failed QA pass never enters advocate review.
 - A QA-approved draft is assigned to an advocate in the database and moves to `UNDER_ADVOCATE_REVIEW`. Advocate edits create immutable `DocumentVersion` rows with `ADVOCATE` provenance. Information requests, user responses, approvals, notifications, assignment transitions, and advocate access are audited.
 - `/advocate/*` is protected in both Next.js and Nest by the authenticated user's database role. Approval requires an explicit confirmation and records `reviewedById` plus `reviewedAt` on the legal document.
-- Advocate approval renders the approved structured version into escaped, deterministic HTML and converts it to an A4 PDF through headless Chromium. The PDF, its SHA-256 checksum, approved version reference, generation time, and delivery result are stored in `FinalDocument`; the private storage key is never exposed.
+- For legal notices and RTI, advocate approval renders escaped, deterministic HTML as an audit record and draws an A4 PDF with pdfkit and bundled fonts. Lending certificates use the advocate-uploaded signed PDF. The PDF, its SHA-256 checksum, approved version reference, generation time, and delivery result are stored in `FinalDocument`; the private storage key is never exposed.
 - Final downloads require both the user's HTTP-only session and a five-minute HMAC-signed link. Email contains only a link back to the authenticated dashboard, never a public file URL or attachment.
-- RTI exists only as the requested enum value accepted by the generic API. No RTI-specific flow is implemented.
+- RTI has public-authority selection, structured record requests, its own generation/QA, advocate review and private final delivery. Lending certificates have a separate draft/QA pipeline and mandatory advocate-uploaded signed PDF.
 
-`API_URL` is server-only. No secrets use a `NEXT_PUBLIC_` prefix. Only `.env.example` files are committed. The local servers bind to loopback by default. Production requires deployment configuration, a shared rate-limit/session revocation strategy if needed, database backups, and HTTPS.
+`API_URL` is server-only. No secrets use a `NEXT_PUBLIC_` prefix. Only `.env.example` files are committed. The local servers bind to loopback by default. Production deployment templates are in `deploy/vps`; see the deployment guide for persistent storage, backups, HTTPS and hosting configuration. Rate limiting remains per API process.
 
 Useful routes include `POST /advocate/matters/:id/approve`, `GET /matters/:id/final-document`, `POST /matters/:id/final-document/retry`, and `GET /matters/:id/final-document/file`.
 

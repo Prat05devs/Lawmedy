@@ -33,7 +33,7 @@ export class MattersService {
   async get(userId: string, id: string) {
     const matter = await this.db.matter.findFirst({
       where: { id, userId },
-      include: { statements: { orderBy: { createdAt: "desc" } } },
+      include: { statements: { orderBy: { createdAt: "desc" }, take: 1 } },
     });
     if (!matter) throw new NotFoundException("Matter not found.");
     return matter;

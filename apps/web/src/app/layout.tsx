@@ -1,17 +1,26 @@
 import type { Metadata } from "next";
-import { Zalando_Sans, Zalando_Sans_Expanded } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./design.css";
 import "./refine.css";
 
 // Brand kit: Zalando Sans Expanded for headings (kept on the --font-serif variable the CSS already uses),
 // Zalando Sans for everything else.
-const serif = Zalando_Sans_Expanded({ subsets: ["latin"], variable: "--font-serif", display: "swap", weight: ["400", "700", "800"] });
-const sans = Zalando_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap", weight: ["400", "500", "600", "700"] });
+const serif = localFont({ src: [
+  { path: "./fonts/ZalandoSansExpanded_400Regular.ttf", weight: "400" },
+  { path: "./fonts/ZalandoSansExpanded_700Bold.ttf", weight: "700" },
+  { path: "./fonts/ZalandoSansExpanded_800ExtraBold.ttf", weight: "800" },
+], variable: "--font-serif", display: "swap" });
+const sans = localFont({ src: [
+  { path: "./fonts/ZalandoSans_400Regular.ttf", weight: "400" },
+  { path: "./fonts/ZalandoSans_500Medium.ttf", weight: "500" },
+  { path: "./fonts/ZalandoSans_600SemiBold.ttf", weight: "600" },
+  { path: "./fonts/ZalandoSans_700Bold.ttf", weight: "700" },
+], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Lawmedy — Legal notices & RTI, reviewed by advocates",
+    default: "Lawmedy — Legal notices, RTI & lending certificates",
     template: "%s | Lawmedy",
   },
   description:

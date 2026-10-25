@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { whatsappDisplay } from "@/lib/site";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -20,7 +21,7 @@ import {
 import type { MatterReview } from "@/lib/api";
 import { ManualPaymentPanel } from "@/components/manual-payment";
 
-type RazorpayInstance = { open(): void };
+type RazorpayInstance = { open(): void; on(event: string, callback: () => void): void };
 declare global {
   interface Window {
     Razorpay?: new (options: Record<string, unknown>) => RazorpayInstance;
@@ -39,7 +40,7 @@ export function ReviewPanel({
     <>
       <FactReview matterId={matterId} review={review} />
       {(review.status === "READY_FOR_PAYMENT" || review.status === "PAYMENT_VERIFICATION" || review.status === "PAID") && (
-        review.paymentMode === "manual" ? (
+        review.paymentMode === "manual" || review.status === "PAYMENT_VERIFICATION" ? (
           <ManualPaymentPanel matterId={matterId} review={review} />
         ) : (
           <PaymentPanel matterId={matterId} review={review} />
@@ -149,7 +150,7 @@ function FactReview({
             </div>
           )}
           <ApplicantFields applicant={review.applicant} matterType={review.matterType} />
-          {review.matterType === "LEGAL_NOTICE" && <RecipientFields recipient={review.recipient} />}
+          {review.matterType !== "RTI" && <RecipientFields recipient={review.recipient} lending={review.matterType === "LENDING_CERTIFICATE"} />}
           <label className="confirm-check">
             <input type="checkbox" name="confirmed" required />
             <span>I confirm this information is accurate.</span>
@@ -199,6 +200,11 @@ function ApplicantFields({
         <textarea name="applicantAddress" rows={3} minLength={10} maxLength={2000} required defaultValue={applicant?.address ?? ""} />
       </label>
       <label>
+        WhatsApp number
+        <span className="field-note">Our team will send your finished PDF to this number on WhatsApp, from {whatsappDisplay}.</span>
+        <input name="applicantWhatsapp" type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" required minLength={10} maxLength={20} defaultValue={applicant?.whatsapp ?? ""} />
+      </label>
+      <label>
         Phone <span className="muted small">Optional</span>
         <input name="applicantPhone" type="tel" defaultValue={applicant?.phone ?? ""} />
       </label>
@@ -207,15 +213,15 @@ function ApplicantFields({
 }
 
 function RecipientFields({
-  recipient,
+  recipient, lending,
 }: {
-  recipient: MatterReview["recipient"];
+  recipient: MatterReview["recipient"]; lending?: boolean;
 }) {
   return (
     <div className="recipient-fields">
-      <h3>Recipient details</h3>
+      <h3>{lending ? "Borrower details" : "Recipient details"}</h3>
       <p className="muted small">
-        Enter the person or organisation that should receive the notice.
+        {lending ? "Enter the person or organisation you lent or paid the money to." : "Enter the person or organisation that should receive the notice."}
       </p>
       <label>
         Recipient name
@@ -295,30 +301,35 @@ function PaymentPanel({
   review: MatterReview;
 }) {
   const router = useRouter();
-  const [state, action, pending] = useActionState(
-    createPaymentOrder.bind(null, matterId),
-    {},
-  );
+  const [pending, setPending] = useState(false);
   const [clientError, setClientError] = useState("");
   const [waiting, setWaiting] = useState(false);
-  const openedOrder = useRef<string | null>(null);
+  const inFlight = useRef(false);
+  const [receipt, setReceipt] = useState<{ orderId: string; paymentId: string; signature: string } | null>(null);
 
-  useEffect(() => {
-    if (!state.checkout || openedOrder.current === state.checkout.orderId)
-      return;
-    openedOrder.current = state.checkout.orderId;
-    void openCheckout(state.checkout, {
-      success: (response) => {
-        setWaiting(true);
-        void verifyPayment(matterId, {
-          orderId: response.razorpay_order_id,
-          paymentId: response.razorpay_payment_id,
-          signature: response.razorpay_signature,
-        }).then(() => router.refresh());
-      },
-      error: setClientError,
-    });
-  }, [router, state.checkout, matterId]);
+  async function pay() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPending(true); setClientError("");
+    let payment = receipt;
+    try {
+      if (!payment) {
+        const state = await createPaymentOrder(matterId, {}, new FormData());
+        if (!state.checkout) throw new Error(state.error || "Could not create a payment order.");
+        const response = await openCheckout(state.checkout);
+        payment = { orderId: response.razorpay_order_id, paymentId: response.razorpay_payment_id, signature: response.razorpay_signature };
+        setReceipt(payment);
+      }
+      setWaiting(true);
+      const result = await verifyPayment(matterId, payment);
+      if (result.error) setClientError(result.error);
+      setWaiting(result.status !== "PAID");
+    } catch (error) {
+      setClientError(error instanceof Error ? error.message : "Checkout could not complete. Please try again.");
+    } finally {
+      setPending(false); inFlight.current = false; router.refresh();
+    }
+  }
 
   const paid = review.status === "PAID" || review.payment?.status === "PAID";
   return (
@@ -330,7 +341,7 @@ function PaymentPanel({
           <p className="muted small">
             {paid
               ? "Your payment was verified securely."
-              : "Razorpay test checkout is used during development."}
+              : "Pay securely with Razorpay."}
           </p>
         </div>
       </div>
@@ -348,20 +359,20 @@ function PaymentPanel({
             </strong>
           </div>
           {review.paymentConfigured ? (
-            <form action={action}>
-              <button className="button primary" disabled={pending || waiting}>
-                {pending || waiting ? (
+            <div>
+              <button className="button primary" onClick={() => void pay()} disabled={pending}>
+                {pending ? (
                   <LoaderCircle className="spin" size={17} />
                 ) : (
                   <CreditCard size={17} />
                 )}
                 {pending
-                  ? "Creating secure order…"
-                  : waiting
-                    ? "Waiting for verification…"
+                  ? "Opening secure payment…"
+                  : receipt
+                    ? "Check payment status"
                     : "Pay securely with Razorpay"}
               </button>
-            </form>
+            </div>
           ) : (
             <div className="message payment-pending">
               Payment setup is pending. Your confirmed information is saved and
@@ -369,17 +380,16 @@ function PaymentPanel({
             </div>
           )}
           <p className="field-note payment-note">
-            A browser success message never marks the matter paid. Lawmedy waits
-            for Razorpay’s signed webhook.
+            Your document work starts after your payment is securely confirmed.
           </p>
           {waiting && (
             <p className="message success" role="status">
-              Payment submitted. Waiting for secure webhook confirmation…
+              Payment confirmation is pending. Check the status shortly; do not pay again.
             </p>
           )}
-          {(state.error || clientError) && (
+          {clientError && (
             <p className="message error" role="alert">
-              {state.error || clientError}
+              {clientError}
             </p>
           )}
         </>
@@ -388,54 +398,39 @@ function PaymentPanel({
   );
 }
 
-async function openCheckout(
-  checkout: CheckoutDetails,
-  callbacks: {
-    success(response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): void;
-    error(message: string): void;
-  },
-) {
-  try {
-    await loadRazorpay();
-    if (!window.Razorpay) throw new Error("Checkout did not load.");
+type CheckoutResponse = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
+async function openCheckout(checkout: CheckoutDetails): Promise<CheckoutResponse> {
+  await loadRazorpay();
+  return new Promise((resolve, reject) => {
+    if (!window.Razorpay) return reject(new Error("Checkout did not load. Please try again."));
     const instance = new window.Razorpay({
-      key: checkout.keyId,
-      order_id: checkout.orderId,
-      amount: checkout.amount,
-      currency: checkout.currency,
-      name: checkout.name,
-      description: checkout.description,
-      prefill: checkout.prefill,
-      theme: { color: "#486c55" },
-      handler: callbacks.success,
-      modal: { ondismiss: () => undefined },
+      key: checkout.keyId, order_id: checkout.orderId, amount: checkout.amount,
+      currency: checkout.currency, name: checkout.name, description: checkout.description,
+      prefill: checkout.prefill, theme: { color: "#486c55" }, handler: resolve,
+      modal: { ondismiss: () => reject(new Error("Checkout closed. You can try again when ready.")) },
     });
+    instance.on("payment.failed", () => reject(new Error("Payment did not complete. Please try again.")));
     instance.open();
-  } catch {
-    callbacks.error(
-      "Secure checkout could not load. Check your connection and try again.",
-    );
-  }
+  });
 }
 
+let checkoutScript: Promise<void> | undefined;
 function loadRazorpay() {
   if (window.Razorpay) return Promise.resolve();
-  return new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
-    );
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(), { once: true });
-      return;
-    }
+  if (!checkoutScript) checkoutScript = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
+    const fail = () => {
+      clearTimeout(timeout); script.remove(); checkoutScript = undefined;
+      reject(new Error("Secure checkout could not load. Check your connection and try again."));
+    };
+    const timeout = setTimeout(fail, 15000);
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject();
+    script.onload = () => { clearTimeout(timeout); resolve(); };
+    script.onerror = fail;
     document.head.appendChild(script);
   });
+  return checkoutScript;
 }
 
 function ActionMessages({

@@ -1,26 +1,38 @@
 /* Editorial, flat styling for the whole product. Loaded last so it wins over older rules.
    Ink on warm paper, one accent, borders instead of shadows, plain text instead of badges. */
 :root {
-  /* Brand kit: background #FAFAFA, text #171615, primary #D6D3D1, accent #413F3E, surface #FFFFFF, border #DADADA. */
-  --ink: #171615;
-  --muted: #5f5d5b;
-  --paper: #fafafa;
-  --ivory: #fafafa;
+  /* "Mor & Genda": robe black and band white, with Indian accents.
+     Mor (peacock) = work and home, Genda (marigold) = money, Rani (pink) = shopping, in small doses. */
+  --ink: #141414;
+  --robe: #141414;
+  --muted: #55554f;
+  --paper: #f8f8f6;
+  --ivory: #f8f8f6;
   --card: #ffffff;
-  --line: #dadada;
+  --line: #e3e3df;
   --primary: #d6d3d1;
-  --accent: #413f3e;
+  --mor: #0b6e69;
+  --mor-tint: #e0f2ef;
+  --mor-ink: #08524e;
+  --genda: #f2a900;
+  --genda-tint: #fdf0cc;
+  --genda-ink: #6b4800;
+  --rani: #c2185b;
+  --rani-tint: #fbe3ec;
+  --rani-ink: #8e1043;
+  --accent: var(--mor);
   --gold: #413f3e;
   --gold-2: #5a5857;
-  --navy: #171615;
+  --navy: #141414;
   --navy-2: #2b2a29;
   --radius: 10px;
 }
-body { background: var(--paper); color: var(--ink); font-family: var(--font-sans), system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
-h1, h2, h3, .display { font-family: var(--font-serif), system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; }
-* { box-shadow: none !important; text-shadow: none !important; }
-*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-a { text-underline-offset: 3px; }
+@layer base {
+  body { background: var(--paper); color: var(--ink); font-family: var(--font-sans), system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
+  h1, h2, h3 { font-family: var(--font-serif), system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+  a { text-underline-offset: 3px; }
+}
+.display { font-family: var(--font-serif), system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; }
 
 /* Labels: small, sentence case, no tracking, no decoration */
 .eyebrow, .nav-label, .banner-tag, .step-eyebrow { font: 400 13px/1.4 var(--font-sans), sans-serif; letter-spacing: 0; text-transform: none; color: var(--muted); margin: 0 0 6px; }
@@ -47,8 +59,10 @@ a { text-underline-offset: 3px; }
 /* Surfaces */
 .panel, .admin-card, .tracker, .evidence-card, .verify-card, .admin-stat, .status-chip, .tips { background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
 .panel { padding: 24px; }
-input, select, textarea { border-radius: 6px; border: 1px solid #c4c1bf; background: #ffffff; }
-input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outline-offset: 0; border-color: var(--ink); }
+@layer base {
+  input, select, textarea { border-radius: 6px; border: 1px solid #c4c1bf; background: #ffffff; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outline-offset: 0; border-color: var(--ink); }
+}
 
 /* Workspace chrome */
 .sidebar { background: var(--ink); }

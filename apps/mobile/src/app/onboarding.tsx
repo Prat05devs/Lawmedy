@@ -10,7 +10,7 @@ import { setFlag } from "@/lib/device-flags";
 import { colors, fonts } from "@/lib/theme";
 
 const pages = [
-  { photo: courts.supremeCourt, title: "Legal notices and RTI applications, from your phone", text: "Describe what happened. We prepare the document from the facts you confirm." },
+  { photo: courts.supremeCourt, title: "Legal notices, RTI applications and lending certificates, from your phone", text: "Describe what happened. We prepare the document from the facts you confirm." },
   { photo: courts.bombayHighCourtStreet, title: "Write it your way", text: "Plain words are enough, in Hindi, English or a mix. You check every fact before anything is drafted." },
   { photo: courts.madrasHighCourt, title: "An advocate reviews every document", text: "You get a PDF you can send, usually within 24 hours of verified payment. Try it before you create an account." },
 ];

@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma.service";
 import { GeminiService } from "./gemini.service";
 import { parseAnalysis, PROMPT_VERSION } from "./analysis";
+import { AI_LEASE_MS } from "../ai-timing";
 
 const questionsInclude = {
   questions: {
@@ -125,7 +126,7 @@ export class IntakeService {
           provider: settings.provider,
           modelName: settings.modelName || "NOT_CONFIGURED",
           promptVersion: PROMPT_VERSION,
-          expiresAt: new Date(now.getTime() + 90000),
+          expiresAt: new Date(now.getTime() + AI_LEASE_MS),
         },
       });
       await tx.auditLog.create({
@@ -149,6 +150,7 @@ export class IntakeService {
         statement.statement,
         settings.modelName,
         matterType,
+        run.id,
       );
       output = {
         text: response.text,

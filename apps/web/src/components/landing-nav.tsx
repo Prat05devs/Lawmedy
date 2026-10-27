@@ -1,72 +1,108 @@
 "use client";
 import Link from "next/link";
 import { Menu, MessageCircle } from "lucide-react";
-import { Brand } from "@/components/brand";
 import { AccountMenu, deskFor, type MenuUser } from "@/components/account-menu";
-import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/landing/theme-toggle";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { whatsappDisplay, whatsappLink } from "@/lib/site";
 
 const links = [
-  { href: "#how", label: "How it works" },
-  { href: "#situations", label: "Situations" },
-  { href: "#price", label: "Services & prices" },
-  { href: "#questions", label: "Questions" },
+  { href: "/#usecases", label: "Use cases" },
+  { href: "/#services", label: "Services" },
+  { href: "/#how", label: "How it works" },
+  { href: "/#questions", label: "Questions" },
 ];
 
-// Robe-black header for the home page.
+// Logo for each theme; CSS shows the one that matches.
+function Logo() {
+  return (
+    <Link href="/" className="lx-logo" aria-label="Lawmedy home">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="lx-logo-day" src="/images/brand/logo-dark.png" alt="Lawmedy" width={1460} height={390} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="lx-logo-night" src="/images/brand/logo-light.png" alt="" width={1460} height={390} />
+    </Link>
+  );
+}
+
+// The public site's top bar: frosted, sticky, with the day/night switch.
 export function LandingNav({ user }: { user?: MenuUser | null }) {
   return (
-    <header className="lp-header sticky top-0 z-20 border-b border-white/10 bg-robe text-white">
-      <div className="mx-auto flex max-w-[1120px] items-center gap-8 px-6 py-3">
-        <Brand href="/" tone="light" />
-        <nav className="hidden gap-6 text-[15px] lg:flex" aria-label="Primary">
-          {links.map((l) => <a key={l.href} href={l.href} className="text-white/75 hover:text-white">{l.label}</a>)}
+    <header className="lx-nav">
+      <div className="lx-wrap lx-nav-in">
+        <Logo />
+        <nav className="lx-navlinks" aria-label="Primary">
+          {links.map((l) => <a key={l.href} href={l.href} className="lx-navlink">{l.label}</a>)}
         </nav>
-        <div className="ml-auto hidden items-center gap-4 lg:flex">
-          <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white/85 hover:border-white/50 hover:text-white">
-            <MessageCircle className="size-4" aria-hidden /> WhatsApp us
-          </a>
+        <div className="lx-nav-actions">
+          <ThemeToggle />
           {user ? (
-            <AccountMenu user={user} />
+            <span className="lx-desk-only"><AccountMenu user={user} /></span>
           ) : (
             <>
-              <Link href="/login" className="text-[15px] text-white/85 hover:text-white">Log in</Link>
-              <Button asChild className="bg-genda font-semibold text-robe hover:bg-genda/90"><Link href="/signup">Get started</Link></Button>
+              <Link href="/login" className="lx-navlink lx-desk-only">Log in</Link>
+              <Link href="/signup" className="lx-btn lx-btn-primary lx-desk-only">Get started</Link>
             </>
           )}
+          <Sheet>
+            <SheetTrigger asChild>
+              <button type="button" className="lx-mode lx-phone-only" aria-label="Open menu"><Menu aria-hidden /></button>
+            </SheetTrigger>
+            <SheetContent side="right" className="lx-sheet w-[min(320px,85vw)] gap-0 p-6">
+              <SheetTitle className="mb-4">Menu</SheetTitle>
+              <nav className="grid gap-1" aria-label="Mobile">
+                {links.map((l) => (
+                  <SheetClose asChild key={l.href}>
+                    <a href={l.href} className="lx-sheet-link">{l.label}</a>
+                  </SheetClose>
+                ))}
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="lx-sheet-link">
+                  <MessageCircle aria-hidden /> WhatsApp {whatsappDisplay}
+                </a>
+              </nav>
+              <div className="mt-6 grid gap-3">
+                {user ? (
+                  <Link href={deskFor(user.role)} className="lx-btn lx-btn-primary">Go to dashboard</Link>
+                ) : (
+                  <>
+                    <Link href="/signup" className="lx-btn lx-btn-primary">Get started</Link>
+                    <Link href="/login" className="lx-btn lx-btn-quiet">Log in</Link>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="ml-auto text-white hover:bg-white/10 hover:text-white lg:hidden" aria-label="Open menu">
-              <Menu />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[min(320px,85vw)] gap-0 bg-robe p-6 text-white">
-            <SheetTitle className="mb-4 text-white">Menu</SheetTitle>
-            <nav className="grid gap-1" aria-label="Mobile">
-              {links.map((l) => (
-                <SheetClose asChild key={l.href}>
-                  <a href={l.href} className="rounded-md px-2 py-3 text-base text-white/85 hover:bg-white/10 hover:text-white">{l.label}</a>
-                </SheetClose>
-              ))}
-              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-md px-2 py-3 text-base text-white/85 hover:bg-white/10">
-                <MessageCircle className="size-4" aria-hidden /> WhatsApp {whatsappDisplay}
-              </a>
-            </nav>
-            <div className="mt-6 grid gap-3">
-              {user ? (
-                <Button asChild className="h-11 bg-genda text-robe hover:bg-genda/90"><Link href={deskFor(user.role)}>Go to dashboard</Link></Button>
-              ) : (
-                <>
-                  <Button asChild className="h-11 bg-genda font-semibold text-robe hover:bg-genda/90"><Link href="/signup">Get started</Link></Button>
-                  <Button asChild variant="outline" className="h-11 border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"><Link href="/login">Log in</Link></Button>
-                </>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
       </div>
     </header>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="lx-foot">
+      <div className="lx-wrap">
+        <div className="lx-foot-grid">
+          <div>
+            <Logo />
+            <p>Lawmedy helps you prepare documents. It is not a substitute for legal advice on complex disputes.</p>
+          </div>
+          <nav aria-label="Product">
+            <h4>Product</h4>
+            {links.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}
+          </nav>
+          <nav aria-label="Company">
+            <h4>Company</h4>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/refunds">Refunds</Link>
+            <Link href="/contact">Contact</Link>
+            <a href={whatsappLink} target="_blank" rel="noopener noreferrer">WhatsApp {whatsappDisplay}</a>
+            <Link href="/delete-account">Delete account</Link>
+          </nav>
+        </div>
+        <p className="lx-copy">© {new Date().getFullYear()} Lawmedy</p>
+      </div>
+    </footer>
   );
 }

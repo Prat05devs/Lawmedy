@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { themeScript } from "@/lib/theme";
 import "./globals.css";
 import "./design.css";
 import "./refine.css";
@@ -32,7 +33,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable}`}>
+    // The theme script sets data-theme before first paint, so React must accept that attribute.
+    <html lang="en" className={`${serif.variable} ${sans.variable}`} data-theme="day" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

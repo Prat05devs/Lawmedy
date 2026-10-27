@@ -39,7 +39,7 @@ export const Eyebrow = ({ children }: { children: React.ReactNode; gold?: boolea
 
 type Variant = "primary" | "gold" | "outline" | "ghost" | "danger";
 const variantMap = { primary: "default", gold: "default", outline: "outline", ghost: "ghost", danger: "destructive" } as const;
-const iconColor: Record<Variant, string> = { primary: "#fff", gold: colors.ink, outline: colors.ink, ghost: colors.ink, danger: "#fff" };
+const iconColor: Record<Variant, string> = { primary: "#fff", gold: "#fff", outline: colors.ink, ghost: colors.ink, danger: "#fff" };
 
 export function Button({ title, onPress, variant = "primary", loading, disabled, icon, iconAfter, style }: {
   title: string; onPress?: () => void; variant?: Variant;
@@ -54,13 +54,12 @@ export function Button({ title, onPress, variant = "primary", loading, disabled,
       style={style}
       className={cn(
         "h-auto min-h-12 rounded-lg px-5 py-3",
-        variant === "gold" && "bg-genda active:bg-genda/90",
         variant === "outline" && "border-foreground bg-transparent",
         disabled && "opacity-50",
       )}
     >
       {loading ? <ActivityIndicator color={fg} /> : icon && !iconAfter ? <Feather name={icon} size={18} color={fg} /> : null}
-      <Text className={cn("font-sans-bold text-base", variant === "gold" && "text-foreground")}>{title}</Text>
+      <Text className="font-sans-bold text-base">{title}</Text>
       {!loading && icon && iconAfter ? <Feather name={icon} size={20} color={fg} /> : null}
     </UIButton>
   );

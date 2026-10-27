@@ -132,9 +132,10 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
                 <View style={s.svcIcon}><Feather name={service.icon} size={20} color={c.accent} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.svcTitle}>{service.title}</Text>
+                  <Text style={s.svcPrice}>{servicePrice(pricing, service.type)}</Text>
                   <Text style={s.svcText} numberOfLines={3}>{service.text}</Text>
                 </View>
-                <Text style={s.svcPrice}>{servicePrice(pricing, service.type)}</Text>
+                <Feather name="chevron-right" size={18} color={c.muted} />
               </Pressable>
             ))}
           </View>
@@ -293,7 +294,7 @@ const styles = (c: Palette) => StyleSheet.create({
   svcIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.tint, alignItems: "center", justifyContent: "center" },
   svcTitle: { fontFamily: fonts.displayBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.2, color: c.ink },
   svcText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18, color: c.muted, marginTop: 2 },
-  svcPrice: { fontFamily: fonts.sansBold, fontSize: 16, color: c.ink },
+  svcPrice: { fontFamily: fonts.sansBold, fontSize: 15, color: c.accent, marginTop: 2 },
   bandTitle: { fontFamily: fonts.display, fontSize: 28, lineHeight: 33, letterSpacing: -0.8, color: band.ink, marginTop: 24 },
   bandText: { fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 23, color: band.muted, marginTop: 10 },
   stats: { flexDirection: "row", gap: 18, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: band.line, marginBottom: 8 },

@@ -2,13 +2,12 @@ import "../../global.css";
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { PortalHost } from "@rn-primitives/portal";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, ZalandoSansExpanded_400Regular, ZalandoSansExpanded_700Bold, ZalandoSansExpanded_800ExtraBold } from "@expo-google-fonts/zalando-sans-expanded";
 import { ZalandoSans_400Regular, ZalandoSans_500Medium, ZalandoSans_600SemiBold } from "@expo-google-fonts/zalando-sans";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { ThemeProvider } from "@/lib/app-theme";
+import { ThemeProvider, ThemedStatusBar } from "@/lib/app-theme";
 import { colors } from "@/lib/theme";
 
 function Routes() {
@@ -40,7 +39,7 @@ export default function Root() {
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider>
-          <StatusBar style="auto" />
+          <ThemedStatusBar />
           <Routes />
           <PortalHost />
         </ThemeProvider>

@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth";
 import { WEB_URL, WHATSAPP_DISPLAY, WHATSAPP_LINK } from "@/lib/links";
-import { colors, fonts } from "@/lib/theme";
+import { colors, fonts, themed } from "@/lib/theme";
 
 const links = [
   { label: "Privacy Policy", path: "/privacy" },
@@ -67,9 +67,9 @@ export default function Account() {
     </Screen>
   );
 }
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 15 },
   border: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   label: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink },
   foot: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted, textAlign: "center", marginTop: 22, lineHeight: 18 },
-});
+}));

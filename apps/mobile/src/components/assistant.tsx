@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tap } from "@/components/app-ui";
 import { greeting, topics, type AssistantAction, type Topic } from "@/lib/assistant";
-import { colors, fonts, shadow } from "@/lib/theme";
+import { colors, fonts, shadow, themed } from "@/lib/theme";
 
 type Message = { id: number; from: "bot" | "me"; text: string; action?: Topic["action"] };
 
@@ -62,8 +62,7 @@ export function AssistantButton({ onPress }: { onPress: () => void }) {
       <Animated.View style={{ transform: [{ translateY }] }}>
         {!reduced && <Animated.View pointerEvents="none" style={[s.ring, { opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] }), transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }] }]} />}
         <Pressable onPress={() => { tap(); setShowTag(false); onPress(); }} accessibilityRole="button" accessibilityLabel="Open the Lawmedy assistant" style={({ pressed }) => [s.fab, pressed && { transform: [{ scale: 0.94 }] }]}>
-          <Feather name="message-circle" size={24} color="#fff" />
-          <View style={s.spark}><Feather name="cpu" size={11} color={colors.ink} /></View>
+          <Feather name="message-circle" size={26} color="#fff" />
         </Pressable>
       </Animated.View>
     </View>
@@ -207,25 +206,24 @@ export function AssistantSheet({ visible, onClose, onAction, prices }: { visible
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   fabWrap: { position: "absolute", right: 16, bottom: 16, flexDirection: "row", alignItems: "center", gap: 10 },
-  fab: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
-  ring: { position: "absolute", width: 56, height: 56, borderRadius: 28, backgroundColor: colors.ink },
-  spark: { position: "absolute", top: 13, right: 12, width: 15, height: 15, borderRadius: 8, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  fab: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.solid, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  ring: { position: "absolute", width: 56, height: 56, borderRadius: 28, backgroundColor: colors.solid },
   tag: { backgroundColor: colors.card, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, ...shadow, shadowOpacity: 0.1 },
   tagText: { fontFamily: fonts.sansBold, fontSize: 13, color: colors.ink },
   backdrop: { backgroundColor: "rgba(28,27,26,0.35)" },
   sheet: { position: "absolute", left: 0, right: 0, bottom: 0, height: "82%", backgroundColor: colors.paper, borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: "hidden" },
   grabber: { alignSelf: "center", width: 36, height: 5, borderRadius: 3, backgroundColor: colors.line, marginTop: 8 },
   header: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.solid, alignItems: "center", justifyContent: "center" },
   title: { fontFamily: fonts.displayBold, fontSize: 15, lineHeight: 20, letterSpacing: -0.2, color: colors.ink },
   subtitle: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
   online: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ok },
   iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   bubble: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
   bot: { backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, borderBottomLeftRadius: 6, alignSelf: "flex-start" },
-  me: { backgroundColor: colors.ink, borderBottomRightRadius: 6 },
+  me: { backgroundColor: colors.solid, borderBottomRightRadius: 6 },
   bubbleText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 21, color: colors.ink },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.muted },
   actionBtn: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.ink, backgroundColor: colors.card },
@@ -235,5 +233,5 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, minHeight: 38, justifyContent: "center" },
   chipDone: { backgroundColor: colors.tint, borderColor: colors.tint },
   chipText: { fontFamily: fonts.sansMedium, fontSize: 13.5, color: colors.ink },
-});
+}));
 

@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { colorScheme } from "nativewind";
+import { StatusBar } from "expo-status-bar";
+import { setColorMode } from "@/lib/theme";
 
 // Day and night palettes, the same as the website: neutrals carry the screen, Mor is the one accent.
 // Photo sections use `band`, a black fade, in both modes.
@@ -16,19 +19,35 @@ const KEY = "lawmedy-theme";
 type Ctx = { mode: Mode; c: Palette; toggle: () => void };
 const ThemeContext = createContext<Ctx>({ mode: "day", c: palettes.day, toggle: () => undefined });
 
+// Every screen reads the shared colours while rendering, so a mode change swaps those colours,
+// switches the UI kit's variables, and re-renders the app below this provider.
+function apply(mode: Mode) {
+  setColorMode(mode);
+  try { colorScheme.set(mode === "night" ? "dark" : "light"); } catch { /* the UI kit keeps day colours */ }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<Mode>("day");
-  useEffect(() => { void SecureStore.getItemAsync(KEY).then((v) => { if (v === "night" || v === "day") setMode(v); }).catch(() => undefined); }, []);
+  useEffect(() => {
+    void SecureStore.getItemAsync(KEY).then((v) => { if (v === "night") { apply("night"); setMode("night"); } }).catch(() => undefined);
+  }, []);
   const value = useMemo<Ctx>(() => ({
     mode,
     c: palettes[mode],
-    toggle: () => setMode((m) => {
-      const next = m === "night" ? "day" : "night";
+    toggle: () => {
+      const next: Mode = mode === "night" ? "day" : "night";
+      apply(next);
       void SecureStore.setItemAsync(KEY, next).catch(() => undefined);
-      return next;
-    }),
+      setMode(next);
+    },
   }), [mode]);
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={value}><React.Fragment key={mode}>{children}</React.Fragment></ThemeContext.Provider>;
 }
 
 export const useAppTheme = () => useContext(ThemeContext);
+
+// Light status-bar text in night mode, dark in day mode.
+export function ThemedStatusBar() {
+  const { mode } = useAppTheme();
+  return <StatusBar style={mode === "night" ? "light" : "dark"} />;
+}

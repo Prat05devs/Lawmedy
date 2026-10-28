@@ -6,7 +6,7 @@ import { AppScreen, BarButton, success, tap } from "@/components/app-ui";
 import { Button, Field, Message } from "@/components/ui";
 import { publicApi } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
-import { colors, fonts, radius, shadow } from "@/lib/theme";
+import { colors, fonts, radius, shadow, themed } from "@/lib/theme";
 
 type Icon = keyof typeof Feather.glyphMap;
 
@@ -119,7 +119,7 @@ export default function AdvocatePortal() {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   badge: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.tint2, marginTop: 4 },
   badgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ok },
   badgeText: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.7, textTransform: "uppercase", color: colors.ink },
@@ -144,4 +144,4 @@ const s = StyleSheet.create({
   doneIcon: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.ok, alignItems: "center", justifyContent: "center", marginBottom: 22 },
   doneTitle: { fontFamily: fonts.display, fontSize: 24, lineHeight: 28, letterSpacing: -0.7, color: colors.ink, textAlign: "center" },
   doneText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.muted, textAlign: "center", marginTop: 10 },
-});
+}));

@@ -8,6 +8,7 @@ import { API_URL, authHeaders, post } from "@/lib/api";
 import { errorMessage } from "@/lib/hooks";
 import { colors, fonts } from "@/lib/theme";
 import type { FinalDocument, MatterType } from "@/lib/types";
+import { deliveredLine } from "@/lib/turnaround";
 
 export function FinalPanel({ matterId, doc, type, step, onChanged }: { matterId: string; doc: FinalDocument; type: MatterType; step: string; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
@@ -45,6 +46,15 @@ export function FinalPanel({ matterId, doc, type, step, onChanged }: { matterId:
               <Body muted small>{Math.max(1, Math.ceil(doc.sizeBytes / 1024))} KB</Body>
             </View>
           </View>
+          {(() => {
+            const line = deliveredLine(doc.paidAt, doc.generatedAt);
+            return line ? (
+              <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: 12, backgroundColor: line.within ? colors.okBg : colors.warnBg, marginBottom: 14 }}>
+                <Feather name={line.within ? "check-circle" : "clock"} size={18} color={line.within ? colors.ok : colors.warnText} style={{ marginTop: 1 }} />
+                <Text style={{ flex: 1, fontFamily: fonts.sansMedium, fontSize: 14, lineHeight: 20, color: line.within ? colors.ok : colors.warnText }}>{line.text}</Text>
+              </View>
+            ) : null;
+          })()}
           <Button title={Platform.OS === "ios" ? "Open / share PDF" : "Download PDF"} icon="download" variant="gold" onPress={() => download(doc)} loading={busy} />
         </>
       ) : (

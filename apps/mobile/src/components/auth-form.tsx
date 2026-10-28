@@ -5,7 +5,7 @@ import { Link, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Body, Button, Field, H1, Message } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { colors, fonts } from "@/lib/theme";
+import { colors, fonts, themed } from "@/lib/theme";
 import { errorMessage } from "@/lib/hooks";
 import { WEB_URL } from "@/lib/links";
 
@@ -69,8 +69,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   legal: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 14 },
   link: { color: colors.ink, fontFamily: fonts.sansMedium, textDecorationLine: "underline" },
   switch: { fontFamily: fonts.sans, fontSize: 15, color: colors.muted },
-});
+}));

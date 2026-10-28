@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { post } from "@/lib/api";
 import { setStatementDraft } from "@/lib/statement-draft";
 import { errorMessage } from "@/lib/hooks";
-import { fonts } from "@/lib/theme";
+import { fonts, themed } from "@/lib/theme";
 import { useAppTheme } from "@/lib/app-theme";
 import type { Matter, MatterType } from "@/lib/types";
 
@@ -59,10 +59,10 @@ export default function SignedInHome() {
   return <HomeScreen signedIn={{ name: user?.fullName ?? "", onStart: start, top }} />;
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   hello: { fontFamily: fonts.displayBold, fontSize: 20, lineHeight: 25, letterSpacing: -0.3},
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 4, marginTop: 4 },
   title: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 23, letterSpacing: -0.3},
   all: { flexDirection: "row", alignItems: "center", gap: 2, minHeight: 32 },
   allText: { fontFamily: fonts.sansBold, fontSize: 14},
-});
+}));

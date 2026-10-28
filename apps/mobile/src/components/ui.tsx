@@ -8,7 +8,7 @@ import { Input } from "@/components/primitives/input";
 import { Label } from "@/components/primitives/label";
 import { Text } from "@/components/primitives/text";
 import { Textarea } from "@/components/primitives/textarea";
-import { colors } from "@/lib/theme";
+import { colors, isNight } from "@/lib/theme";
 import { statusLabel, type MatterStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -39,13 +39,14 @@ export const Eyebrow = ({ children }: { children: React.ReactNode; gold?: boolea
 
 type Variant = "primary" | "gold" | "outline" | "ghost" | "danger";
 const variantMap = { primary: "default", gold: "default", outline: "outline", ghost: "ghost", danger: "destructive" } as const;
-const iconColor: Record<Variant, string> = { primary: "#fff", gold: "#fff", outline: colors.ink, ghost: colors.ink, danger: "#fff" };
+// A function so outline and ghost icons follow day and night.
+const iconColor = (variant: Variant) => (variant === "outline" || variant === "ghost" ? colors.ink : variant !== "danger" && isNight() ? "#0b1413" : "#fff");
 
 export function Button({ title, onPress, variant = "primary", loading, disabled, icon, iconAfter, style }: {
   title: string; onPress?: () => void; variant?: Variant;
   loading?: boolean; disabled?: boolean; icon?: keyof typeof Feather.glyphMap; iconAfter?: boolean; style?: StyleProp<ViewStyle>;
 }) {
-  const fg = iconColor[variant];
+  const fg = iconColor(variant);
   return (
     <UIButton
       variant={variantMap[variant]}

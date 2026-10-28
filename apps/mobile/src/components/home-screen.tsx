@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ImageSourcePropType } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -6,7 +6,8 @@ import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { tap } from "@/components/app-ui";
 import { AssistantButton, AssistantSheet } from "@/components/assistant";
@@ -89,7 +90,7 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
       <ScrollView contentContainerStyle={{ paddingBottom: 96 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {signedIn?.top ? <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 }}>{signedIn.top}</View> : null}
 
-        <Band photo={photos.advocateDesk} fade="hero">
+        <Band photo={photos.advocateDesk} video={require("../../assets/video/advocate-desk.mp4")} fade="hero">
           <Animated.Text entering={enter(0)} maxFontSizeMultiplier={1.3} accessibilityRole="header" style={s.heroTitle}>The letter that gets things moving.</Animated.Text>
           <Animated.Text entering={enter(1)} style={s.heroLede}>
             Tell us what happened in your own words. We draft a legal notice, an RTI application or a lending certificate from the facts you confirm, an advocate reviews it, and the PDF reaches your WhatsApp.
@@ -244,14 +245,24 @@ const fades: Record<"hero" | "left" | "bottom" | "center", { colors: [string, st
   bottom: { colors: ["rgba(8,9,9,0.5)", "rgba(8,9,9,0.85)", "rgba(8,9,9,0.97)"] },
   center: { colors: ["rgba(8,9,9,0.8)", "rgba(8,9,9,0.72)", "rgba(8,9,9,0.9)"] },
 };
-export function Band({ photo, fade, children }: { photo: ImageSourcePropType; fade: keyof typeof fades; children: React.ReactNode }) {
+export function Band({ photo, video, fade, children }: { photo: ImageSourcePropType; video?: number; fade: keyof typeof fades; children: React.ReactNode }) {
   const f = fades[fade];
   return (
     <ImageBackground source={photo} resizeMode="cover" style={{ overflow: "hidden", backgroundColor: "#0b0c0c" }}>
+      {video ? <BandVideo source={video} /> : null}
       <LinearGradient colors={f.colors} start={f.start} end={f.end} style={StyleSheet.absoluteFill} />
       <View style={{ paddingHorizontal: 20, paddingVertical: 40 }}>{children}</View>
     </ImageBackground>
   );
+}
+
+// A muted, looping video over the band's photo. With reduced motion on, the photo stays still.
+function BandVideo({ source }: { source: number }) {
+  const reduced = useReducedMotion();
+  const player = useVideoPlayer(source, (p) => { p.loop = true; p.muted = true; });
+  useEffect(() => { if (reduced) player.pause(); else player.play(); }, [reduced, player]);
+  if (reduced) return null;
+  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false}/>;
 }
 
 function Stat({ figure, text, source }: { figure: string; text: string; source: string }) {

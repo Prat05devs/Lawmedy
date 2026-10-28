@@ -37,3 +37,28 @@
     --rani-ink: 336 80% 31%;
   }
 }
+
+/* Night mode (set from the app's day/night switch): soft black, light text, the lifted Mor accent. */
+@layer base {
+  .dark:root {
+    --background: 150 8% 7%;
+    --foreground: 150 4% 93%;
+    --card: 160 7% 10%;
+    --card-foreground: 150 4% 93%;
+    --popover: 160 7% 10%;
+    --popover-foreground: 150 4% 93%;
+    --primary: 174 46% 53%;
+    --primary-foreground: 165 29% 6%;
+    --secondary: 160 7% 13%;
+    --secondary-foreground: 150 4% 93%;
+    --muted: 160 7% 13%;
+    --muted-foreground: 156 3% 65%;
+    --accent: 174 30% 16%;
+    --accent-foreground: 174 46% 63%;
+    --destructive: 4 100% 75%;
+    --destructive-foreground: 0 0% 8%;
+    --border: 160 6% 17%;
+    --input: 160 6% 22%;
+    --ring: 174 46% 53%;
+  }
+}

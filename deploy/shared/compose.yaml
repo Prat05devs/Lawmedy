@@ -14,7 +14,6 @@ services:
       PORT: 4000
       TRUST_PROXY_HOPS: 1
       NODE_OPTIONS: --max-old-space-size=384
-      STORAGE_DRIVER: local
       PRIVATE_STORAGE_DIR: /var/lib/lawmedy/private
     init: true
     cap_drop: [ALL]

@@ -13,12 +13,17 @@ function amountQualifier(tokens: string[]) {
   if (has(tokens, ["penalty", "fine", "damages", "compensation", "refund"])) return "compensation";
   if (has(tokens, ["fee", "fees", "cost", "costs"])) return "cost";
   if (has(tokens, ["salary", "wages", "wage"])) return "salary";
-  if (has(tokens, ["rent", "deposit"])) return "rent";
+  if (has(tokens, ["deposit", "advance", "token"])) return "deposit";
+  if (has(tokens, ["rent"])) return "rent";
   return "principal";
 }
 
 function dateQualifier(tokens: string[]) {
   if (has(tokens, ["due", "deadline", "repay", "repayment", "return", "expiry"])) return "due";
+  // When something ended: moving out, handing over, leaving a job. Never the same slot as a payment date.
+  if (has(tokens, ["vacate", "vacated", "vacating", "moved", "moving", "handover", "handed", "possession", "termination", "terminated", "resignation", "resigned", "relieving", "exit", "left", "leaving"])) return "end";
+  // When something began: an agreement, a booking, joining a job.
+  if (has(tokens, ["agreement", "contract", "signed", "signing", "joining", "joined", "booking", "booked", "start", "lease"])) return "start";
   if (has(tokens, ["notice", "demand", "reminder", "contact", "complaint", "reported", "last"])) return "followup";
   return "event";
 }

@@ -67,6 +67,16 @@ export class ReviewService {
         },
       });
       if (analysis) {
+        // The complaint itself, in one line from the customer's own statement. Without it the
+        // drafter knows the amounts and dates but not what went wrong, and cannot write a notice.
+        if (analysis.summary.trim())
+          candidates.push({
+            type: "what_happened",
+            text: analysis.summary.trim(),
+            source: "STATEMENT",
+            sourceId: `${analysis.id}:summary`,
+            sourceLabel: "Summary of your statement",
+          });
         this.readFacts(analysis.facts).forEach((fact, index) =>
           candidates.push({
             type: canonicalFactType(fact.key),

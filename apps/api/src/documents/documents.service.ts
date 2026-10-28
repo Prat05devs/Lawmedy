@@ -48,13 +48,29 @@ export class DocumentsService {
       : lastRun?.error === "AI_NOT_CONFIGURED" ? "WAITING_FOR_CONFIGURATION"
       : running || matter.status === "AI_PROCESSING" || matter.status === "PAID" ? document?.status === "FAILED" ? "FAILED" : "PROCESSING"
       : "NOT_STARTED";
+    const missing = state === "MISSING_INFORMATION" ? await this.missingItems(matterId, matter.type) : [];
     return {
       matterStatus: matter.status, state, configured: this.gemini.configured(), matterType: matter.type,
       document: version ? { id: document!.id, versionNumber: version.versionNumber, content: version.content, createdAt: version.createdAt, qa: this.qaSummary(version.qa) } : null,
-      message: state === "MISSING_INFORMATION" ? "The draft needs more confirmed information before it can be prepared."
+      missing,
+      message: state === "MISSING_INFORMATION"
+        ? `Your payment is safe. Before we can draft, we need: ${missing.length ? missing.join("; ") : "a few more details"}. Our team will contact you on WhatsApp to collect them.`
         : state === "WAITING_FOR_CONFIGURATION" ? "AI setup is pending. Your payment and confirmed information are safe."
         : state === "FAILED" ? "We could not prepare the draft. Your information is safe; please try again." : null,
     };
+  }
+
+  // What the last drafting run said was missing, so the customer and the team see the same list.
+  private async missingItems(matterId: string, type: MatterType) {
+    const run = await this.db.aiRun.findFirst({
+      where: { matterId, taskType: this.taskTypes(type)[0], status: "SUCCEEDED" },
+      orderBy: { createdAt: "desc" }, select: { output: true },
+    });
+    try {
+      const text = (run?.output as { text?: unknown } | null)?.text;
+      const parsed = typeof text === "string" ? JSON.parse(text) as { missingInformation?: unknown } : null;
+      return Array.isArray(parsed?.missingInformation) ? parsed.missingInformation.filter((item): item is string => typeof item === "string").slice(0, 8) : [];
+    } catch { return []; }
   }
 
   async retry(userId: string, matterId: string) {

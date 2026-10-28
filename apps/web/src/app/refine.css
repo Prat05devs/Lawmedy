@@ -115,7 +115,7 @@
 .tracker ol { gap: 4px; }
 @media (max-width: 800px) { .matter-line { grid-template-columns: 1fr; gap: 6px; } .matter-line time { text-align: left; } }
 .sidebar nav { margin-top: 28px; }
-.workspace-footer { justify-content: flex-start; }
+.workspace-footer { justify-content: flex-start; gap: 6px 16px; flex-wrap: wrap; }
 .secure-note { display: none; }
 
 /* Legal and support pages share the landing page's light header and ink footer */

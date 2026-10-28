@@ -18,6 +18,7 @@ export default async function AdminMatters({ searchParams }: { searchParams: Pro
         <label className="search"><Search size={16} /><input name="q" defaultValue={q} placeholder="Search reference, name or email" /></label>
         <select name="status" defaultValue={status}>
           <option value="">All statuses</option>
+          <option value="NEEDS_INFORMATION">Paid, needs more information</option>
           {Object.entries(statusLabel).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </select>
         <button className="button primary">Filter</button>

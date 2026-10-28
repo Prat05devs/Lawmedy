@@ -62,7 +62,7 @@ export default async function MatterPage({
         </span>
       </div>
       <AutoRefresh active={working} slow={["UNDER_ADVOCATE_REVIEW", "PAYMENT_VERIFICATION"].includes(matter.status)} />
-      <ProgressTracker status={matter.status} />
+      <ProgressTracker status={matter.status} paidAt={finalDocument?.paidAt} />
       <div className="detail-grid">
         <div>
           <section className="panel">

@@ -45,7 +45,7 @@ export function DraftPanel({
         </div>
       </div>
       {draft.state === "READY" && draft.document ? (
-        <DraftPreview draft={draft.document} matterType={draft.matterType} />
+        <DraftPreview draft={draft.document} matterType={draft.matterType} approved={draft.matterStatus === "APPROVED" || draft.matterStatus === "COMPLETED"} />
       ) : draft.state === "WAITING_FOR_CONFIGURATION" ? (
         <div className="draft-state">
           <ShieldCheck size={24} />
@@ -92,7 +92,7 @@ export function DraftPanel({
   );
 }
 
-function DraftPreview({ draft, matterType }: { draft: NonNullable<MatterDocument["document"]>; matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE" }) {
+function DraftPreview({ draft, matterType, approved }: { draft: NonNullable<MatterDocument["document"]>; matterType: "LEGAL_NOTICE" | "RTI" | "LENDING_CERTIFICATE"; approved: boolean }) {
   const content = draft.content;
   if ("lender" in content) return <div className="notice-preview">
     <p className="message success">Draft prepared for advocate review · Version {draft.versionNumber}</p>
@@ -101,7 +101,7 @@ function DraftPreview({ draft, matterType }: { draft: NonNullable<MatterDocument
     <p className="field-note">Our in-house advocate will provide the signed and stamped PDF on their letterhead within 24 hours after verified payment and complete information.</p>
   </div>;
   if ("informationRequests" in content) return (
-    <div className="notice-preview"><div className="draft-ready"><CheckCircle2 size={18}/><span>Automated QA complete · Version {draft.versionNumber}. Your final RTI PDF is being prepared directly.</span></div><article><p className="notice-label">RTI APPLICATION</p><div className="notice-parties"><div><small>Applicant</small><strong>{content.applicant.name}</strong></div><div><small>Public authority</small><strong>{content.publicAuthority.name}</strong><span>{content.publicAuthority.department}</span></div></div><h3>{content.subject}</h3><ol>{content.informationRequests.map((request, index) => <li key={index}>{request.text}</li>)}</ol></article><p className="field-note">This structured draft uses only your confirmed facts and proceeds directly to the final PDF.</p></div>
+    <div className="notice-preview"><div className="draft-ready"><CheckCircle2 size={18}/><span>Automated QA complete · Version {draft.versionNumber}. {approved ? "Approved by an advocate." : "An advocate reviews it before the final PDF."}</span></div><article><p className="notice-label">RTI APPLICATION</p><div className="notice-parties"><div><small>Applicant</small><strong>{content.applicant.name}</strong></div><div><small>Public authority</small><strong>{content.publicAuthority.name}</strong><span>{content.publicAuthority.department}</span></div></div><h3>{content.subject}</h3><ol>{content.informationRequests.map((request, index) => <li key={index}>{request.text}</li>)}</ol></article><p className="field-note">This draft uses only your confirmed facts. {approved ? "An advocate approved it; download the final PDF below." : "An advocate reviews it before the final PDF is prepared."}</p></div>
   );
   return (
     <div className="notice-preview">
@@ -139,8 +139,9 @@ function DraftPreview({ draft, matterType }: { draft: NonNullable<MatterDocument
         </div>
       </article>
       <p className="field-note">
-        This is a read-only AI draft. An advocate will review it before it is
-        approved for delivery.
+        {approved
+          ? "This draft was reviewed and approved by an advocate. Download the final PDF below."
+          : "This is a read-only AI draft. An advocate will review it before it is approved for delivery."}
       </p>
     </div>
   );

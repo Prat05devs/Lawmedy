@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Modal, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable } from "@/components/pressable";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tap } from "@/components/app-ui";

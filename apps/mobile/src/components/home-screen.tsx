@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ImageSourcePropType } from "react-native";
+import { ImageBackground, ScrollView, StyleSheet, Text, TextInput, View, type ImageSourcePropType } from "react-native";
+import { Pressable } from "@/components/pressable";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";

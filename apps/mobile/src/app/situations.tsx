@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { LayoutAnimation, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LayoutAnimation, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable } from "@/components/pressable";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

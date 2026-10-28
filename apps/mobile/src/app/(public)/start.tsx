@@ -10,7 +10,7 @@ import { errorMessage } from "@/lib/hooks";
 import { usePublic, type PublicAuthority, type Pricing, type QuickCheck } from "@/lib/public";
 import { services, servicePrice } from "@/lib/services";
 import { DocCard } from "@/components/doc-card";
-import { colors, fonts, radius } from "@/lib/theme";
+import { colors, fonts, radius, themed } from "@/lib/theme";
 import type { MatterType } from "@/lib/types";
 
 type Step = "type" | "describe" | "authority" | "result";
@@ -191,7 +191,7 @@ export default function Start() {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.8, color: colors.ink, marginBottom: 10 },
   editor: { minHeight: 260, fontFamily: fonts.sans, fontSize: 17, lineHeight: 25, color: colors.ink, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 16 },
   count: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted, marginTop: 8 },
@@ -205,4 +205,4 @@ const s = StyleSheet.create({
   factKey: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.muted, textTransform: "capitalize", marginBottom: 2 },
   factValue: { fontFamily: fonts.sansMedium, fontSize: 15.5, color: colors.ink },
   link: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink, textDecorationLine: "underline" },
-});
+}));

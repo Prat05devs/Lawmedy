@@ -446,8 +446,19 @@ function ActionMessages({
   );
 }
 
+// Plain names for the fact slots the API groups facts into (see apps/api/src/review/reconciliation.ts).
+const factNames: Record<string, string> = {
+  "amount:principal": "Amount lent or owed", "amount:deposit": "Deposit or advance", "amount:rent": "Rent",
+  "amount:salary": "Salary", "amount:interest": "Interest", "amount:compensation": "Compensation or refund", "amount:cost": "Fees or costs",
+  "date:event": "Date it happened", "date:due": "Date it was due", "date:followup": "Date you followed up",
+  "date:end": "Date it ended (moved out, left a job)", "date:start": "Date it began (agreement, joining)",
+  recipient_name: "Other party’s name", recipient_address: "Other party’s address", recipient_phone: "Other party’s phone", recipient_email: "Other party’s email",
+  sender_name: "Your name", sender_address: "Your address", what_happened: "What happened",
+};
 function label(value: string) {
-  return value.replace(":", " – ").replaceAll("_", " ");
+  if (factNames[value]) return factNames[value];
+  const text = value.replace(":", " – ").replaceAll("_", " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 function sourceLabel(value: string) {
   return value.toLowerCase().replaceAll("_", " ");

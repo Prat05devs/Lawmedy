@@ -118,13 +118,14 @@ export type MatterDocument = {
   };
 };
 export type FinalDocument =
-  | { state: "NOT_READY" | "PENDING"; matterStatus: Matter["status"] }
+  | { state: "NOT_READY" | "PENDING"; matterStatus: Matter["status"]; paidAt?: string | null }
   | {
       state: "READY";
       matterStatus: Matter["status"];
       filename: string;
       sizeBytes: number;
       generatedAt: string;
+      paidAt?: string | null;
       deliveryStatus: "PENDING" | "SENT" | "FAILED" | "SKIPPED_CONFIGURATION";
       downloadUrl: string;
     };

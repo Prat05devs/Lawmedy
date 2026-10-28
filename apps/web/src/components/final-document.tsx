@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Download, FileCheck2, LoaderCircle, MailCheck, RefreshCw } from "lucide-react";
 import type { FinalDocument } from "@/lib/api";
 import { retryFinalDocument } from "@/lib/actions";
+import { deliveredLine } from "@/lib/turnaround";
 
 export function FinalDocumentPanel({
   matterId,
@@ -21,7 +22,7 @@ export function FinalDocumentPanel({
   if (finalDocument.state === "NOT_READY") return null;
 
   return (
-    <section className="panel final-document-panel">
+    <section className="panel final-document-panel" id="final-document">
       <div className="panel-heading">
         <span className="step-number">07</span>
         <div>
@@ -58,6 +59,10 @@ export function FinalDocumentPanel({
           </form>
         </div>
       )}
+      {finalDocument.state === "READY" && (() => {
+        const line = deliveredLine(finalDocument.paidAt, finalDocument.generatedAt);
+        return line ? <p className={`message ${line.within ? "success" : "error"}`}>{line.text}</p> : null;
+      })()}
       {finalDocument.state === "READY" &&
         finalDocument.deliveryStatus === "SENT" && (
           <p className="final-delivery-note"><MailCheck size={16} /> A secure dashboard link was emailed to you.</p>

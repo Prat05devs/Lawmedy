@@ -63,8 +63,8 @@ export type MatterDocument = {
   document: null | { id: string; versionNumber: number; createdAt: string; content: NoticeContent | RtiContent | CertificateContent; qa: null | { passed: boolean; issueCount: number; warningCount: number } };
 };
 export type FinalDocument =
-  | { state: "NOT_READY" | "PENDING"; matterStatus: MatterStatus }
-  | { state: "READY"; matterStatus: MatterStatus; filename: string; sizeBytes: number; generatedAt: string; deliveryStatus: string; downloadUrl: string };
+  | { state: "NOT_READY" | "PENDING"; matterStatus: MatterStatus; paidAt?: string | null }
+  | { state: "READY"; matterStatus: MatterStatus; filename: string; sizeBytes: number; generatedAt: string; paidAt?: string | null; deliveryStatus: string; downloadUrl: string };
 export type AdvocateRequests = {
   status: MatterStatus;
   requests: { id: string; question: string; answer: null | { answer: string } }[];

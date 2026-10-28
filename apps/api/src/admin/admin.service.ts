@@ -11,6 +11,8 @@ const safeName = (name: string) => name.replace(/[^\w.\- ]+/g, "_").slice(0, 120
 // API container limit; larger matters remain available as individual downloads.
 const ZIP_MAX_BYTES = 25 * 1024 * 1024;
 
+const NEEDS_INFORMATION: Prisma.MatterWhereInput = { status: "AI_PROCESSING", documents: { some: { status: "MISSING_INFORMATION" } } };
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -20,17 +22,20 @@ export class AdminService {
   ) {}
 
   async dashboard() {
-    const [byStatus, pendingPayments, advocates, unassigned, advocateSignups] = await Promise.all([
+    const [byStatus, pendingPayments, advocates, unassigned, advocateSignups, needsInformation] = await Promise.all([
       this.db.matter.groupBy({ by: ["status"], _count: { _all: true } }),
       this.db.payment.count({ where: { status: "SUBMITTED" } }),
       this.db.user.count({ where: { role: "ADVOCATE", active: true } }),
       this.db.matter.count({ where: { status: "DRAFT_GENERATED", assignment: null } }),
       this.db.advocateInterest.count({ where: { status: "NEW" } }),
+      // Paid, but the AI could not draft from the confirmed facts: someone has to contact the customer.
+      this.db.matter.count({ where: NEEDS_INFORMATION }),
     ]);
     return {
       pendingPayments,
       activeAdvocates: advocates,
       awaitingAssignment: unassigned,
+      needsInformation,
       newAdvocateSignups: advocateSignups,
       matters: Object.fromEntries(byStatus.map((row) => [row.status, row._count._all])),
       total: byStatus.reduce((sum, row) => sum + row._count._all, 0),
@@ -39,7 +44,8 @@ export class AdminService {
 
   listMatters(filter: { status?: string; q?: string }) {
     const where: Prisma.MatterWhereInput = {};
-    if (filter.status && filter.status in MatterStatus) where.status = filter.status as MatterStatus;
+    if (filter.status === "NEEDS_INFORMATION") Object.assign(where, NEEDS_INFORMATION);
+    else if (filter.status && filter.status in MatterStatus) where.status = filter.status as MatterStatus;
     const q = filter.q?.trim();
     if (q)
       where.OR = [

@@ -161,7 +161,7 @@
 .status-chip { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border: 1px solid var(--line); border-radius: 4px; background: #fff; font-size: 13px; }
 .status-chip strong { font-size: 16px; }
 .admin-filter { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-.admin-filter .search { flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.admin-filter .search { flex: 1; min-width: 220px; display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .admin-filter input { border: 0; outline: 0; background: transparent; padding: 11px 0; width: 100%; }
 .admin-filter select { padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .admin-table { padding: 8px; display: grid; gap: 4px; }

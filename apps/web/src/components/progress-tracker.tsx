@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Clock3 } from "lucide-react";
 import type { Matter } from "@/lib/api";
+import { expectedLine } from "@/lib/turnaround";
 
 const steps = ["Your details", "Payment", "In progress", "Advocate review", "Ready"];
 const stage: Record<Matter["status"], number> = {
@@ -20,8 +21,11 @@ const note: Record<Matter["status"], string> = {
   COMPLETED: "Your document is ready to download.",
 };
 
-export function ProgressTracker({ status }: { status: Matter["status"] }) {
+const working = new Set<Matter["status"]>(["PAID", "AI_PROCESSING", "DRAFT_GENERATED", "UNDER_ADVOCATE_REVIEW", "USER_RESPONSE_REQUIRED", "APPROVED"]);
+
+export function ProgressTracker({ status, paidAt }: { status: Matter["status"]; paidAt?: string | null }) {
   const current = stage[status];
+  const expected = working.has(status) ? expectedLine(paidAt) : null;
   return (
     <div className="tracker" aria-label="Progress">
       <ol>
@@ -36,7 +40,11 @@ export function ProgressTracker({ status }: { status: Matter["status"] }) {
           );
         })}
       </ol>
-      <p>{note[status]}</p>
+      <p>
+        {note[status]}
+        {status === "COMPLETED" ? <> <a href="#final-document" className="text-link">Download your PDF</a></> : null}
+        {expected ? <><br /><strong>{expected}</strong></> : null}
+      </p>
     </div>
   );
 }

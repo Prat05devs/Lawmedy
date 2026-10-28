@@ -1,10 +1,11 @@
 import React from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable } from "@/components/pressable";
 import { Image, type ImageSource } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, fonts, radius, shadow } from "@/lib/theme";
+import { colors, fonts, radius, shadow, themed } from "@/lib/theme";
 
 export const tap = () => { void Haptics.selectionAsync().catch(() => undefined); };
 export const success = () => { void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined); };
@@ -89,7 +90,7 @@ export function ListRow({ title, text, icon, onPress, last }: { title: string; t
 export const Group = ({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) => <View style={[s.group, style]}>{children}</View>;
 export const GroupLabel = ({ children }: { children: string }) => <Text style={s.groupLabel}>{children}</Text>;
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   bar: { height: 48, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   barText: { fontFamily: fonts.sansBold, fontSize: 16, color: colors.ink },
   title: { fontFamily: fonts.display, fontSize: 28, lineHeight: 31, letterSpacing: -0.8, color: colors.ink, marginBottom: 16, marginTop: 4 },
@@ -107,4 +108,4 @@ const s = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, minHeight: 56, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   rowTitle: { fontFamily: fonts.sansBold, fontSize: 15, color: colors.ink },
   rowText: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.muted, marginTop: 2 },
-});
+}));

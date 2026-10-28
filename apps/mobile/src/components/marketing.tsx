@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image, type ImageSource } from "expo-image";
-import { colors, fonts, radius } from "@/lib/theme";
+import { colors, fonts, radius, themed } from "@/lib/theme";
 import { Body } from "@/components/ui";
 import type { Testimonial } from "@/lib/public";
 
@@ -87,7 +87,7 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
 
 export const SectionTitle = ({ children }: { children: React.ReactNode }) => <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>{children}</Text>;
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   page: { backgroundColor: "#fffefb", borderWidth: 1, borderColor: colors.line, padding: 18 },
   pageHead: { flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.ink, paddingBottom: 8, marginBottom: 10 },
   mono: { fontFamily: fonts.sans, fontSize: 10.5, letterSpacing: 0.8, color: colors.ink },
@@ -108,4 +108,4 @@ const s = StyleSheet.create({
   quote: { marginBottom: 22 },
   quoteText: { fontFamily: fonts.displayBold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: colors.ink, marginBottom: 8 },
   quoteBy: { fontFamily: fonts.sans, fontSize: 14, color: colors.muted },
-});
+}));

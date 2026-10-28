@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BarButton, tap } from "@/components/app-ui";
 import { Body, Loading, Message, PanelHeaderVisible, StatusBadge } from "@/components/ui";
 import { useApi, shortDate } from "@/lib/hooks";
-import { colors, fonts, radius } from "@/lib/theme";
+import { colors, fonts, radius, themed } from "@/lib/theme";
 import { progressNote, type Matter, type Overview } from "@/lib/types";
 import { getStatementDraft } from "@/lib/statement-draft";
 import { StatementPanel } from "@/components/matter/statement";
@@ -18,6 +18,7 @@ import { PaymentPanel } from "@/components/matter/payment";
 import { DraftPanel } from "@/components/matter/draft";
 import { AdvocatePanel } from "@/components/matter/advocate";
 import { FinalPanel } from "@/components/matter/final";
+import { expectedLine } from "@/lib/turnaround";
 
 const BUSY: Matter["status"][] = ["PAYMENT_VERIFICATION", "PAID", "AI_PROCESSING", "DRAFT_GENERATED", "UNDER_ADVOCATE_REVIEW", "APPROVED"];
 const RANK: Record<Matter["status"], number> = {
@@ -60,7 +61,7 @@ export default function MatterScreen() {
     steps.push({ key: "payment", title: "Pay the fee", done: rank >= 4, render: () => (review ? <PaymentPanel matterId={mt.id} review={review} step="" onChanged={reload} /> : null) });
     steps.push({ key: "draft", title: "Your draft is prepared", done: draft.state === "READY" || rank >= 6, render: () => (draft.state === "NOT_STARTED" ? <Body muted>We start drafting as soon as your payment is verified.</Body> : <DraftPanel matterId={mt.id} draft={draft} step="" onChanged={reload} />) });
     steps.push({ key: "advocate", title: "Advocate review", done: rank >= 7, render: () => (advocateRequests && advocateRequests.requests.length ? <AdvocatePanel matterId={mt.id} data={advocateRequests} step="" onChanged={reload} /> : <Body muted>{mt.status === "UNDER_ADVOCATE_REVIEW" ? "Our advocate is reviewing your document. If they need anything, you will see their question here." : "Our in-house advocate reviews your draft before you receive it."}</Body>) });
-    steps.push({ key: "final", title: "Download your PDF", done: rank === 8, render: () => (finalDocument.state === "NOT_READY" ? <Body muted>Available once the advocate approves your document.</Body> : <FinalPanel matterId={mt.id} doc={finalDocument} type={mt.type} step="" onChanged={reload} />) });
+    steps.push({ key: "final", title: "Download your PDF", done: rank === 8, render: () => (finalDocument.state === "NOT_READY" ? <Body muted>{expectedLine(finalDocument.paidAt) ?? "Available once the advocate approves your document."}</Body> : <FinalPanel matterId={mt.id} doc={finalDocument} type={mt.type} step="" onChanged={reload} />) });
   }
   const current = steps.find((s) => !s.done && !s.optional)?.key ?? steps[steps.length - 1]?.key;
   const currentIndex = steps.findIndex((s) => s.key === current);
@@ -116,7 +117,7 @@ export default function MatterScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   bar: { height: 48, paddingHorizontal: 12, justifyContent: "center" },
   title: { fontFamily: fonts.display, fontSize: 28, lineHeight: 31, letterSpacing: -0.8, color: colors.ink },
   meta: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.muted, marginTop: 4 },
@@ -130,4 +131,4 @@ const s = StyleSheet.create({
   dotText: { fontFamily: fonts.sansBold, fontSize: 12, color: colors.muted },
   stepTitle: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.ink },
   stepState: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.muted, marginTop: 1 },
-});
+}));

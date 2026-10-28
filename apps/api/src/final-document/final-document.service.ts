@@ -252,13 +252,16 @@ export class FinalDocumentService {
   async get(userId: string, matterId: string) {
     const matter = await this.db.matter.findFirst({
       where: { id: matterId, userId },
-      include: { finalDocument: true },
+      include: { finalDocument: true, payments: { where: { status: "PAID" }, orderBy: { paidAt: "desc" }, take: 1, select: { paidAt: true } } },
     });
     if (!matter) throw new NotFoundException("Matter not found.");
+    // When the payment was verified: the 24-hour delivery promise is counted from here.
+    const paidAt = matter.payments[0]?.paidAt ?? null;
     if (!matter.finalDocument)
       return {
         state: matter.status === "APPROVED" ? "PENDING" : "NOT_READY",
         matterStatus: matter.status,
+        paidAt,
       };
     const expires = Math.floor(Date.now() / 1000) + 5 * 60;
     const signature = this.signature(
@@ -273,6 +276,7 @@ export class FinalDocumentService {
       filename: matter.finalDocument.filename,
       sizeBytes: matter.finalDocument.sizeBytes,
       generatedAt: matter.finalDocument.generatedAt,
+      paidAt,
       deliveryStatus: matter.finalDocument.deliveryStatus,
       downloadUrl: `/final/${matterId}?expires=${expires}&signature=${signature}`,
     };

@@ -1,37 +1,34 @@
-import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { Image, type ImageSource } from "expo-image";
+import React, { useEffect, useState } from "react";
+import { ImageBackground, ScrollView, StyleSheet, Text, TextInput, View, type ImageSourcePropType } from "react-native";
+import { Pressable } from "@/components/pressable";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
-import { AppScreen, tap } from "@/components/app-ui";
+import { StatusBar } from "expo-status-bar";
+import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { tap } from "@/components/app-ui";
 import { AssistantButton, AssistantSheet } from "@/components/assistant";
-import { Button } from "@/components/ui";
 import { saveDraft } from "@/lib/guest-draft";
-import { courts } from "@/lib/courts";
 import { services, servicePrice } from "@/lib/services";
 import { WEB_URL } from "@/lib/links";
 import { photos } from "@/lib/photos";
 import { usePublic, type Pricing, type Testimonial } from "@/lib/public";
 import type { AssistantAction } from "@/lib/assistant";
 import type { MatterType } from "@/lib/types";
-import { categories, scenarios, type Tone } from "@/lib/scenarios";
-import { colors, fonts, radius, shadow } from "@/lib/theme";
+import { scenarios } from "@/lib/scenarios";
+import { band, useAppTheme, type Palette } from "@/lib/app-theme";
+import { fonts } from "@/lib/theme";
 
-type Icon = keyof typeof Feather.glyphMap;
-
-const toneDot: Record<Tone, string> = { genda: "bg-genda", mor: "bg-mor", rani: "bg-rani" };
-
-// What our AI system does, in order. Each step matches the API: intake analysis, follow-up
-// questions, evidence extraction, structured drafting with vetted legal bases, QA, advocate review.
-const aiSteps: { title: string; text: string }[] = [
-  { title: "Understands you", text: "Reads your account in Hindi, English or a mix, and records each fact in your own exact words." },
-  { title: "Cross-questions you", text: "Asks a few short questions about dates, amounts or agreements, instead of guessing." },
-  { title: "Reads your proof", text: "Takes only what is visible in receipts, chats, transfers and agreements." },
-  { title: "Drafts to a legal format", text: "A fixed legal structure, citing laws only from our vetted list. It never invents one." },
-  { title: "Checks its own work", text: "A second AI pass compares every line with the facts you confirmed." },
-  { title: "An advocate signs off", text: "A real advocate reads it, corrects it and approves it before you get it." },
+const steps: { title: string; text: string }[] = [
+  { title: "Describe the problem", text: "A few plain sentences are enough. We ask only for what’s missing." },
+  { title: "Add what you already have", text: "Agreements, receipts, transfers, screenshots." },
+  { title: "Confirm every fact", text: "Each date and amount is shown next to where it came from. You choose." },
+  { title: "Pay securely", text: "Work starts once the payment is verified." },
+  { title: "Draft, review, download", text: "An advocate edits and approves it. Usually within 24 hours of verified payment." },
 ];
 
 // Signed-in extras for the shared home page: who is signed in, how "start" works for them, and
@@ -42,6 +39,8 @@ export type SignedIn = { name: string; onStart: (type?: MatterType, story?: stri
 // matters at the top, and starting a document creates a matter instead of the guest quick check.
 export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
   const router = useRouter();
+  const { mode, c, toggle } = useAppTheme();
+  const s = styles(c);
   const pricing = usePublic<Pricing | null>("/public/pricing", null);
   const testimonials = usePublic<Testimonial[]>("/public/testimonials", []);
   const price = servicePrice(pricing, "LEGAL_NOTICE");
@@ -64,286 +63,260 @@ export function HomeScreen({ signedIn }: { signedIn?: SignedIn }) {
       else router.push(to === "sample" ? "/sample" : to === "advocate" ? "/advocate-portal" : "/how-it-works");
     }, 250);
   };
+  const enter = (i: number) => FadeInDown.duration(500).delay(80 * i);
 
   return (
-    <View style={{ flex: 1 }}>
-    <AppScreen
-      left={<Image source={require("../../assets/logo-dark.png")} style={{ width: 112, height: 30 }} contentFit="contain" contentPosition="left" accessibilityLabel="Lawmedy" />}
-      right={signedIn ? (
-        <Pressable onPress={() => { tap(); router.push("/account"); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Your account, ${signedIn.name}`} style={s.account}>
-          <View style={s.avatar}><Text style={s.initials}>{initials}</Text></View>
-        </Pressable>
-      ) : (
-        <Pressable onPress={() => { tap(); router.push("/login"); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Log in" style={s.account}>
-          <Text style={s.accountText}>Log in</Text>
-          <View style={s.avatar}><Feather name="user" size={18} color="#fff" /></View>
-        </Pressable>
-      )}
-    >
-      <View style={{ gap: 20, marginTop: 4 }}>
-        {signedIn?.top}
-        <View className="rounded-2xl bg-robe p-5">
-          <Text maxFontSizeMultiplier={1.3} accessibilityRole="header" className="font-display text-[28px] leading-[32px] tracking-tight text-white">
-            Legal notices, RTI applications and lending certificates, <Text className="font-display text-genda">on your side.</Text>
-          </Text>
-          <Text className="mt-3 font-sans text-[15px] leading-[23px] text-white/75">
-            Tell us what happened in your own words. You confirm the facts, an advocate reviews your document, and the PDF reaches you on WhatsApp.
-          </Text>
-          <View style={{ marginTop: 16, padding: 14, backgroundColor: colors.card, borderRadius: radius.sm }}>
-            <Text style={s.insetTitle}>Tell us what happened</Text>
-            <TextInput value={story} onChangeText={setStory} multiline maxLength={5000} accessibilityLabel="Tell us what happened" placeholder="Who was involved? What happened, and what would you like to happen?" placeholderTextColor={colors.muted} style={{ minHeight: 100, textAlignVertical: "top", fontFamily: fonts.sans, fontSize: 16, lineHeight: 24, color: colors.ink, paddingVertical: 10 }} />
-            <Button variant="gold" title="Start my legal notice" icon="arrow-right" iconAfter onPress={() => start("LEGAL_NOTICE", story.trim())} />
-          </View>
-          <Text className="mt-3 font-sans-bold text-sm text-white">{price} per notice · usually ready within 24 hours of verified payment</Text>
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <Text accessibilityRole="header" style={s.sectionTitle}>Three services, clear prices</Text>
-          {services.map((service) => (
-            <Pressable key={service.type} accessibilityRole="button" accessibilityLabel={`Start ${service.title}`} onPress={() => { tap(); start(service.type); }} style={({ pressed }) => [s.card, s.remedy, pressed && { opacity: 0.75 }]}>
-              <View style={s.tile}><Feather name={service.icon} size={22} color={colors.ink} accessible={false} /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.remedyTitle}>{service.title}</Text>
-                <Text style={[s.sectionTitle, { marginTop: 6 }]}>{servicePrice(pricing, service.type)}</Text>
-                <Text style={s.remedyText}>{service.text}</Text>
-                <Text style={[s.insetTitle, { marginTop: 12 }]}>Get started →</Text>
-              </View>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <StatusBar style={mode === "night" ? "light" : "dark"} />
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: c.bg }}>
+        <View style={s.bar}>
+          <Image source={mode === "night" ? require("../../assets/logo-light.png") : require("../../assets/logo-dark.png")} style={{ width: 108, height: 28 }} contentFit="contain" contentPosition="left" accessibilityLabel="Lawmedy" />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable onPress={() => { tap(); toggle(); }} accessibilityRole="button" accessibilityLabel={mode === "night" ? "Switch to day mode" : "Switch to night mode"} style={s.iconBtn} hitSlop={6}>
+              <Feather name={mode === "night" ? "sun" : "moon"} size={19} color={c.ink} />
             </Pressable>
-          ))}
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <Text accessibilityRole="header" style={s.sectionTitle}>Situations we help with</Text>
-          <Text style={s.lead}>Choose the one closest to yours. We’ll start your story with blanks for you to fill in.</Text>
-          {categories.map((category) => (
-            <View key={category.title} style={[s.card, { padding: 16 }]}>
-              <Text accessibilityRole="header" style={s.remedyTitle}>{category.title}</Text>
-              <Text style={s.remedyText}>{category.text}</Text>
-              {category.items.map((title) => {
-                const scenario = scenarios.find((item) => item.title === title)!;
-                return <Pressable key={title} accessibilityRole="button" accessibilityLabel={title} onPress={() => { tap(); start("LEGAL_NOTICE", scenario.example); }} style={({ pressed }) => [{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }, pressed && { opacity: 0.6 }]}>
-                  <View className={`h-2.5 w-2.5 rounded-full ${toneDot[scenario.tone]}`} accessible={false} />
-                  <Text style={[s.remedyText, { flex: 1, marginTop: 0 }]}>{title}</Text>
-                  <Feather name="chevron-right" size={18} color={colors.muted} accessible={false} />
-                </Pressable>;
-              })}
-            </View>
-          ))}
-          <Shortcut icon="book-open" title="Government records (RTI)" text="Application status, public decisions, file notings and answer sheets." onPress={() => start("RTI")} />
-          <Shortcut icon="file-plus" title="Record money already lent" text="Loans to friends or family and payments already made, with the transfer and repayment terms you provide." onPress={() => start("LENDING_CERTIFICATE")} />
-        </View>
-
-        <Feature
-          photo={photos.courtChambers}
-          chip="The old way"
-          chipIcon="clock"
-          title="Take leave, go to the chambers, wait your turn"
-          icon="smartphone"
-          text="That effort is why so many people let a dispute go. With Lawmedy you skip it: explain it on your phone, our AI drafts it, and an advocate reviews it. No visit needed."
-          meta={["No leave needed", "Done from your phone"]}
-          onPress={() => start()}
-        />
-
-        <View style={[s.card, { padding: 20 }]}>
-          <View style={s.cardHead}>
-            <Feather name="cpu" size={18} color={colors.ink} />
-            <Text style={[s.eyebrow, { marginBottom: 0 }]}>Built on AI, and proud of it</Text>
+            {signedIn ? (
+              <Pressable onPress={() => { tap(); router.push("/account"); }} accessibilityRole="button" accessibilityLabel={`Your account, ${signedIn.name}`} style={s.avatar} hitSlop={6}>
+                <Text style={s.initials}>{initials}</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => { tap(); router.push("/login"); }} accessibilityRole="button" style={s.login} hitSlop={6}>
+                <Text style={s.loginText}>Log in</Text>
+              </Pressable>
+            )}
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={[s.sectionTitle, { marginTop: 10, paddingHorizontal: 0 }]}>Our own AI system, made for legal documents</Text>
-          <Text style={s.lead}>We built a system on top of leading AI models so it gets the format and the facts right. It listens, asks, checks, and never guesses.</Text>
-          <View style={{ marginTop: 16 }}>
-            {aiSteps.map((step, i) => (
-              <View key={step.title} style={s.step}>
-                <View style={{ alignItems: "center" }}>
-                  <View style={[s.stepNum, i === aiSteps.length - 1 && { backgroundColor: colors.ink }]}>
-                    {i === aiSteps.length - 1 ? <Feather name="shield" size={14} color="#fff" /> : <Text style={s.stepNumText}>{i + 1}</Text>}
-                  </View>
-                  {i < aiSteps.length - 1 && <View style={s.stepLine} />}
+        </View>
+      </SafeAreaView>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 96 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        {signedIn?.top ? <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 }}>{signedIn.top}</View> : null}
+
+        <Band photo={photos.advocateDesk} video={require("../../assets/video/advocate-desk.mp4")} fade="hero">
+          <Animated.Text entering={enter(0)} maxFontSizeMultiplier={1.3} accessibilityRole="header" style={s.heroTitle}>The letter that gets things moving.</Animated.Text>
+          <Animated.Text entering={enter(1)} style={s.heroLede}>
+            Tell us what happened in your own words. We draft a legal notice, an RTI application or a lending certificate from the facts you confirm, an advocate reviews it, and the PDF reaches your WhatsApp.
+          </Animated.Text>
+          <Animated.View entering={enter(2)} style={s.glass}>
+            <Text style={s.glassLabel}>Tell us what happened</Text>
+            <TextInput
+              value={story}
+              onChangeText={setStory}
+              multiline
+              maxLength={5000}
+              accessibilityLabel="Tell us what happened"
+              placeholder="For example: I lent ₹1.5 lakh to a friend in March. He promised to return it by June."
+              placeholderTextColor={band.muted}
+              style={s.storyInput}
+            />
+            <Pressable onPress={() => { tap(); start("LEGAL_NOTICE", story.trim()); }} accessibilityRole="button" style={({ pressed }) => [s.btn, { backgroundColor: band.accent }, pressed && { opacity: 0.85 }]}>
+              <Text style={[s.btnText, { color: band.accentInk }]}>Start my legal notice</Text>
+              <Feather name="arrow-right" size={18} color={band.accentInk} />
+            </Pressable>
+          </Animated.View>
+          <Animated.View entering={enter(3)}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }} style={{ marginHorizontal: -20, marginTop: 14 }}>
+              {scenarios.map((sc) => (
+                <Pressable key={sc.title} onPress={() => { tap(); setStory(sc.example); }} accessibilityRole="button" style={({ pressed }) => [s.pick, story === sc.example && { borderColor: band.accent, backgroundColor: "rgba(79,191,179,0.18)" }, pressed && { opacity: 0.8 }]}>
+                  <Text style={s.pickText}>{sc.title}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Animated.View>
+          <Text style={s.heroPrices}>{price} legal notice · {rtiPrice} RTI · {servicePrice(pricing, "LENDING_CERTIFICATE")} lending certificate</Text>
+        </Band>
+
+        <View style={s.section}>
+          <Text accessibilityRole="header" style={s.h2}>Three documents, each for a different job</Text>
+          <Text style={s.lead}>Each one is written only from facts you confirm, and an advocate approves it before you receive it.</Text>
+          <View style={{ gap: 10, marginTop: 16 }}>
+            {services.map((service) => (
+              <Pressable key={service.type} accessibilityRole="button" accessibilityLabel={`Start ${service.title}`} onPress={() => { tap(); start(service.type); }} style={({ pressed }) => [s.card, s.svc, pressed && { borderColor: c.accent }]}>
+                <View style={s.svcIcon}><Feather name={service.icon} size={20} color={c.accent} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.svcTitle}>{service.title}</Text>
+                  <Text style={s.svcPrice}>{servicePrice(pricing, service.type)}</Text>
+                  <Text style={s.svcText} numberOfLines={3}>{service.text}</Text>
                 </View>
-                <View style={{ flex: 1, paddingBottom: i < aiSteps.length - 1 ? 14 : 0 }}>
-                  <Text style={s.insetTitle}>{step.title}</Text>
-                  <Text style={s.insetText}>{step.text}</Text>
+                <Feather name="chevron-right" size={18} color={c.muted} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <Pressable onPress={() => { tap(); router.push("/situations"); }} accessibilityRole="button" accessibilityLabel="Which document fits? See situations">
+          <Band photo={photos.neighbourhoodDispute} fade="left">
+            <Text accessibilityRole="header" style={s.bandTitle}>What’s happening to you?</Text>
+            <Text style={s.bandText}>Deposits, salaries, neighbours, builders, government files. See which document fits your situation, and what it costs.</Text>
+            <View style={[s.btnGhost, { marginTop: 18 }]}>
+              <Text style={s.btnGhostText}>See situations</Text>
+              <Feather name="arrow-right" size={18} color={band.ink} />
+            </View>
+          </Band>
+        </Pressable>
+
+        <View style={s.section}>
+          <Text accessibilityRole="header" style={s.h2}>From your story to a signed PDF</Text>
+          <View style={{ marginTop: 16 }}>
+            {steps.map((step, i) => (
+              <View key={step.title} style={{ flexDirection: "row", gap: 14 }}>
+                <View style={{ alignItems: "center" }}>
+                  <View style={s.dot}><Text style={s.dotText}>{i + 1}</Text></View>
+                  {i < steps.length - 1 && <View style={s.rail} />}
+                </View>
+                <View style={{ flex: 1, paddingBottom: i < steps.length - 1 ? 18 : 0 }}>
+                  <Text style={s.stepTitle}>{step.title}</Text>
+                  <Text style={s.stepText}>{step.text}</Text>
                 </View>
               </View>
             ))}
           </View>
-          <Button title="Ask how our AI works" variant="outline" icon="message-circle" style={{ marginTop: 16 }} onPress={() => { tap(); setChat(true); }} />
+          <Pressable onPress={() => { tap(); router.push("/sample"); }} accessibilityRole="button" style={({ pressed }) => [s.btnQuiet, pressed && { opacity: 0.7 }]}>
+            <Text style={s.btnQuietText}>See a sample notice</Text>
+          </Pressable>
         </View>
 
-        <Feature
-          photo={photos.neighbourhoodDispute}
-          chip="Legal notice"
-          title="From unpaid deposits to boundary disputes"
-          icon="users"
-          text="A legal notice puts your demand on record and gives the other side a deadline to reply. It is usually the first formal step, before anyone goes to court."
-          meta={["Your facts, not a template", "PDF you can send"]}
-          onPress={() => start("LEGAL_NOTICE")}
-        />
-
-        <Feature
-          photo={courts.supremeCourtWide}
-          chip="Right to Information"
-          title="Records from any public authority"
-          icon="clock"
-          text="Under the RTI Act, 2005, a public information officer must reply within 30 days. We draft the application to the right office; you pay the government fee directly."
-          meta={["Central and state offices", "Ready to submit"]}
-          onPress={() => start("RTI")}
-        />
-
-        <View style={[s.card, { padding: 16, gap: 12 }]}>
-          <View style={s.cardHead}>
-            <Feather name="info" size={20} color={colors.ink} />
-            <Text style={s.cardTitle}>Before you start</Text>
+        <Band photo={photos.courtChambers} fade="bottom">
+          <Text accessibilityRole="header" style={s.bandTitle}>Why put it in writing?</Text>
+          <Text style={s.bandText}>Getting a notice drafted has meant taking leave and visiting an advocate’s chamber, so most people let it go.</Text>
+          <View style={s.stats}>
+            <Stat figure="5.64 crore" text="cases pending across Indian courts" source="Rajya Sabha reply, 23 July 2026, citing NJDG" />
+            <Stat figure="30 days" text="to send a written demand after a cheque bounces" source="Section 138, Negotiable Instruments Act" />
           </View>
-          <View style={{ gap: 8 }}>
-            <Shortcut icon="check-square" title="Check your case for free" text="See what we understood and what we would need" onPress={() => start()} />
-            <Shortcut icon="file-text" title="See a sample notice" text="What the final, advocate-checked PDF looks like" onPress={() => router.push("/sample")} />
-            <Shortcut icon="repeat" title="How it works" text="From your words to a reviewed PDF, step by step" onPress={() => router.push("/how-it-works")} />
+        </Band>
+
+        <View style={s.section}>
+          <View style={[s.card, { padding: 18, gap: 10 }]}>
+            <Feather name="shield" size={22} color={c.accent} />
+            <Text style={s.h3}>Reviewed by an advocate</Text>
+            <Text style={s.lead}>Every document is checked by one of our in-house advocates before it reaches you. If our advocate cannot take your matter, you get your money back.</Text>
           </View>
+          <Pressable onPress={() => { tap(); setChat(true); }} accessibilityRole="button" style={({ pressed }) => [s.card, s.row, pressed && { borderColor: c.accent }]}>
+            <Feather name="message-circle" size={20} color={c.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.rowTitle}>Questions? Ask us</Text>
+              <Text style={s.rowText}>How it works, prices, privacy, and what AI does</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={c.muted} />
+          </Pressable>
         </View>
 
         {testimonials.length > 0 && (
-          <View style={{ gap: 12 }}>
-            <View style={s.sectionHead}><Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>What customers say</Text></View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }} style={{ marginHorizontal: -20 }}>
+          <View style={[s.section, { paddingTop: 0 }]}>
+            <Text style={s.h2}>What customers say</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }} style={{ marginHorizontal: -20, marginTop: 14 }}>
               {testimonials.map((t) => (
-                <View key={t.id} style={[s.card, s.quote]}>
-                  <Feather name="message-square" size={22} color={colors.faint} />
-                  <Text style={s.quoteText}>{t.quote}</Text>
-                  <Text style={s.quoteBy}>{t.name}{t.descriptor ? ` · ${t.descriptor}` : ""}</Text>
+                <View key={t.id} style={[s.card, { width: 280, padding: 16 }]}>
+                  <Text style={s.quote}>{t.quote}</Text>
+                  <Text style={s.rowText}>{t.name}{t.descriptor ? `, ${t.descriptor}` : ""}</Text>
                 </View>
               ))}
             </ScrollView>
           </View>
         )}
 
-        <View style={[s.card, { overflow: "hidden" }]}>
-          <Image source={courts.uttarakhandHighCourt} style={s.bannerPhoto} contentFit="cover" transition={150} />
-          <View style={{ padding: 16, gap: 12 }}>
-            <View style={s.cardHead}>
-              <Feather name="shield" size={20} color={colors.ink} />
-              <Text style={s.cardTitle}>Reviewed by an advocate</Text>
-            </View>
-            <Text style={s.lead}>Every legal notice, RTI application and lending certificate is checked by one of our in-house advocates before it reaches you. Our AI does the heavy lifting; a person decides what goes out.</Text>
-            <View style={{ gap: 8 }}>
-              <Point icon="edit-3" title="Edited, not just approved" text="The advocate may correct the draft or ask you a question first." />
-              <Point icon="rotate-ccw" title="Full refund if we decline" text="If our advocate cannot take your matter, you get your money back." />
-            </View>
-          </View>
-        </View>
+        <Band photo={photos.street} fade="center">
+          <Text accessibilityRole="header" style={[s.bandTitle, { textAlign: "center" }]}>You have work to do. Put it in writing from your phone.</Text>
+          <Text style={[s.bandText, { textAlign: "center" }]}>No leave, no queue, no trip to a chamber.</Text>
+          <Pressable onPress={() => { tap(); start("LEGAL_NOTICE"); }} accessibilityRole="button" style={({ pressed }) => [s.btn, { backgroundColor: band.accent, marginTop: 18 }, pressed && { opacity: 0.85 }]}>
+            <Text style={[s.btnText, { color: band.accentInk }]}>Start my legal notice</Text>
+          </Pressable>
+        </Band>
 
-        <View style={[s.card, { padding: 20, gap: 12 }]}>
-          <View style={s.soon}><View style={s.soonDot} /><Text style={s.soonText}>Coming soon · For advocates</Text></View>
-          <Text maxFontSizeMultiplier={1.3} style={s.sectionTitle}>More clients, less paperwork</Text>
-          <Text style={[s.lead, { marginTop: 0 }]}>Today our in-house advocates review every document. Our portal for independent advocates is almost ready: requests reach you on a digital desk with the facts organised and the documents attached. You review the draft, the person gets help quickly, and you build a client list without extra legwork.</Text>
-          <View style={{ gap: 8 }}>
-            <Point icon="clipboard" title="Requests arrive ready to review" text="The client's account, key facts and documents, with a first draft for you to correct." />
-            <Point icon="trending-up" title="Clients who may need you again" text="When a notice gets no reply or a matter has to go further, the person already knows the advocate who handled it." />
-          </View>
-          <Button title="Register as an advocate" variant="outline" icon="arrow-right" iconAfter onPress={() => { tap(); router.push("/advocate-portal"); }} />
+        <View style={s.section}>
+          <Pressable onPress={() => { tap(); router.push("/advocate-portal"); }} accessibilityRole="button" style={({ pressed }) => [s.card, s.row, pressed && { borderColor: c.accent }]}>
+            <Feather name="briefcase" size={20} color={c.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.rowTitle}>Are you an advocate?</Text>
+              <Text style={s.rowText}>Our portal for independent advocates opens soon. Register your interest.</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={c.muted} />
+          </Pressable>
         </View>
-        <View style={{ height: 56 }} />
-      </View>
-    </AppScreen>
-    <AssistantButton onPress={() => setChat(true)} />
-    <AssistantSheet visible={chat} onClose={() => setChat(false)} onAction={act} prices={{ notice: price, rti: rtiPrice }} />
+      </ScrollView>
+      <AssistantButton onPress={() => setChat(true)} />
+      <AssistantSheet visible={chat} onClose={() => setChat(false)} onAction={act} prices={{ notice: price, rti: rtiPrice }} />
     </View>
   );
 }
 
-function Feature({ photo, chip, chipIcon = "check-circle", title, icon, text, meta, onPress }: { photo: ImageSource; chip: string; chipIcon?: Icon; title: string; icon: Icon; text: string; meta: string[]; onPress: () => void }) {
+// A full-width photo section under a black fade, the same in day and night.
+const fades: Record<"hero" | "left" | "bottom" | "center", { colors: [string, string, ...string[]]; start?: { x: number; y: number }; end?: { x: number; y: number } }> = {
+  hero: { colors: ["rgba(8,9,9,0.55)", "rgba(8,9,9,0.82)", "rgba(8,9,9,0.96)"] },
+  left: { colors: ["rgba(8,9,9,0.94)", "rgba(8,9,9,0.7)", "rgba(8,9,9,0.45)"], start: { x: 0, y: 0.5 }, end: { x: 1, y: 0.5 } },
+  bottom: { colors: ["rgba(8,9,9,0.5)", "rgba(8,9,9,0.85)", "rgba(8,9,9,0.97)"] },
+  center: { colors: ["rgba(8,9,9,0.8)", "rgba(8,9,9,0.72)", "rgba(8,9,9,0.9)"] },
+};
+export function Band({ photo, video, fade, children }: { photo: ImageSourcePropType; video?: number; fade: keyof typeof fades; children: React.ReactNode }) {
+  const f = fades[fade];
   return (
-    <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.card, { overflow: "hidden" }, pressed && { opacity: 0.94 }]}>
-      <View style={s.featurePhoto}>
-        <Image source={photo} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
-        <LinearGradient colors={["transparent", "rgba(28,27,26,0.25)", "rgba(28,27,26,0.85)"]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
-        <View style={s.featureCaption}>
-          <View style={s.chip}><Feather name={chipIcon} size={13} color="#fff" /><Text style={s.chipText}>{chip}</Text></View>
-          <Text maxFontSizeMultiplier={1.3} style={s.featureTitle}>{title}</Text>
-        </View>
-      </View>
-      <View style={s.featureBody}>
-        <View style={s.round}><Feather name={icon} size={18} color={colors.ink} /></View>
-        <View style={{ flex: 1 }}>
-          <Text style={s.featureText}>{text}</Text>
-          <View style={s.metaRow}>
-            {meta.map((m, i) => <Text key={m} style={s.metaText}>{i > 0 ? "•  " : ""}{m}</Text>)}
-          </View>
-        </View>
-      </View>
-    </Pressable>
+    <ImageBackground source={photo} resizeMode="cover" style={{ overflow: "hidden", backgroundColor: "#0b0c0c" }}>
+      {video ? <BandVideo source={video} /> : null}
+      <LinearGradient colors={f.colors} start={f.start} end={f.end} style={StyleSheet.absoluteFill} />
+      <View style={{ paddingHorizontal: 20, paddingVertical: 40 }}>{children}</View>
+    </ImageBackground>
   );
 }
 
-function Shortcut({ icon, title, text, onPress }: { icon: Icon; title: string; text: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [s.inset, { alignItems: "center" }, pressed && { backgroundColor: colors.tint2 }]}>
-      <Feather name={icon} size={20} color={colors.ink} />
-      <View style={{ flex: 1 }}>
-        <Text style={s.insetTitle}>{title}</Text>
-        <Text style={s.insetText}>{text}</Text>
-      </View>
-      <Feather name="chevron-right" size={18} color={colors.muted} />
-    </Pressable>
-  );
+// A muted, looping video over the band's photo. With reduced motion on, the photo stays still.
+function BandVideo({ source }: { source: number }) {
+  const reduced = useReducedMotion();
+  const player = useVideoPlayer(source, (p) => { p.loop = true; p.muted = true; });
+  useEffect(() => { if (reduced) player.pause(); else player.play(); }, [reduced, player]);
+  if (reduced) return null;
+  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false}/>;
 }
 
-function Point({ icon, title, text }: { icon: Icon; title: string; text: string }) {
+function Stat({ figure, text, source }: { figure: string; text: string; source: string }) {
   return (
-    <View style={s.inset}>
-      <Feather name={icon} size={18} color={colors.ink} style={{ marginTop: 1 }} />
-      <View style={{ flex: 1 }}>
-        <Text style={s.insetTitle}>{title}</Text>
-        <Text style={s.insetText}>{text}</Text>
-      </View>
+    <View style={{ flex: 1, gap: 6 }}>
+      <Text style={{ fontFamily: fonts.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.8, color: band.ink }}>{figure}</Text>
+      <Text style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 20, color: band.ink }}>{text}</Text>
+      <Text style={{ fontFamily: fonts.sans, fontSize: 11.5, lineHeight: 16, color: band.muted }}>Source: {source}</Text>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  account: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
-  accountText: { fontFamily: fonts.sansBold, fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase", color: colors.muted },
-  initials: { fontFamily: fonts.sansBold, fontSize: 13, color: "#fff" },
-  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
-  card: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, ...shadow },
-  eyebrow: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.9, textTransform: "uppercase", color: colors.muted, marginBottom: 12 },
-  headline: { fontFamily: fonts.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.8, color: colors.ink },
-  lead: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, color: colors.muted, marginTop: 10 },
-  inset: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: radius.sm, backgroundColor: colors.tint },
-  insetTitle: { fontFamily: fonts.sansBold, fontSize: 13, lineHeight: 18, color: colors.ink },
-  insetText: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 1 },
-  featurePhoto: { height: 192, justifyContent: "flex-end", backgroundColor: colors.tint2 },
-  featureCaption: { padding: 16 },
-  chip: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.22)", marginBottom: 6 },
-  chipText: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.7, textTransform: "uppercase", color: "#fff" },
-  featureTitle: { fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.3, color: "#fff" },
-  featureBody: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 16 },
-  round: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.tint2, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  featureText: { fontFamily: fonts.sansMedium, fontSize: 14, lineHeight: 21, color: colors.ink },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
-  metaText: { fontFamily: fonts.sansBold, fontSize: 11, lineHeight: 16, letterSpacing: 0.3, color: colors.muted },
-  sectionHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 23, letterSpacing: -0.3, color: colors.ink },
-  sectionMeta: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted },
-  remedy: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 16 },
-  tile: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.tint2, alignItems: "center", justifyContent: "center" },
-  remedyHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  remedyTitle: { flex: 1, fontFamily: fonts.sansBold, fontSize: 16, lineHeight: 22, letterSpacing: -0.1, color: colors.ink },
-  remedyText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 3 },
-  tags: { flexWrap: "wrap", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-  tag: { fontFamily: fonts.sansBold, fontSize: 11, color: colors.ink, backgroundColor: colors.tint2, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, overflow: "hidden" },
-  tagMeta: { fontFamily: fonts.sansBold, fontSize: 11, color: colors.muted },
-  cardHead: { flexDirection: "row", alignItems: "center", gap: 8 },
-  cardTitle: { fontFamily: fonts.sansBold, fontSize: 16, lineHeight: 22, color: colors.ink },
-  quote: { width: 280, padding: 16 },
-  quoteText: { fontFamily: fonts.displayRegular, fontSize: 15, lineHeight: 22, color: colors.ink, marginVertical: 8 },
-  quoteBy: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
-  soon: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.tint2 },
-  soonDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ok },
-  soonText: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.7, textTransform: "uppercase", color: colors.ink },
-  step: { flexDirection: "row", gap: 12 },
-  stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.tint2, alignItems: "center", justifyContent: "center" },
-  stepNumText: { fontFamily: fonts.sansBold, fontSize: 12, color: colors.ink },
-  stepLine: { flex: 1, width: 1.5, backgroundColor: colors.line, marginVertical: 3 },
-  bannerPhoto: { width: "100%", height: 160, backgroundColor: colors.tint2 },
+const styles = (c: Palette) => StyleSheet.create({
+  bar: { height: 52, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.tint, alignItems: "center", justifyContent: "center" },
+  initials: { fontFamily: fonts.sansBold, fontSize: 14, color: c.accent },
+  login: { minHeight: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: c.accent, alignItems: "center", justifyContent: "center" },
+  loginText: { fontFamily: fonts.sansBold, fontSize: 15, color: c.accentInk },
+  heroTitle: { fontFamily: fonts.display, fontSize: 34, lineHeight: 38, letterSpacing: -1.1, color: band.ink, marginTop: 48 },
+  heroLede: { fontFamily: fonts.sans, fontSize: 16, lineHeight: 24, color: band.muted, marginTop: 14, marginBottom: 22 },
+  glass: { padding: 14, borderRadius: 18, borderWidth: 1, borderColor: band.line, backgroundColor: "rgba(20,22,22,0.62)" },
+  glassLabel: { fontFamily: fonts.sansBold, fontSize: 14, color: band.ink, marginBottom: 6 },
+  storyInput: { minHeight: 96, textAlignVertical: "top", fontFamily: fonts.sans, fontSize: 16, lineHeight: 23, color: band.ink, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: band.line, backgroundColor: "rgba(0,0,0,0.35)", marginBottom: 12 },
+  btn: { minHeight: 50, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 20 },
+  btnText: { fontFamily: fonts.sansBold, fontSize: 16 },
+  btnGhost: { minHeight: 48, alignSelf: "flex-start", borderRadius: 12, borderWidth: 1, borderColor: band.line, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18 },
+  btnGhostText: { fontFamily: fonts.sansBold, fontSize: 15, color: band.ink },
+  btnQuiet: { minHeight: 48, marginTop: 20, borderRadius: 12, borderWidth: 1, borderColor: c.line, alignItems: "center", justifyContent: "center" },
+  btnQuietText: { fontFamily: fonts.sansBold, fontSize: 15, color: c.ink },
+  pick: { minHeight: 44, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: band.line, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "center" },
+  pickText: { fontFamily: fonts.sansMedium, fontSize: 14.5, color: band.ink },
+  heroPrices: { fontFamily: fonts.sans, fontSize: 13.5, color: band.muted, marginTop: 16 },
+  section: { paddingHorizontal: 20, paddingVertical: 36, gap: 12 },
+  h2: { fontFamily: fonts.display, fontSize: 24, lineHeight: 29, letterSpacing: -0.6, color: c.ink },
+  h3: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 23, letterSpacing: -0.3, color: c.ink },
+  lead: { fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 23, color: c.muted },
+  card: { backgroundColor: c.surface, borderRadius: 16, borderWidth: 1, borderColor: c.line },
+  svc: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, minHeight: 76 },
+  svcIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.tint, alignItems: "center", justifyContent: "center" },
+  svcTitle: { fontFamily: fonts.displayBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.2, color: c.ink },
+  svcText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18, color: c.muted, marginTop: 2 },
+  svcPrice: { fontFamily: fonts.sansBold, fontSize: 15, color: c.accent, marginTop: 2 },
+  bandTitle: { fontFamily: fonts.display, fontSize: 28, lineHeight: 33, letterSpacing: -0.8, color: band.ink, marginTop: 24 },
+  bandText: { fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 23, color: band.muted, marginTop: 10 },
+  stats: { flexDirection: "row", gap: 18, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: band.line, marginBottom: 8 },
+  dot: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: c.accent, alignItems: "center", justifyContent: "center", backgroundColor: c.bg },
+  dotText: { fontFamily: fonts.displayBold, fontSize: 13, color: c.accent },
+  rail: { flex: 1, width: 2, backgroundColor: c.line, marginVertical: 3 },
+  stepTitle: { fontFamily: fonts.displayBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.2, color: c.ink, marginTop: 5 },
+  stepText: { fontFamily: fonts.sans, fontSize: 14.5, lineHeight: 21, color: c.muted, marginTop: 3 },
+  row: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16, minHeight: 64 },
+  rowTitle: { fontFamily: fonts.sansBold, fontSize: 15.5, color: c.ink },
+  rowText: { fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 19, color: c.muted, marginTop: 2 },
+  quote: { fontFamily: fonts.displayRegular, fontSize: 15, lineHeight: 22, color: c.ink, marginBottom: 10 },
 });

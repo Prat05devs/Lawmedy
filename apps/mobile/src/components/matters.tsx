@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Pressable } from "@/components/pressable";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { Group, tap } from "@/components/app-ui";
 import { StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage, shortDate } from "@/lib/hooks";
-import { colors, fonts, radius, shadow } from "@/lib/theme";
+import { colors, fonts, radius, shadow, themed } from "@/lib/theme";
 import { progressNote, type Matter } from "@/lib/types";
 
 export const NEEDS_YOU: Matter["status"][] = ["DRAFT", "INTAKE_IN_PROGRESS", "READY_FOR_PAYMENT", "USER_RESPONSE_REQUIRED"];
@@ -53,8 +54,8 @@ export function MatterList({ matters }: { matters: Matter[] }) {
   );
 }
 
-const s = StyleSheet.create({
-  next: { backgroundColor: colors.ink, borderRadius: radius.md, padding: 18, ...shadow },
+const s = themed(() => StyleSheet.create({
+  next: { backgroundColor: colors.solid, borderRadius: radius.md, padding: 18, ...shadow },
   nextLabel: { fontFamily: fonts.sansBold, fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", color: "#c9c6c4", marginBottom: 6 },
   nextTitle: { fontFamily: fonts.displayBold, fontSize: 19, lineHeight: 25, letterSpacing: -0.3, color: "#fff", marginBottom: 6 },
   nextText: { fontFamily: fonts.sans, fontSize: 14.5, lineHeight: 21, color: "#e6e4e2" },
@@ -63,4 +64,4 @@ const s = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   rowTitle: { fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3, color: colors.ink },
   rowMeta: { fontFamily: fonts.sans, fontSize: 13, color: colors.muted },
-});
+}));

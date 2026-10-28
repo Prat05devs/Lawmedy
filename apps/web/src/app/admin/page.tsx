@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { CreditCard, FolderOpen, UserCheck, Users } from "lucide-react";
+import { CreditCard, FolderOpen, MessageCircleQuestion, UserCheck, Users } from "lucide-react";
 import { api, statusLabel, type Matter } from "@/lib/api";
 
-type Dash = { pendingPayments: number; activeAdvocates: number; awaitingAssignment: number; newAdvocateSignups: number; total: number; matters: Record<string, number> };
+type Dash = { pendingPayments: number; activeAdvocates: number; awaitingAssignment: number; needsInformation?: number; newAdvocateSignups: number; total: number; matters: Record<string, number> };
 
 export default async function AdminDashboard() {
   const d = await api<Dash>("/admin/dashboard");
   const cards = [
     { href: "/admin/payments", label: "Payments to verify", value: d.pendingPayments, Icon: CreditCard, hot: d.pendingPayments > 0 },
     { href: "/admin/matters?status=DRAFT_GENERATED", label: "Awaiting assignment", value: d.awaitingAssignment, Icon: UserCheck, hot: d.awaitingAssignment > 0 },
+    { href: "/admin/matters?status=NEEDS_INFORMATION", label: "Paid, needs more information", value: d.needsInformation ?? 0, Icon: MessageCircleQuestion, hot: (d.needsInformation ?? 0) > 0 },
     { href: "/admin/matters", label: "All matters", value: d.total, Icon: FolderOpen, hot: false },
     { href: "/admin/advocates", label: "Active advocates", value: d.activeAdvocates, Icon: Users, hot: false },
     { href: "/admin/advocate-signups", label: "New advocate sign-ups", value: d.newAdvocateSignups ?? 0, Icon: Users, hot: (d.newAdvocateSignups ?? 0) > 0 },

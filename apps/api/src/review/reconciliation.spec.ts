@@ -16,6 +16,12 @@ describe("fact reconciliation", () => {
   it("keeps different kinds of amounts and dates in separate slots", () => {
     expect(canonicalFactType("interest_amount")).not.toBe(canonicalFactType("loan_amount"));
     expect(canonicalFactType("due_date")).not.toBe(canonicalFactType("agreement_date"));
+    // A deposit case has a payment date and a vacating date; both are true and both are needed.
+    expect(canonicalFactType("vacating_date")).toBe("date:end");
+    expect(canonicalFactType("vacating_date")).not.toBe(canonicalFactType("payment_date"));
+    expect(canonicalFactType("joining_date")).toBe("date:start");
+    expect(canonicalFactType("deposit_amount")).toBe("amount:deposit");
+    expect(canonicalFactType("monthly_rent")).toBe("amount:rent");
   });
 
   it("separates the sender's details from the recipient's", () => {

@@ -8,7 +8,16 @@ import { colors, fonts } from "@/lib/theme";
 import type { MatterReview } from "@/lib/types";
 import { WHATSAPP_DISPLAY } from "@/lib/links";
 
-const label = (t: string) => t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+// Plain names for the fact slots the API groups facts into (see apps/api/src/review/reconciliation.ts).
+const factNames: Record<string, string> = {
+  "amount:principal": "Amount lent or owed", "amount:deposit": "Deposit or advance", "amount:rent": "Rent",
+  "amount:salary": "Salary", "amount:interest": "Interest", "amount:compensation": "Compensation or refund", "amount:cost": "Fees or costs",
+  "date:event": "Date it happened", "date:due": "Date it was due", "date:followup": "Date you followed up",
+  "date:end": "Date it ended (moved out, left a job)", "date:start": "Date it began (agreement, joining)",
+  recipient_name: "Other party’s name", recipient_address: "Other party’s address", recipient_phone: "Other party’s phone", recipient_email: "Other party’s email",
+  sender_name: "Your name", sender_address: "Your address", what_happened: "What happened",
+};
+const label = (t: string) => factNames[t] ?? t.replace(":", " – ").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 const sourceName = { STATEMENT: "Your statement", ANSWER: "Your answer", EVIDENCE: "Your document" } as const;
 
 export function ReviewPanel({ matterId, review, step, onChanged }: { matterId: string; review: MatterReview; step: string; onChanged: () => void }) {

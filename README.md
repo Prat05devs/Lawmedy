@@ -2,7 +2,7 @@
 
 A private workspace for legal notices, RTI applications, and ₹199 lending certificates, with web and Expo mobile clients, private evidence, grounded AI drafting/QA, Razorpay payments, advocate review and private PDF delivery.
 
-The current hosting plan is **Hostinger for the Next.js website and DigitalOcean for the Nest API, PostgreSQL and Caddy**. Follow [docs/deploy-vps.md](docs/deploy-vps.md) for deployment, environment values, Razorpay setup, mobile rebuilds, and the advocate's signed-certificate workflow. See [the security review](docs/security-review.md) and [operations plan](docs/operations.md) before launch. The older API-on-Hostinger guide is an alternative deployment.
+The current hosting plan is **Hostinger for the Next.js website and DigitalOcean for the Nest API, PostgreSQL and Caddy**. Follow [docs/deploy-vps.md](docs/deploy-vps.md) for deployment, environment values, Razorpay setup, mobile rebuilds, and the advocate's signed-certificate workflow. See [the security review](docs/security-review.md) and [operations plan](docs/operations.md) before launch.
 
 Adding valid `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to the API environment automatically replaces the old manual payment flow on both clients. Configure the signed `payment.captured` webhook before going live so payments still complete after checkout is closed. Only captured payments start document work.
 
@@ -47,7 +47,7 @@ pnpm dev
 
 The seed command creates the local advocate from `ADVOCATE_EMAIL`, `ADVOCATE_FULL_NAME`, and `ADVOCATE_PASSWORD` in `apps/api/.env`. Copy the placeholders from `apps/api/.env.example`, replace the password for your own environment, run the seed command, then sign in at `/login`. Advocate accounts are sent to the role-protected `/advocate` workspace.
 
-Legal-notice and RTI final PDFs are drawn with pdfkit using the Noto fonts in `apps/api/assets/fonts` (Hindi text uses Noto Serif Devanagari). No browser or system fonts are needed, so the API runs on plain Node.js hosts such as Hostinger Cloud Hosting. See [docs/deploy-hostinger.md](docs/deploy-hostinger.md).
+Legal-notice and RTI final PDFs are drawn with pdfkit using the Noto fonts in `apps/api/assets/fonts` (Hindi text uses Noto Serif Devanagari). No browser or system fonts are needed. The API runs on the shared DigitalOcean droplet; see [docs/deploy-shared-droplet.md](docs/deploy-shared-droplet.md).
 
 Email delivery uses Resend. For sandbox testing, put `RESEND_API_KEY` and a verified `RESEND_FROM` sender in `apps/api/.env`. When these values are absent, advocate approval still creates the private PDF and completes the matter; the user sees the download in Lawmedy with a clear local email-configuration note.
 
